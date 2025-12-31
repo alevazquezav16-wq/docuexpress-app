@@ -176,8 +176,17 @@ def create_app(config_class=Config):
         CSRFProtect(app)
     db.init_app(app)
     # ✅ 3. Inicializar caché multicapa
-    cache = Cache(app)
-    app.cache = cache
+    # Intentamos usar el backend indicado en configuración (por defecto Redis).
+    # Si falla (p. ej. Redis no está disponible en desarrollo) caemos a SimpleCache.
+    try:
+        cache = Cache(app)
+        app.cache = cache
+    except Exception as e:
+        logging.warning("Cache init failed, falling back to SimpleCache: %s", e)
+        # Forzar tipo SimpleCache y reintentar
+        app.config['CACHE_TYPE'] = 'SimpleCache'
+        cache = Cache(app)
+        app.cache = cache
 
     # Ruta de prueba para verificar la caché
     @app.route('/cache-test')
@@ -192,16 +201,33 @@ def create_app(config_class=Config):
     # ✅ 4. Inicializar Rate Limiter con Redis
     limiter = None
     if app.config.get('RATELIMIT_ENABLED', True):
-        limiter = Limiter(
-            app=app,
-            key_func=get_remote_address,
-            default_limits=[app.config.get('RATELIMIT_DEFAULT', '1000 per day')],
-            storage_uri=app.config.get('RATELIMIT_STORAGE_URL', 'redis://localhost:6379'),
-            strategy='fixed-window'
-        )
-        logging.info("✅ Rate Limiting habilitado (Redis)")
-        logging.info(f"   Límites por defecto: {app.config.get('RATELIMIT_DEFAULT')}")
-        app.limiter = limiter
+        storage_uri = app.config.get('RATELIMIT_STORAGE_URL', 'redis://localhost:6379')
+        try:
+            limiter = Limiter(
+                app=app,
+                key_func=get_remote_address,
+                default_limits=[app.config.get('RATELIMIT_DEFAULT', '1000 per day')],
+                storage_uri=storage_uri,
+                strategy='fixed-window'
+            )
+            logging.info("✅ Rate Limiting habilitado (%s)", storage_uri)
+            logging.info(f"   Límites por defecto: {app.config.get('RATELIMIT_DEFAULT')}")
+            app.limiter = limiter
+        except Exception as e:
+            logging.warning("No se pudo inicializar Rate Limiter con %s: %s. Usando almacenamiento en memoria para desarrollo.", storage_uri, e)
+            try:
+                # Fallback a almacenamiento en memoria para evitar 500s en desarrollo
+                limiter = Limiter(
+                    app=app,
+                    key_func=get_remote_address,
+                    default_limits=[app.config.get('RATELIMIT_DEFAULT', '1000 per day')],
+                    storage_uri='memory://',
+                    strategy='fixed-window'
+                )
+                app.limiter = limiter
+            except Exception as e2:
+                logging.error("Error al inicializar Rate Limiter en memoria: %s", e2)
+                app.limiter = None
     else:
         logging.info("⚠️ Rate Limiting deshabilitado")
         app.limiter = None
