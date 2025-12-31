@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Mi Perfil{% endblock %}
+
+{% block content %}
+<header class="mb-4">
+    <h1 class="display-5">Mi Perfil</h1>
+    <p class="lead">Gestiona la configuración de tu cuenta.</p>
+</header>
+
+<!-- Mensajes Flash -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<div class="card shadow-sm" style="max-width: 600px;">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-key-fill"></i> Cambiar Contraseña</h5>
+    </div>
+    <div class="card-body">
+        <form method="post" novalidate>
+            {{ form.hidden_tag() }}
+            <div class="mb-3">
+                {{ form.password_actual.label(class="form-label") }}
+                {{ form.password_actual(class="form-control" + (" is-invalid" if form.password_actual.errors else "")) }}
+                {% for error in form.password_actual.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+            </div>
+            <hr>
+            <div class="mb-3">
+                {{ form.nuevo_password.label(class="form-label") }}
+                {{ form.nuevo_password(class="form-control" + (" is-invalid" if form.nuevo_password.errors else "")) }}
+                {% for error in form.nuevo_password.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="mb-3">
+                {{ form.confirmar_password.label(class="form-label") }}
+                {{ form.confirmar_password(class="form-control" + (" is-invalid" if form.confirmar_password.errors else "")) }}
+                {% for error in form.confirmar_password.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+            </div>
+            {{ form.submit(class="btn btn-primary w-100") }}
+        </form>
+    </div>
+</div>
+{% endblock %}

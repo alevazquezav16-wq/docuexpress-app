@@ -1,0 +1,554 @@
+<!-- Filtros de Rango Temporal -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-center justify-content-md-end align-items-center flex-wrap gap-2">
+            <div class="btn-group w-100 w-md-auto" role="group" aria-label="Filtro de rango">
+                <input type="radio" class="btn-check" name="dateRange" id="range7d" value="7" autocomplete="off" checked>
+                <label class="btn btn-outline-primary btn-sm" for="range7d">
+                    <i class="bi bi-calendar-week me-1 d-none d-md-inline"></i><span class="d-md-none">7d</span><span class="d-none d-md-inline">7 días</span>
+                </label>
+                
+                <input type="radio" class="btn-check" name="dateRange" id="range30d" value="30" autocomplete="off">
+                <label class="btn btn-outline-primary btn-sm" for="range30d">
+                    <i class="bi bi-calendar-month me-1 d-none d-md-inline"></i><span class="d-md-none">30d</span><span class="d-none d-md-inline">30 días</span>
+                </label>
+                
+                <input type="radio" class="btn-check" name="dateRange" id="range90d" value="90" autocomplete="off">
+                <label class="btn btn-outline-primary btn-sm" for="range90d">
+                    <i class="bi bi-calendar3 me-1 d-none d-md-inline"></i><span class="d-md-none">90d</span><span class="d-none d-md-inline">90 días</span>
+                </label>
+                
+                <input type="radio" class="btn-check" name="dateRange" id="rangeYear" value="365" autocomplete="off">
+                <label class="btn btn-outline-primary btn-sm" for="rangeYear">
+                    <i class="bi bi-calendar-range me-1 d-none d-md-inline"></i><span class="d-md-none">1a</span><span class="d-none d-md-inline">Año</span>
+                </label>
+                
+                <input type="radio" class="btn-check" name="dateRange" id="rangeCustom" value="custom" autocomplete="off">
+                <label class="btn btn-outline-primary btn-sm" for="rangeCustom">
+                    <i class="bi bi-sliders me-1"></i><span class="d-none d-sm-inline">Personalizado</span><span class="d-sm-none">+</span>
+                </label>
+            </div>
+        </div>
+        
+        <!-- Panel de Rango Personalizado (oculto por defecto) -->
+        <div id="customRangePanel" class="mt-3" style="display: none;">
+            <div class="card border-primary">
+                <div class="card-body p-3">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-4">
+                            <label for="customStartDate" class="form-label small mb-1">Fecha Inicio</label>
+                            <input type="date" class="form-control form-control-sm" id="customStartDate">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="customEndDate" class="form-label small mb-1">Fecha Fin</label>
+                            <input type="date" class="form-control form-control-sm" id="customEndDate">
+                        </div>
+                        <div class="col-md-4">
+                            <button type="button" class="btn btn-primary btn-sm w-100" id="applyCustomRange">
+                                <i class="bi bi-check-circle me-1"></i>Aplicar Filtro
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Fila de Tarjetas de Resumen Rediseñadas con Tendencias -->
+{% if current_user.role == 'admin' %}
+<div class="row g-4 mb-4" id="dashboard-cards">
+    <!-- Tarjeta Ganancia Total -->
+    <div class="col-lg-3 col-md-6">
+        <div class="metric-card {% if totales.ganancia > 0 %}positive{% elif totales.ganancia < 0 %}negative{% endif %}">
+            <div class="icon"><i class="bi bi-cash-coin"></i></div>
+            <div class="content">
+                <div class="label">Ganancia del Mes</div>
+                <div class="value" data-target="{{ "%.2f"|format(totales.ganancia) }}">${{ "%.2f"|format(totales.ganancia) }}</div>
+                {% if totales_comparativa %}
+                <div class="trend {{ 'trend-up' if totales_comparativa.cambio_ganancia > 0 else 'trend-down' if totales_comparativa.cambio_ganancia < 0 else 'trend-neutral' }}">
+                    <i class="bi {{ 'bi-arrow-up' if totales_comparativa.cambio_ganancia > 0 else 'bi-arrow-down' if totales_comparativa.cambio_ganancia < 0 else 'bi-dash' }}"></i>
+                    <span>{{ "%.1f"|format(totales_comparativa.porcentaje_ganancia|abs) }}%</span>
+                    <small class="trend-label">vs mes anterior</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tarjeta Trámites de Hoy -->
+    <div class="col-lg-3 col-md-6">
+        <div class="metric-card">
+            <div class="icon"><i class="bi bi-file-earmark-text"></i></div>
+            <div class="content">
+                <div class="label">Trámites de Hoy</div>
+                <div class="value" data-target="{{ tramites_de_hoy }}">{{ tramites_de_hoy }}</div>
+                {% if tramites_comparativa %}
+                <div class="trend {{ 'trend-up' if tramites_comparativa.cambio > 0 else 'trend-down' if tramites_comparativa.cambio < 0 else 'trend-neutral' }}">
+                    <i class="bi {{ 'bi-arrow-up' if tramites_comparativa.cambio > 0 else 'bi-arrow-down' if tramites_comparativa.cambio < 0 else 'bi-dash' }}"></i>
+                    <span>{{ tramites_comparativa.cambio|abs }} trámites</span>
+                    <small class="trend-label">vs ayer</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tarjeta Papelerías -->
+    <div class="col-lg-3 col-md-6">
+        <div class="metric-card">
+            <div class="icon"><i class="bi bi-shop"></i></div>
+            <div class="content">
+                <div class="label">Papelerías Activas</div>
+                <div class="value" data-target="{{ num_papelerias }}">{{ num_papelerias }}</div>
+                <div class="trend trend-info">
+                    <i class="bi bi-info-circle"></i>
+                    <span>{{ (totales.ganancia / num_papelerias)|round(2) if num_papelerias > 0 else 0 }}$</span>
+                    <small class="trend-label">ganancia promedio</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tarjeta Gastos Operativos -->
+    <div class="col-lg-3 col-md-6">
+        <div class="metric-card negative">
+             <div class="icon"><i class="bi bi-receipt"></i></div>
+             <div class="content">
+                <div class="label">Gastos del Mes</div>
+                <div class="value" data-target="{{ "%.2f"|format(total_gastos_operativos) }}">${{ "%.2f"|format(total_gastos_operativos) }}</div>
+                {% if totales_comparativa %}
+                <div class="trend {{ 'trend-down' if totales_comparativa.costos_porcentaje > 0 else 'trend-up' if totales_comparativa.costos_porcentaje < 0 else 'trend-neutral' }}">
+                    <i class="bi {{ 'bi-arrow-up' if totales_comparativa.costos_porcentaje > 0 else 'bi-arrow-down' if totales_comparativa.costos_porcentaje < 0 else 'bi-dash' }}"></i>
+                    <span>{{ "%.1f"|format(totales_comparativa.costos_porcentaje|abs) }}%</span>
+                    <small class="trend-label">vs mes anterior</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Widget de Meta Mensual y Proyección -->
+{% if current_user.role == 'admin' and meta_progress %}
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h5 class="mb-1 fw-bold">
+                            <i class="bi bi-bullseye text-primary me-2"></i>
+                            Meta Mensual
+                        </h5>
+                        <small class="text-muted">Objetivo: ${{ "{:,.2f}".format(meta_progress.meta_objetivo) }}</small>
+                    </div>
+                    <div class="text-end">
+                        <div class="badge bg-primary fs-6 px-3 py-2">
+                            {{ "%.1f"|format(meta_progress.porcentaje) }}%
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Barra de progreso -->
+                <div class="progress mb-3" style="height: 30px;">
+                    <div class="progress-bar bg-gradient progress-bar-striped progress-bar-animated" 
+                         role="progressbar" 
+                         style="width: {{ [meta_progress.porcentaje, 100]|min }}%"
+                         aria-valuenow="{{ meta_progress.porcentaje }}" 
+                         aria-valuemin="0" 
+                         aria-valuemax="100">
+                        <span class="fw-bold">${{ "{:,.2f}".format(meta_progress.ganancia_actual) }}</span>
+                    </div>
+                </div>
+                
+                <!-- Información detallada -->
+                <div class="row g-3 text-center">
+                    <div class="col-md-3">
+                        <div class="p-2">
+                            <i class="bi bi-cash-stack text-success fs-4"></i>
+                            <div class="fw-bold mt-1">${{ "{:,.2f}".format(meta_progress.ganancia_actual) }}</div>
+                            <small class="text-muted">Alcanzado</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-2">
+                            <i class="bi bi-graph-up-arrow text-info fs-4"></i>
+                            <div class="fw-bold mt-1">${{ "{:,.2f}".format(meta_progress.proyeccion) }}</div>
+                            <small class="text-muted">Proyección</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-2">
+                            <i class="bi bi-calendar-minus text-warning fs-4"></i>
+                            <div class="fw-bold mt-1">{{ meta_progress.dias_restantes }}</div>
+                            <small class="text-muted">Días hasta corte</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-2">
+                            <i class="bi bi-flag text-danger fs-4"></i>
+                            <div class="fw-bold mt-1">${{ "{:,.2f}".format(meta_progress.falta) }}</div>
+                            <small class="text-muted">Falta</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Mensaje motivacional -->
+                {% if meta_progress.proyeccion >= meta_progress.meta_objetivo %}
+                <div class="alert alert-success mt-3 mb-0" role="alert">
+                    <i class="bi bi-trophy-fill me-2"></i>
+                    <strong>¡Excelente!</strong> Al ritmo actual alcanzarás tu meta este mes. ¡Sigue así hasta el corte del domingo!
+                </div>
+                {% elif meta_progress.porcentaje >= 75 %}
+                <div class="alert alert-info mt-3 mb-0" role="alert">
+                    <i class="bi bi-speedometer2 me-2"></i>
+                    <strong>¡Buen ritmo!</strong> Faltan {{ meta_progress.dias_restantes }} días hasta el corte del domingo. Necesitas ${{ "{:,.2f}".format(meta_progress.falta) }} más para la meta.
+                </div>
+                {% else %}
+                <div class="alert alert-warning mt-3 mb-0" role="alert">
+                    <i class="bi bi-rocket-takeoff me-2"></i>
+                    <strong>¡Acelera!</strong> Quedan {{ meta_progress.dias_restantes }} días hasta el domingo. Necesitas aumentar el ritmo para alcanzar tu meta de ${{ "{:,.2f}".format(meta_progress.meta_objetivo) }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Panel de Métricas Destacadas -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm" style="height: auto;">
+            <div class="card-body p-4">
+                <h6 class="fw-bold mb-3">
+                    <i class="bi bi-star-fill text-warning me-2"></i>
+                    Métricas Destacadas
+                </h6>
+                
+                {% if mejor_mes %}
+                <div class="mb-3 pb-3 border-bottom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted">🏆 Mejor Mes Histórico</small>
+                            <div class="fw-bold">{{ mejor_mes.mes }}</div>
+                        </div>
+                        <div class="text-end">
+                            <div class="text-success fw-bold">${{ "{:,.0f}".format(mejor_mes.ganancia) }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if dia_productivo %}
+                <div class="mb-3 pb-3 border-bottom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted">📅 Día Más Productivo</small>
+                            <div class="fw-bold">{{ dia_productivo.dia_nombre }}</div>
+                        </div>
+                        <div class="text-end">
+                            <small class="text-muted">{{ dia_productivo.tramites }} trámites</small>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="mb-3 pb-3 border-bottom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted">📊 Margen Promedio</small>
+                            <div class="fw-bold">{{ margen_promedio }}%</div>
+                        </div>
+                        <div class="text-end">
+                            <div class="badge {{ 'bg-success' if margen_promedio >= 50 else 'bg-warning' }}">
+                                {{ 'Excelente' if margen_promedio >= 50 else 'Bueno' if margen_promedio >= 30 else 'Mejorable' }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if rentabilidad_tramites and rentabilidad_tramites|length > 0 %}
+                <div>
+                    <small class="text-muted">💰 Trámite Más Rentable</small>
+                    <div class="fw-bold">{{ rentabilidad_tramites[0].tramite }}</div>
+                    <small class="text-success">+${{ "{:,.2f}".format(rentabilidad_tramites[0].margen_promedio) }} promedio</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Calculadora Rápida (debajo de métricas destacadas) -->
+        <div class="card border-0 shadow-sm mt-3">
+            <div class="card-body p-4">
+                <h6 class="fw-bold mb-3">
+                    <i class="bi bi-calculator-fill text-primary me-2"></i>
+                    Calculadora Rápida
+                </h6>
+                <p class="text-muted small mb-3">Estima tu ganancia potencial</p>
+                
+                <div class="row g-2">
+                    <div class="col-12">
+                        <label for="calcTramites" class="form-label small mb-1">Cantidad de trámites</label>
+                        <input type="number" class="form-control form-control-sm" id="calcTramites" min="1" value="10" placeholder="Ej: 10">
+                    </div>
+                    <div class="col-12">
+                        <label for="calcGanancia" class="form-label small mb-1">Ganancia promedio por trámite</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="calcGanancia" min="0" step="0.01" value="{{ margen_promedio|default(50)|round(2) }}" placeholder="Ej: 50.00">
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <button type="button" class="btn btn-primary btn-sm w-100 mt-2" id="btnCalcular">
+                            <i class="bi bi-calculator me-1"></i> Calcular
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="calcResult" class="mt-3 p-3 rounded" style="background-color: var(--card-header-bg); display: none;">
+                    <div class="text-center">
+                        <small class="text-muted d-block mb-1">Ganancia estimada</small>
+                        <div class="display-6 fw-bold text-success mb-2" id="calcTotal">$0.00</div>
+                        <small class="text-muted" id="calcDetails"></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Alertas Inteligentes y Insights -->
+{% if current_user.role == 'admin' %}
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center mb-3">
+                    <i class="bi bi-lightbulb-fill text-warning fs-4 me-2"></i>
+                    <h5 class="mb-0 fw-bold">Insights y Alertas</h5>
+                </div>
+                <div class="row g-3">
+                    <!-- Alerta de gastos altos -->
+                    {% if totales_comparativa and totales_comparativa.costos_porcentaje > 20 %}
+                    <div class="col-md-6">
+                        <div class="alert alert-warning mb-0 d-flex align-items-center" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <div>
+                                <strong>Gastos elevados</strong><br>
+                                <small>Tus gastos han aumentado un {{ "%.1f"|format(totales_comparativa.costos_porcentaje) }}% este mes vs el anterior</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Alerta de crecimiento positivo -->
+                    {% if totales_comparativa and totales_comparativa.porcentaje_ganancia > 15 %}
+                    <div class="col-md-6">
+                        <div class="alert alert-success mb-0 d-flex align-items-center" role="alert">
+                            <i class="bi bi-graph-up-arrow me-2"></i>
+                            <div>
+                                <strong>¡Excelente desempeño!</strong><br>
+                                <small>Tus ganancias crecieron {{ "%.1f"|format(totales_comparativa.porcentaje_ganancia) }}% este mes</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Alerta de trámites activos -->
+                    {% if tramites_comparativa and tramites_comparativa.cambio > 5 %}
+                    <div class="col-md-6">
+                        <div class="alert alert-info mb-0 d-flex align-items-center" role="alert">
+                            <i class="bi bi-activity me-2"></i>
+                            <div>
+                                <strong>Alta actividad hoy</strong><br>
+                                <small>{{ tramites_comparativa.cambio }} trámites más que ayer</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Recordatorio de registro -->
+                    {% if tramites_de_hoy == 0 %}
+                    <div class="col-md-6">
+                        <div class="alert alert-secondary mb-0 d-flex align-items-center" role="alert">
+                            <i class="bi bi-clipboard-check me-2"></i>
+                            <div>
+                                <strong>Sin trámites hoy</strong><br>
+                                <small>No has registrado trámites el día de hoy</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Mensaje de Suplantación -->
+{% if is_impersonating %}
+<div class="alert alert-warning alert-dismissible fade show" role="alert">
+    <i class="bi bi-eye"></i>
+    <strong>Modo de Suplantación:</strong> Ahora estás viendo la interfaz como <strong>{{ impersonated_user_name }}</strong>.
+    <a href="{{ url_for('auth.stop_viewing') }}" class="btn btn-sm btn-outline-warning ms-2">
+        <i class="bi bi-person-check"></i> Volver a Admin
+    </a>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endif %}
+
+<!-- Fila de Gráficos -->
+<div class="row g-4 mb-4">
+    <!-- Gráfico 1: Top Papelerías por Ganancia -->
+    <div class="col-lg-6">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-header bg-gradient-primary text-white border-0">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h5 class="mb-1">
+                            <i class="bi bi-trophy-fill me-2"></i>
+                            Papelerías Más Rentables
+                        </h5>
+                        <small class="opacity-75">Las 10 papelerías que generan mayor ganancia</small>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-light" onclick="exportChartData('topPapelerias')" title="Exportar datos">
+                            <i class="bi bi-download"></i>
+                        </button>
+                        <div class="badge bg-white text-primary">
+                            <i class="bi bi-bar-chart-line"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="topPapeleriasChart" style="max-height: 400px;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfico 2: Evolución Mensual -->
+    <div class="col-lg-6">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-header bg-gradient-info text-white border-0">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h5 class="mb-1">
+                            <i class="bi bi-graph-up me-2"></i>
+                            Evolución Mensual (Últimos 12 meses)
+                        </h5>
+                        <small class="opacity-75">Tendencia financiera histórica</small>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-light" onclick="exportChartData('monthlySummary')" title="Exportar datos">
+                            <i class="bi bi-download"></i>
+                        </button>
+                        <div class="badge bg-white text-info">
+                            <i class="bi bi-calendar-event"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Summary Cards for the chart -->
+                <div class="row g-3 mb-4 text-center">
+                    <div class="col-md-4">
+                        <div class="card bg-success-subtle border-success-subtle shadow-sm h-100">
+                            <div class="card-body py-3">
+                                <div class="d-flex align-items-center justify-content-center mb-2">
+                                    <i class="bi bi-cash-coin text-success-emphasis fs-4 me-2"></i>
+                                    <h6 class="card-title text-success-emphasis mb-0 fs-6">Ingreso Total</h6>
+                                </div>
+                                <p class="card-text fs-5 fw-bold text-success-emphasis mb-0" id="total-ingresos-12-meses">$0.00</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-danger-subtle border-danger-subtle shadow-sm h-100">
+                            <div class="card-body py-3">
+                                <div class="d-flex align-items-center justify-content-center mb-2">
+                                    <i class="bi bi-receipt-cutoff text-danger-emphasis fs-4 me-2"></i>
+                                    <h6 class="card-title text-danger-emphasis mb-0 fs-6">Gasto Total</h6>
+                                </div>
+                                <p class="card-text fs-5 fw-bold text-danger-emphasis mb-0" id="total-gastos-12-meses">$0.00</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-primary-subtle border-primary-subtle shadow-sm h-100">
+                            <div class="card-body py-3">
+                                <div class="d-flex align-items-center justify-content-center mb-2">
+                                    <i class="bi bi-pie-chart-fill text-primary-emphasis fs-4 me-2"></i>
+                                    <h6 class="card-title text-primary-emphasis mb-0 fs-6">Ganancia Neta</h6>
+                                </div>
+                                <p class="card-text fs-5 fw-bold text-primary-emphasis mb-0" id="ganancia-neta-12-meses">
+                                    $0.00 <span id="ganancia-trend" class="ms-1"></span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="monthlySummaryChart" style="max-height: 300px;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Fila de Gráficos de Dona -->
+<div class="row g-4 mb-4">
+    <!-- Gráfico 3: Distribución de Trámites -->
+    <div class="col-lg-6">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-header chart-header-tramites border-0">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h5 class="mb-1 fw-bold chart-title">
+                            <i class="bi bi-file-earmark-text-fill me-2"></i>
+                            Trámites Más Realizados
+                        </h5>
+                        <small class="chart-subtitle">Cantidad de cada tipo de trámite procesado</small>
+                    </div>
+                    <div class="badge chart-badge-tramites ms-2 px-2 py-1">
+                        <i class="bi bi-pie-chart"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body d-flex align-items-center">
+                <div class="chart-container flex-grow-1">
+                    <canvas id="tramitesDistributionChart" style="max-width: 100%; max-height: 350px;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfico 4: Distribución de Gastos -->
+    <div class="col-lg-6">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-header chart-header-gastos border-0">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h5 class="mb-1 fw-bold chart-title">
+                            <i class="bi bi-wallet-fill me-2"></i>
+                            ¿En Qué Se Gasta Más Dinero?
+                        </h5>
+                        <small class="chart-subtitle">Gastos separados por categoría (papelería, renta, servicios, etc.)</small>
+                    </div>
+                    <div class="badge chart-badge-gastos ms-2 px-2 py-1">
+                        <i class="bi bi-pie-chart-fill"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body d-flex align-items-center">
+                <div class="chart-container flex-grow-1">
+                    <canvas id="gastosDistributionChart" style="max-width: 100%; max-height: 350px;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

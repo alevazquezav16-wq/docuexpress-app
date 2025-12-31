@@ -1,0 +1,41 @@
+<div class="mb-3">
+    {{ form_tramite.papeleria_id.label(class="form-label") }}
+    {{ form_tramite.papeleria_id(class="form-select" + (" is-invalid" if form_tramite.papeleria_id.errors else ""), id="papeleria") }}
+    {% for error in form_tramite.papeleria_id.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+</div>
+<div class="mb-3">
+    {{ form_tramite.tramite.label(class="form-label") }}
+    {{ form_tramite.tramite(class="form-select" + (" is-invalid" if form_tramite.tramite.errors else ""), id="tramite") }}
+    {% for error in form_tramite.tramite.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+</div>
+<div class="mb-3" id="tramiteManualContainer" style="display: none;">
+    {{ form_tramite.tramite_manual.label(class="form-label") }}
+    {{ form_tramite.tramite_manual(class="form-control" + (" is-invalid" if form_tramite.tramite_manual.errors else ""), placeholder="Escribe el nombre del trámite") }}
+    {% for error in form_tramite.tramite_manual.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+</div>
+<div class="row">
+    <div class="col-md-6 mb-3">
+        {{ form_tramite.precio.label(class="form-label") }}
+        <small class="text-muted">(auto-completado, puedes editarlo)</small>
+        {{ form_tramite.precio(class="form-control" + (" is-invalid" if form_tramite.precio.errors else ""), step="0.01", id="precio", placeholder="Se autocompleta según la papelería") }}
+        {% for error in form_tramite.precio.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+    </div>
+    <div class="col-md-6 mb-3">
+        {{ form_tramite.costo.label(class="form-label") }}
+        <small class="text-muted">(auto-completado, puedes editarlo)</small>
+        {{ form_tramite.costo(class="form-control" + (" is-invalid" if form_tramite.costo.errors else ""), step="0.01", id="costo", placeholder="Se autocompleta según configuración") }}
+        {% for error in form_tramite.costo.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+    </div>
+</div>
+ <div class="row">
+    <div class="col-md-6 mb-3">
+        {{ form_tramite.cantidad.label(class="form-label") }}
+        {{ form_tramite.cantidad(class="form-control" + (" is-invalid" if form_tramite.cantidad.errors else "")) }}
+        {% for error in form_tramite.cantidad.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+    </div>
+    <div class="col-md-6 mb-3">
+        {{ form_tramite.fecha.label(class="form-label") }}
+        {{ form_tramite.fecha(class="form-control" + (" is-invalid" if form_tramite.fecha.errors else "")) }}
+        {% for error in form_tramite.fecha.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+    </div>
+</div>

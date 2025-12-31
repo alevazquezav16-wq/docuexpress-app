@@ -1,0 +1,9 @@
+{# Este fragmento actualiza la lista de papelerías #}
+<div id="papeleriaListContainer" hx-swap-oob="true">
+    {% include 'lista_papelerias.html' %}
+</div>
+
+{# Este fragmento resetea el formulario a su estado inicial #}
+<div id="form-agregar-papeleria" hx-swap-oob="true">
+    {% include 'form_agregar_papeleria.html' with context %}
+</div>

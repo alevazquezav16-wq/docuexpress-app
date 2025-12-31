@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Gestionar Precios de {{ nombre_papeleria }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <a href="{{ url_for('papeleria.ver_papeleria', papeleria_id=papeleria_id) }}" class="btn btn-outline-secondary mb-3">
+        <i class="bi bi-arrow-left"></i> Volver a {{ nombre_papeleria }}
+    </a>
+
+    <header class="mb-4">
+        <h1>Gestionar Precios</h1>
+        <p class="lead">Establece los precios para cada trámite en <strong>{{ nombre_papeleria }}</strong>.</p>
+    </header>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form id="precios-form"
+                  hx-post="{{ url_for('papeleria.gestionar_precios_papeleria', papeleria_id=papeleria_id) }}"
+                  hx-target="#form-precios-content"
+                  hx-swap="outerHTML"
+                  hx-indicator="#save-indicator">
+
+                <div id="form-precios-content">
+                    {% include 'partials/form_precios_content.html' %}
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.body.addEventListener('htmx:afterOnLoad', function(evt) {
+    // Cuando el formulario se recarga (después de guardar),
+    // se necesita redisparar el evento para que los mensajes flash aparezcan.
+    const flashEvent = new CustomEvent('new-flash-message', { bubbles: true });
+    document.body.dispatchEvent(flashEvent);
+});
+</script>
+{% endblock %}

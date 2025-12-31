@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% from "_form_helpers.html" import render_field %}
+
+{% block title %}Crear Nuevo Usuario{% endblock %}
+
+{% block content %}
+<header class="mb-4">
+    <h1 class="display-5">Crear Nuevo Usuario</h1>
+</header>
+
+{% include 'flash_messages.html' %}
+
+<div class="card shadow-sm" style="max-width: 600px; margin: auto;">
+    <div class="card-body">
+        <form method="post" novalidate>
+            {{ form.hidden_tag() }}
+
+            {{ render_field(form.username, placeholder="ej. juan.perez") }}
+
+            {{ render_field(form.role) }}
+
+            {{ render_field(form.password, placeholder="Mínimo 8 caracteres. Requerido.") }}
+            
+            {{ render_field(form.confirm_password, placeholder="Repite la contraseña para confirmar.") }}
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                <a href="{{ url_for('auth.listar_usuarios') }}" class="btn btn-secondary me-md-2">Cancelar</a>
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

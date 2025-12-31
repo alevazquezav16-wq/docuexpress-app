@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Gasto{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-md-10">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h3 class="mb-0">Editar Gasto</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('gastos.editar_gasto', gasto_id=gasto_id) }}" enctype="multipart/form-data" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.proveedor_id.id }}" class="form-label">{{ form.proveedor_id.label }}</label>
+                            {{ form.proveedor_id(class="form-select" + (" is-invalid" if form.proveedor_id.errors else "")) }}
+                            {% for error in form.proveedor_id.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="{{ form.categoria.id }}" class="form-label">{{ form.categoria.label }}</label>
+                            {{ form.categoria(class="form-select" + (" is-invalid" if form.categoria.errors else "")) }}
+                            {% for error in form.categoria.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-12">
+                            <label for="{{ form.descripcion.id }}" class="form-label">{{ form.descripcion.label }}</label>
+                            {{ form.descripcion(class="form-control" + (" is-invalid" if form.descripcion.errors else "")) }}
+                            {% for error in form.descripcion.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="{{ form.monto.id }}" class="form-label">{{ form.monto.label }}</label>
+                            {{ form.monto(class="form-control" + (" is-invalid" if form.monto.errors else "")) }}
+                            {% for error in form.monto.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="{{ form.fecha.id }}" class="form-label">{{ form.fecha.label }}</label>
+                            {{ form.fecha(class="form-control" + (" is-invalid" if form.fecha.errors else "")) }}
+                            {% for error in form.fecha.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-12">
+                            <label for="{{ form.recibo.id }}" class="form-label">{{ form.recibo.label }}</label>
+                            {{ form.recibo(class="form-control" + (" is-invalid" if form.recibo.errors else "")) }}
+                            <div class="form-text">Si no seleccionas un archivo nuevo, se conservará el recibo actual (si existe).</div>
+                            {% for error in form.recibo.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="mt-4 d-flex justify-content-end gap-2">
+                        <a href="{{ url_for('gastos.gestion_gastos') }}" class="btn btn-secondary">Cancelar</a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

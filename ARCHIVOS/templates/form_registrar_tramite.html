@@ -1,0 +1,9 @@
+<form id="form-registrar-tramite"
+      hx-post="{{ url_for('papeleria.registrar_tramite') }}"
+      hx-target="this"
+      hx-swap="outerHTML">
+    {% include 'form_tramite_fields.html' %}
+    {{ form_tramite.hidden_tag() }}
+    <button type="submit"
+            class="btn btn-primary w-100">Registrar</button>
+</form>

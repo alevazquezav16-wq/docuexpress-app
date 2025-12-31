@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}Test Simple - DocuExpress{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>✅ Test de Renderizado</h1>
+    <p>Si ves esto, base.html funciona correctamente.</p>
+    <p>Usuario: {{ current_user.username if current_user.is_authenticated else 'No autenticado' }}</p>
+</div>
+{% endblock %}

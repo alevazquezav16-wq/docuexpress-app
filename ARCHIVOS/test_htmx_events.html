@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test HTMX Events - DocuExpress</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+        .success { background: #d1fae5; color: #065f46; border-left: 4px solid #10b981; }
+        .info { background: #dbeafe; color: #1e40af; border-left: 4px solid #3b82f6; }
+        .warning { background: #fef3c7; color: #92400e; border-left: 4px solid #f59e0b; }
+        
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 8px;
+        }
+        
+        h2 { color: #1f2937; margin-top: 0; }
+        h3 { color: #374151; }
+        
+        .event-log {
+            background: #1f2937;
+            color: #10b981;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        
+        .event-log .timestamp {
+            color: #60a5fa;
+        }
+        
+        .event-log .event-name {
+            color: #fbbf24;
+            font-weight: bold;
+        }
+        
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        button:hover {
+            background: #2563eb;
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+        
+        .counter {
+            display: inline-block;
+            background: #059669;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>🧪 Test de Eventos HTMX - Sistema de Papelerías</h2>
+        
+        <div class="status info">
+            <strong>ℹ️ Propósito:</strong> Verificar que los eventos HTMX se disparen correctamente al agregar/editar/eliminar papelerías
+        </div>
+
+        <div class="test-section">
+            <h3>📡 Eventos Monitoreados</h3>
+            <p>Este test escucha los siguientes eventos personalizados:</p>
+            <ul>
+                <li><code>reload-dashboard</code> → Recarga gráficos y métricas</li>
+                <li><code>refresh-papeleria-list</code> → Recarga lista de papelerías</li>
+                <li><code>closeModal</code> → Cierra modales automáticamente</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>🎯 Simulador de Eventos</h3>
+            <p>Haz clic en los botones para simular las respuestas del backend:</p>
+            
+            <button onclick="simulateAddPapeleria()">
+                ➕ Simular: Agregar Papelería
+            </button>
+            
+            <button onclick="simulateEditPapeleria()">
+                ✏️ Simular: Editar Papelería
+            </button>
+            
+            <button onclick="simulateDeletePapeleria()">
+                🗑️ Simular: Eliminar Papelería
+            </button>
+            
+            <button onclick="clearLog()">
+                🧹 Limpiar Log
+            </button>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Monitor de Eventos en Tiempo Real</h3>
+            <div>
+                <span class="counter" id="reload-dashboard-count">reload-dashboard: 0</span>
+                <span class="counter" id="refresh-papeleria-list-count">refresh-papeleria-list: 0</span>
+                <span class="counter" id="closeModal-count">closeModal: 0</span>
+            </div>
+            
+            <div class="event-log" id="event-log">
+                <div>[<span class="timestamp">Iniciado</span>] Esperando eventos...</div>
+            </div>
+        </div>
+
+        <div class="status success" style="display:none;" id="success-message">
+            ✅ <strong>¡Prueba Exitosa!</strong> Todos los eventos se dispararon correctamente.
+        </div>
+    </div>
+
+    <script>
+        // Contadores
+        let counts = {
+            'reload-dashboard': 0,
+            'refresh-papeleria-list': 0,
+            'closeModal': 0
+        };
+
+        function logEvent(eventName, detail = null) {
+            const log = document.getElementById('event-log');
+            const timestamp = new Date().toLocaleTimeString('es-MX', { hour12: false });
+            
+            let detailStr = '';
+            if (detail) {
+                detailStr = ` → <span style="color: #a78bfa">${JSON.stringify(detail)}</span>`;
+            }
+            
+            const entry = `[<span class="timestamp">${timestamp}</span>] <span class="event-name">${eventName}</span>${detailStr}`;
+            log.innerHTML += `\n${entry}`;
+            log.scrollTop = log.scrollHeight;
+            
+            // Actualizar contador
+            if (counts.hasOwnProperty(eventName)) {
+                counts[eventName]++;
+                document.getElementById(`${eventName}-count`).textContent = `${eventName}: ${counts[eventName]}`;
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('event-log').innerHTML = '<div>[<span class="timestamp">Limpiado</span>] Log reiniciado...</div>';
+        }
+
+        // Escuchar eventos personalizados
+        document.body.addEventListener('reload-dashboard', function(event) {
+            logEvent('reload-dashboard', event.detail);
+            console.log('✅ Evento reload-dashboard capturado', event.detail);
+        });
+
+        document.body.addEventListener('refresh-papeleria-list', function(event) {
+            logEvent('refresh-papeleria-list', event.detail);
+            console.log('✅ Evento refresh-papeleria-list capturado', event.detail);
+        });
+
+        document.body.addEventListener('closeModal', function(event) {
+            logEvent('closeModal', event.detail);
+            console.log('✅ Evento closeModal capturado', event.detail);
+        });
+
+        // Simuladores
+        function simulateAddPapeleria() {
+            logEvent('SIMULACIÓN', 'Agregando papelería...');
+            
+            // Simular respuesta del backend al agregar papelería
+            setTimeout(() => {
+                htmx.trigger(document.body, 'reload-dashboard');
+                htmx.trigger(document.body, 'refresh-papeleria-list');
+                htmx.trigger(document.body, 'closeModal', { value: 'addPapeleriaModal' });
+                
+                document.getElementById('success-message').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('success-message').style.display = 'none';
+                }, 3000);
+            }, 100);
+        }
+
+        function simulateEditPapeleria() {
+            logEvent('SIMULACIÓN', 'Editando papelería...');
+            
+            setTimeout(() => {
+                htmx.trigger(document.body, 'reload-dashboard');
+                htmx.trigger(document.body, 'refresh-papeleria-list');
+                
+                document.getElementById('success-message').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('success-message').style.display = 'none';
+                }, 3000);
+            }, 100);
+        }
+
+        function simulateDeletePapeleria() {
+            logEvent('SIMULACIÓN', 'Eliminando papelería...');
+            
+            setTimeout(() => {
+                htmx.trigger(document.body, 'reload-dashboard');
+                htmx.trigger(document.body, 'refresh-papeleria-list');
+                
+                document.getElementById('success-message').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('success-message').style.display = 'none';
+                }, 3000);
+            }, 100);
+        }
+
+        console.log('🧪 Test de eventos HTMX iniciado');
+        console.log('📡 Escuchando: reload-dashboard, refresh-papeleria-list, closeModal');
+    </script>
+</body>
+</html>

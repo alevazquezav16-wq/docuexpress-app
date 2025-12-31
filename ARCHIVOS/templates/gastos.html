@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Gastos{% endblock %}
+{% block extra_head %}
+<!-- Incluimos HTMX desde un CDN -->
+<script src="https://unpkg.com/htmx.org@1.9.10"
+    integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC"
+    crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .chart-container {
+        position: relative;
+        height: 300px;
+        /* Altura ajustada para los gráficos de gastos */
+        width: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<header class="mb-4">
+    <h1 class="display-5"><i class="bi bi-wallet2 me-2"></i>Gestión de Gastos</h1>
+    <p class="text-muted">Registra y analiza los gastos operativos de tu negocio.</p>
+
+    <!-- Mensajes Flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+      {% set icon = 'bi-info-circle-fill' %}
+      {% if category == 'success' %}{% set icon = 'bi-check-circle-fill' %}{% endif %}
+      {% if category == 'danger' or category == 'warning' %}{% set icon = 'bi-exclamation-triangle-fill' %}{% endif %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show d-flex align-items-center" role="alert">
+        <i class="bi {{ icon }} me-2"></i>
+        <div>
+          {{ message }}
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+</header>
+
+<!-- Fila de Resumen y Gráficos -->
+<div id="gastos-dashboard"
+    hx-get="{{ url_for('api.gastos_summary_data', fecha_inicio=request.args.get('fecha_inicio'), fecha_fin=request.args.get('fecha_fin'), categoria=request.args.get('categoria')) }}"
+    hx-trigger="load, reload-charts from:body" hx-swap="none"
+    hx-on="htmx:afterRequest: renderGastosCharts(event.detail.xhr.response)">
+    <div class="row g-4 mb-4">
+        <div class="col-lg-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <h6 class="card-subtitle mb-2 text-muted"><i class="bi bi-cash-coin me-2"></i>Gasto Total (Filtrado)</h6>
+                    <p class="card-text display-6 text-danger" id="total-gastos-valor">$0.00</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header">
+                    <h6 class="mb-0 fw-bold"><i class="bi bi-pie-chart-fill me-2"></i>Distribución por Categoría</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container"><canvas id="gastosDistributionChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card shadow-sm h-100">
+                <div class="card-header">
+                    <h6 class="mb-0 fw-bold"><i class="bi bi-graph-up-arrow me-2"></i>Tendencia Mensual</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container"><canvas id="gastosTrendChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="row g-4">
+    <!-- Columna de Formularios -->
+    <div class="col-lg-4">
+        <!-- Formulario para registrar gasto -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-receipt-cutoff"></i> Registrar Nuevo Gasto</h5>
+            </div>
+            <div class="card-body" id="form-gasto-container">
+                {% include 'form_gasto.html' %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Columna de Lista de Gastos -->
+    <div class="col-lg-8" id="tabla-gastos-container" hx-get="{{ url_for('gastos.gestion_gastos', **request.args) }}"
+        hx-trigger="reload-gastos-table from:body" hx-target="this" hx-swap="outerHTML">
+        {% include 'tabla_gastos.html' %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    let gastosDistChart = null;
+    let gastosTrendChart = null;
+
+    function renderGastosCharts(jsonResponse) {
+        try {
+            const data = JSON.parse(jsonResponse);
+
+            // Actualizar tarjeta de total
+            document.getElementById('total-gastos-valor').textContent = `$${data.total.toFixed(2)}`;
+
+            const CHART_COLORS_ARRAY = ['#dc3545', '#fd7e14', '#ffc107', '#20c997', '#0d6efd', '#6f42c1', '#6c757d'];
+
+            // Gráfico de Distribución
+            const distCtx = document.getElementById('gastosDistributionChart').getContext('2d');
+            if (gastosDistChart) {
+                gastosDistChart.destroy();
+            }
+            gastosDistChart = new Chart(distCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.distribution.labels,
+                    datasets: [{
+                        label: 'Distribución de Gastos',
+                        data: data.distribution.data,
+                        backgroundColor: CHART_COLORS_ARRAY,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: true, text: 'Distribución por Categoría' }
+                    }
+                }
+            });
+
+            // Gráfico de Tendencia
+            const trendCtx = document.getElementById('gastosTrendChart').getContext('2d');
+            if (gastosTrendChart) {
+                gastosTrendChart.destroy();
+            }
+            gastosTrendChart = new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: data.trend.labels,
+                    datasets: [{
+                        label: 'Tendencia de Gastos',
+                        data: data.trend.data,
+                        borderColor: '#dc3545',
+                        backgroundColor: 'rgba(220, 53, 69, 0.2)',
+                        fill: true,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: true, text: 'Tendencia Mensual' }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+
+        } catch (e) {
+            console.error("Error al parsear o renderizar los gráficos de gastos:", e);
+        }
+    }
+</script>
+{% endblock %}

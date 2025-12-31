@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Chart.js</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <style>
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 80%;
+            margin: 50px auto;
+            border: 2px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center;">Test de Gráfico Mensual</h1>
+    <div class="chart-container">
+        <canvas id="testChart"></canvas>
+    </div>
+
+    <script>
+        console.log('Chart.js version:', Chart.version);
+        console.log('ChartDataLabels available:', typeof ChartDataLabels !== 'undefined');
+
+        const canvas = document.getElementById('testChart');
+        console.log('Canvas:', canvas);
+        console.log('Canvas dimensions:', canvas.clientWidth, 'x', canvas.clientHeight);
+
+        const ctx = canvas.getContext('2d');
+
+        // Datos de prueba (12 meses con solo el último con datos)
+        const data = {
+            labels: ['2025-01', '2025-02', '2025-03', '2025-04', '2025-05', '2025-06', 
+                     '2025-07', '2025-08', '2025-09', '2025-10', '2025-11', '2025-12'],
+            datasets: [
+                {
+                    label: '💰 Ganancia',
+                    data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1050],
+                    borderColor: '#22c55e',
+                    backgroundColor: 'rgba(34,197,94,0.3)',
+                    borderWidth: 3,
+                    tension: 0.35,
+                    fill: true
+                },
+                {
+                    label: '💵 Ingresos',
+                    data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1400],
+                    borderColor: '#3b82f6',
+                    borderWidth: 2,
+                    tension: 0.35
+                },
+                {
+                    label: '💸 Costos',
+                    data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 350],
+                    borderColor: '#ef4444',
+                    borderWidth: 2,
+                    tension: 0.35
+                }
+            ]
+        };
+
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: '📈 GRÁFICO DE PRUEBA',
+                        font: { size: 16, weight: '700' }
+                    },
+                    legend: { position: 'top' }
+                },
+                scales: {
+                    y: { beginAtZero: true },
+                    x: {}
+                }
+            }
+        });
+
+        console.log('Chart created:', chart);
+    </script>
+</body>
+</html>

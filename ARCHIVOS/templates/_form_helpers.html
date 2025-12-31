@@ -1,0 +1,20 @@
+{#
+    Macro de Jinja2 para renderizar un campo de WTForms con clases de Bootstrap 5.
+    Maneja etiquetas, errores de validación y descripciones.
+#}
+{% macro render_field(field) %}
+    {# 
+        Macro para renderizar campos de WTForms con Bootstrap 5.
+        Determina la clase base según el tipo de campo.
+    #}
+    {% set base_class = 'form-control' %}
+    {% if field.type == 'SelectField' %}{% set base_class = 'form-select' %}{% endif %}
+    {% set error_class = ' is-invalid' if field.errors else '' %}
+    {% set field_class = base_class + error_class %}
+    
+    <div class="mb-3">
+        {{ field.label(class="form-label") }}
+        {{ field(class=field_class, **kwargs) }}
+        {% if field.errors %}<div class="invalid-feedback d-block">{% for error in field.errors %}{{ error }}<br>{% endfor %}</div>{% endif %}
+    </div>
+{% endmacro %}

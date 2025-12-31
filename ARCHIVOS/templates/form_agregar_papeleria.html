@@ -1,0 +1,21 @@
+<form hx-post="{{ url_for('papeleria.agregar_papeleria') }}" 
+      hx-target="#add-papeleria-form-container" 
+      hx-swap="innerHTML" 
+      hx-trigger="submit"
+      id="add-papeleria-form">
+    {{ form_papeleria.hidden_tag() }}
+    <div class="mb-3">
+        <label for="nombre" class="form-label">Nombre de la nueva papelería</label>
+        {{ form_papeleria.nombre(class="form-control", placeholder="Ej. Papelería Central", autocomplete="off") }}
+        {% if form_papeleria.nombre.errors %}
+            <div class="text-danger mt-1">
+                {% for error in form_papeleria.nombre.errors %}
+                    {{ error }}
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+    <button type="submit" class="btn btn-primary w-100">
+        <i class="bi bi-plus-circle"></i> Agregar Papelería
+    </button>
+</form>

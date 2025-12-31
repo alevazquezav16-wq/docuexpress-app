@@ -1,0 +1,27 @@
+<div id="papelerias-list-container" class="card shadow-sm">
+    {% if current_user.role == 'admin' %}
+    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <a href="{{ url_for('main.exportar_csv_general') }}" class="btn btn-sm btn-outline-success">
+            <i class="bi bi-file-earmark-spreadsheet"></i> <span class="d-none d-md-inline">Exportar Todo</span>
+        </a>
+        <h5 class="mb-0 order-first order-md-0 w-100 w-md-auto text-center text-md-start">Mis Papelerías</h5>
+        <div class="position-relative" style="min-width: 200px; max-width: 100%;">
+            <input type="search" name="q" class="form-control form-control-sm" 
+                   placeholder="Buscar..."
+                   value="{{ request.args.get('q', '') }}"
+                   hx-get="{{ url_for('main.index') }}"
+                   hx-trigger="keyup changed delay:300ms, search"
+                   hx-target="#papeleriaList"
+                   hx-swap="innerHTML">
+            <span id="search-indicator" class="htmx-indicator position-absolute top-50 end-0 translate-middle-y me-2">
+                <span class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></span>
+            </span>
+        </div>
+    </div>
+    {% else %}
+    <div class="card-header"><h5 class="mb-0">Mis Papelerías</h5></div> 
+    {% endif %}
+    <div id="papeleriaList" class="list-group list-group-flush" style="max-height: 500px; overflow-y: auto;">
+        {% include "_lista_papelerias_items.html" %}
+    </div>
+</div>

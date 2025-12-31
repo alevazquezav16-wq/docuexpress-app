@@ -1,0 +1,932 @@
+{% extends "base.html" %}
+
+{% block title %}{{ nombre_papeleria }} - Detalles{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+<style>
+    .chart-container {
+        position: relative;
+        height: 30vh;
+        min-height: 250px;  /* Altura mínima garantizada */
+        /* Altura ajustada para los gráficos de detalle */
+        width: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<header class="d-flex justify-content-between align-items-start mb-4">
+    <!-- Título y acciones a la izquierda -->
+    <div>
+        <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary mb-3"><i class="bi bi-arrow-left"></i> Volver al Dashboard</a>
+        <div class="d-flex align-items-center gap-2">
+            <h1 class="display-5 mb-0">{{ nombre_papeleria }}</h1>
+            <a href="{{ url_for('papeleria.editar_papeleria', papeleria_id=papeleria_id) }}"
+               hx-get="{{ url_for('papeleria.editar_papeleria', papeleria_id=papeleria_id) }}"
+               hx-target="#main-dashboard-content"
+               hx-swap="innerHTML"
+               class="btn btn-sm btn-outline-primary"
+               title="Editar nombre de la papelería">
+                <i class="bi bi-pencil-fill"></i>
+                <span class="d-none d-md-inline ms-1">Editar</span>
+            </a>
+        </div>
+    </div>
+    <!-- Nuevas tarjetas de métricas a la derecha -->
+    <div class="d-flex gap-3">
+        <div class="metric-card {% if totales.ganancia >= 0 %}positive{% else %}negative{% endif %}" style="min-width: 220px;">
+            <div class="icon"><i class="bi bi-cash-coin"></i></div>
+            <div class="content">
+                <div class="label">Ganancia Total ({{ periodo_str }})</div>
+                <div class="value">${{ "%.2f"|format(totales.ganancia) }}</div>
+            </div>
+        </div>
+        <div class="metric-card" style="min-width: 220px;">
+            <div class="icon"><i class="bi bi-file-earmark-text"></i></div>
+            <div class="content">
+                <div class="label">Total de Trámites</div>
+                <div class="value">{{ totales.cuantos }}</div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Mensajes Flash -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-filter"></i> Opciones y Filtros</h5>
+        </div>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label for="fecha_inicio" class="form-label">Desde</label>
+                <input type="date" name="fecha_inicio" id="fecha_inicio" class="form-control"
+                    value="{{ fecha_inicio or '' }}">
+            </div>
+            <div class="col-md-4">
+                <label for="fecha_fin" class="form-label">Hasta</label>
+                <input type="date" name="fecha_fin" id="fecha_fin" class="form-control" value="{{ fecha_fin or '' }}">
+            </div>
+            <div class="col-md-4 d-grid gap-2">
+                <button type="submit" class="btn btn-primary btn-lg"><i class="bi bi-funnel-fill"></i> Filtrar</button>
+                <!-- Botones visibles de exportación -->
+                <button class="btn btn-outline-danger" id="btnDownloadPdfMain"
+                   type="button"
+                   data-pdf-url="{{ url_for('papeleria.descargar_pdf', papeleria_id=papeleria_id) }}"
+                   title="Exporta los trámites visibles a PDF">
+                    <i class="bi bi-file-earmark-pdf-fill me-2"></i>Exportar a PDF
+                </button>
+                <a class="btn btn-outline-success" id="btnDownloadCsvMain"
+                   href="{{ url_for('papeleria.exportar_csv_papeleria', papeleria_id=papeleria_id) }}"
+                   title="Exporta el periodo seleccionado a CSV">
+                    <i class="bi bi-file-earmark-spreadsheet-fill me-2"></i>Exportar a CSV
+                </a>
+                <!-- Dropdown de acciones adicional -->
+                <div class="btn-group w-100">
+                    <a href="{{ url_for('papeleria.ver_papeleria', papeleria_id=papeleria_id) }}" class="btn btn-outline-secondary">Limpiar</a>
+                    <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-list"></i> Acciones
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <a class="dropdown-item" href="{{ url_for('papeleria.gestionar_precios_papeleria', papeleria_id=papeleria_id) }}">
+                                <i class="bi bi-tags-fill me-2"></i>Gestionar Precios de esta papelería
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <button class="dropdown-item {% if totales.cuantos == 0 %}disabled{% endif %}"
+                               type="button"
+                               id="btnDownloadPdf"
+                               data-pdf-url="{{ url_for('papeleria.descargar_pdf', papeleria_id=papeleria_id) }}"
+                               title="{% if totales.cuantos == 0 %}No hay trámites visibles para exportar{% else %}Exporta los trámites del periodo seleccionado a PDF{% endif %}"
+                               style="cursor: pointer;">
+                                <i class="bi bi-file-earmark-pdf-fill me-2 text-danger"></i>Exportar a PDF (lo visible)
+                            </button>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{{ url_for('papeleria.exportar_csv_papeleria', papeleria_id=papeleria_id) }}" id="btnDownloadCsv"
+                               title="Exporta el periodo seleccionado a CSV">
+                                <i class="bi bi-file-earmark-spreadsheet-fill me-2 text-success"></i>Exportar a CSV (lo visible)
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Fila de Gráficos de Análisis del Cliente -->
+<div class="row g-4 mb-4">
+    <!-- Gráfico de Trámites Más Solicitados -->
+    <div class="col-lg-5">
+        <div class="card h-100 shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Trámites Más Solicitados</span>
+                <div class="btn-group btn-group-sm" role="group" aria-label="Modo de valores" id="tramites-mode-toggle">
+                    <button type="button" class="btn btn-outline-secondary active" data-mode="percent" id="btnModePercent" title="Mostrar porcentajes">%</button>
+                    <button type="button" class="btn btn-outline-secondary" data-mode="absolute" id="btnModeAbsolute" title="Mostrar valores absolutos">#</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="chart-container"><canvas id="clientTramitesChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+    <!-- Gráfico de Evolución Mensual del Cliente -->
+    <div class="col-lg-7">
+        <div class="card h-100 shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Evolución Mensual de Este Cliente (Últimos 12 meses)
+                    <button type="button" class="btn btn-outline-info btn-sm ms-2" data-bs-toggle="popover" data-bs-placement="bottom" data-bs-html="true" title="Cómo leer este gráfico" data-bs-content="<div style='max-width:260px'>
+                        <div><span class='badge bg-primary me-1'>Ingresos</span>: lo que entró este mes.</div>
+                        <div><span class='badge bg-danger me-1'>Costos</span>: lo que gastaste.</div>
+                        <div><span class='badge bg-success me-1'>Ganancia</span> = Ingresos - Costos.</div>
+                        <div class='mt-1 text-muted small'>Usa <strong>líneas/barras</strong> y <strong>media móvil</strong> para entender mejor la tendencia.</div>
+                    </div>"><i class="bi bi-info-circle"></i></button>
+                </span>
+                <div class="d-flex gap-2 align-items-center">
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Vista mensual" id="monthly-mode-toggle">
+                        <button type="button" class="btn btn-outline-secondary active" data-mode="lines" id="btnMonthlyLines" title="Ver como líneas">
+                            <i class="bi bi-graph-up"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" data-mode="bars" id="btnMonthlyBars" title="Ver como barras">
+                            <i class="bi bi-bar-chart"></i>
+                        </button>
+                    </div>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Media móvil" id="monthly-ma-toggle">
+                        <button type="button" class="btn btn-outline-secondary active" data-ma="off" title="Sin media">MA</button>
+                        <button type="button" class="btn btn-outline-secondary" data-ma="3" title="Media móvil 3 meses">3m</button>
+                        <button type="button" class="btn btn-outline-secondary" data-ma="6" title="Media móvil 6 meses">6m</button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Summary Cards for the client chart -->
+                <div class="row g-3 mb-3 text-center">
+                    <div class="col-md-4">
+                        <div class="card bg-success-subtle border-success-subtle shadow-sm">
+                            <div class="card-body py-2">
+                                <h6 class="card-title text-success-emphasis">Ingreso Total</h6>
+                                <p class="card-text fs-5 fw-bold text-success-emphasis" id="client-total-ingresos">$0.00</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-danger-subtle border-danger-subtle shadow-sm">
+                            <div class="card-body py-2">
+                                <h6 class="card-title text-danger-emphasis">Gasto Total</h6>
+                                <p class="card-text fs-5 fw-bold text-danger-emphasis" id="client-total-gastos">$0.00</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-primary-subtle border-primary-subtle shadow-sm">
+                            <div class="card-body py-2">
+                                <h6 class="card-title text-primary-emphasis">Ganancia Neta</h6>
+                                <p class="card-text fs-5 fw-bold text-primary-emphasis" id="client-ganancia-neta">$0.00 <span id="client-ganancia-trend"></span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-container"><canvas id="clientMonthlyChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-list-ul"></i> Detalle de Trámites</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-striped table-hover mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Fecha</th>
+                    <th>Trámite</th>
+                    <th class="text-end">Precio (Ingreso)</th>
+                    <th class="text-end">Costo (Gasto)</th>
+                    <th class="text-end">Ganancia</th>
+                    <th class="text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in detalles %}
+                <tr>
+                    <td>{{ d.fecha }}</td>
+                    <td>{{ d.tramite }}</td>
+                    <td class="text-end text-success">${{ "%.2f"|format(d.precio) }}</td>
+                    <td class="text-end text-danger">${{ "%.2f"|format(d.costo) }}</td>
+                    <td class="text-end fw-bold">${{ "%.2f"|format(d.precio - d.costo) }}</td>
+                    <td class="text-center">
+                        <div class="btn-group" role="group">
+                            <a href="{{ url_for('papeleria.editar_tramite', tramite_id=d.id) }}"
+                                hx-get="{{ url_for('papeleria.editar_tramite', tramite_id=d.id) }}"
+                                hx-target="#main-dashboard-content"
+                                hx-swap="innerHTML"
+                                class="btn btn-sm btn-outline-warning"
+                                title="Editar trámite">
+                                <i class="bi bi-pencil-square"></i>
+                                <span class="d-none d-md-inline ms-1">Editar</span>
+                            </a>
+                            <form action="{{ url_for('papeleria.eliminar_tramite', tramite_id=d.id) }}"
+                                  method="post"
+                                  class="d-inline"
+                                  hx-post="{{ url_for('papeleria.eliminar_tramite', tramite_id=d.id) }}"
+                                  hx-target="#main-dashboard-content"
+                                  hx-swap="innerHTML"
+                                  hx-confirm="¿Estás seguro de que quieres eliminar este trámite? Esta acción no se puede deshacer.">
+                                {{ delete_form.hidden_tag() }}
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar trámite">
+                                    <i class="bi bi-trash"></i>
+                                    <span class="d-none d-md-inline ms-1">Eliminar</span>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted p-4">
+                        No se encontraron trámites con los filtros seleccionados.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Controles de Paginación -->
+{% if total_pages > 1 %}
+<nav aria-label="Navegación de trámites" class="mt-4 d-flex justify-content-center">
+    <ul class="pagination">
+        <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
+            <a class="page-link"
+                href="{{ url_for('papeleria.ver_papeleria', papeleria_id=papeleria_id, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, page=current_page - 1) }}">Anterior</a>
+        </li>
+
+        <li class="page-item active" aria-current="page">
+            <span class="page-link">Página {{ current_page }} de {{ total_pages }}</span>
+        </li>
+
+        <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
+            <a class="page-link"
+                href="{{ url_for('papeleria.ver_papeleria', papeleria_id=papeleria_id, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, page=current_page + 1) }}">Siguiente</a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }} {# Hereda los scripts del bloque padre (base.html) #}
+
+{# Variables globales para JavaScript - procesadas por Jinja2 en el servidor #}
+<script id="config-vars" type="application/json">
+{
+    "papeleria_id": {{ papeleria_id }},
+    "totales_cuantos": {{ totales.cuantos|int }},
+    "pdf_download_url": "{{ url_for('papeleria.descargar_pdf', papeleria_id=papeleria_id) }}",
+    "csv_download_url": "{{ url_for('papeleria.exportar_csv_papeleria', papeleria_id=papeleria_id) }}",
+    "papeleria_charts_url": "{{ url_for('api.papeleria_charts_data', papeleria_id=papeleria_id) }}"
+}
+</script>
+
+<script>
+    // Cargar configuración desde JSON
+    const config = JSON.parse(document.getElementById('config-vars').textContent);
+    const PAPELERIA_ID = config.papeleria_id;
+    const TOTALES_CUANTOS = config.totales_cuantos;
+    const PDF_DOWNLOAD_URL = config.pdf_download_url;
+    const CSV_DOWNLOAD_URL = config.csv_download_url;
+    const PAPELERIA_CHARTS_URL = config.papeleria_charts_url;
+</script>
+<script>
+    (function(){
+        const CHART_CONFIG = { enableCaching: true, cacheTimeout: 5 * 60 * 1000, retryAttempts: 2, retryDelay: 800 };
+        const cache = { data: null, ts: 0, valid(){return CHART_CONFIG.enableCaching && (Date.now()-this.ts)<CHART_CONFIG.cacheTimeout;}, set(d){this.data=d;this.ts=Date.now();}, get(){return this.valid()?this.data:null}, clear(){this.data=null;this.ts=0;} };
+
+        class PapeleriaChartManager {
+            constructor(){ this.charts = {}; this.isLoading = false; this.tramitesMode = 'percent'; this.monthlyMode='lines'; this.movingAvg='off'; this._monthlyRaw=null; }
+            validateDependencies(){ if (typeof Chart === 'undefined') throw new Error('Chart.js no está cargado'); return true; }
+            updateTheme(){ const t=document.documentElement.getAttribute('data-bs-theme'); const grid=t==='dark'?'rgba(255,255,255,0.1)':'rgba(0,0,0,0.1)'; const text=t==='dark'?'#dee2e6':'#212529'; Chart.defaults.color=text; Chart.defaults.borderColor=grid; }
+            getCanvasIdForChart(name){ return name==='tramites'?'clientTramitesChart':name==='monthly'?'clientMonthlyChart':null; }
+            destroy(name){ try{ if(this.charts[name]){ this.charts[name].destroy(); this.charts[name]=null; } }catch(e){ this.charts[name]=null; } }
+            destroyAll(){ Object.keys(this.charts).forEach(n=>this.destroy(n)); }
+            showNoDataMessage(canvasId, message){ const c=document.getElementById(canvasId); if(!c) return; const ctx=c.getContext('2d'); const w=c.width||c.clientWidth||300, h=c.height||c.clientHeight||150; ctx.clearRect(0,0,w,h); ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--bs-body-color')||'#666'; ctx.textAlign='center'; ctx.font='14px Arial'; ctx.fillText(message||'Sin datos', w/2, h/2); }
+            async fetchData(attempt=1){ 
+                console.log('🔍 Fetching data from:', PAPELERIA_CHARTS_URL);
+                const cached=cache.get(); 
+                if(cached) {
+                    console.log('✅ Using cached data');
+                    return cached;
+                }
+                const res=await fetch(PAPELERIA_CHARTS_URL,{headers:{'Cache-Control':'no-cache'}}); 
+                if(!res.ok){ 
+                    console.error('❌ Fetch failed with status:', res.status);
+                    if(attempt<CHART_CONFIG.retryAttempts){ 
+                        console.log('🔄 Retrying...', attempt+1);
+                        await new Promise(r=>setTimeout(r, CHART_CONFIG.retryDelay)); 
+                        return this.fetchData(attempt+1);
+                    } 
+                    throw new Error(`HTTP ${res.status}`);
+                } 
+                const data=await res.json(); 
+                console.log('✅ Data fetched successfully:', data);
+                cache.set(data); 
+                return data; 
+            }
+            validateApiResponse(d){ if(!d||typeof d!=='object') throw new Error('Respuesta inválida'); if(!d.tramitesDistribution||!d.monthlySummary) throw new Error('Claves faltantes'); }
+            async createAll(d){ this.destroyAll(); this._monthlyRaw = d.monthlySummary; await Promise.allSettled([ this.createTramites(d.tramitesDistribution), this.createMonthly(d.monthlySummary) ]); }
+            setTramitesMode(mode){
+                if (!mode || (mode!=='percent' && mode!=='absolute')) return;
+                this.tramitesMode = mode;
+                const group = document.getElementById('tramites-mode-toggle');
+                if (group) {
+                    [...group.querySelectorAll('button')].forEach(btn => btn.classList.toggle('active', btn.dataset.mode===mode));
+                }
+                if (this.charts.tramites) {
+                    const fmt = (value, ctx)=>{
+                        if (mode==='absolute') return String(value);
+                        const data=ctx.chart.data.datasets[0].data; const total=data.reduce((a,b)=>a+(+b||0),0) || 1;
+                        const pct=Math.round((value/total)*100); return pct>=8? pct+'%': '';
+                    };
+                    if (this.charts.tramites.options.plugins && this.charts.tramites.options.plugins.datalabels) {
+                        this.charts.tramites.options.plugins.datalabels.formatter = fmt;
+                    }
+                    this.charts.tramites.update();
+                }
+            }
+            _computeMovingAverage(arr, win){ if(!Array.isArray(arr) || !win || win==='off') return null; const w=parseInt(win,10); if(!w||w<2) return null; const out=[]; for(let i=0;i<arr.length;i++){ const s=Math.max(0,i-w+1); const slice=arr.slice(s,i+1); const avg = slice.reduce((a,b)=>a+(+b||0),0)/slice.length; out.push(+avg.toFixed(2)); } return out; }
+            setMonthlyMode(mode){ if(!mode || (mode!=='lines' && mode!=='bars')) return; this.monthlyMode=mode; const group=document.getElementById('monthly-mode-toggle'); if(group){ [...group.querySelectorAll('button')].forEach(btn=>btn.classList.toggle('active', btn.dataset.mode===mode)); } if(this._monthlyRaw){ this.destroy('monthly'); this.createMonthly(this._monthlyRaw); } }
+            setMovingAverage(ma){ if(!ma || (ma!=='off' && ma!=='3' && ma!=='6')) return; this.movingAvg=ma; const group=document.getElementById('monthly-ma-toggle'); if(group){ [...group.querySelectorAll('button')].forEach(btn=>btn.classList.toggle('active', btn.dataset.ma===ma)); } if(this._monthlyRaw){ this.destroy('monthly'); this.createMonthly(this._monthlyRaw); } }
+            createTramites(chart){
+                const id=this.getCanvasIdForChart('tramites');
+                if(!chart||!chart.data||chart.data.length===0){ this.showNoDataMessage(id,'Sin trámites registrados'); return; }
+                const canvas=document.getElementById(id); const ctx=canvas.getContext('2d');
+                // Registrar plugin de datalabels si existe
+                if (typeof ChartDataLabels !== 'undefined' && !Chart.registry.plugins.get('datalabels')) {
+                    Chart.register(ChartDataLabels);
+                }
+                // Plugin para texto centrado (total)
+                const centerTextPlugin = {
+                    id: 'centerText',
+                    afterDraw(c, args, opts){
+                        if (c.config.type !== 'doughnut') return;
+                        const {ctx} = c; const meta=c.getDatasetMeta(0);
+                        if (!meta || !meta.data || !meta.data[0]) return;
+                        const x=meta.data[0].x, y=meta.data[0].y;
+                        const total = (c.config.data.datasets[0].data||[]).reduce((a,b)=>a+(+b||0),0);
+                        ctx.save();
+                        ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--bs-body-color')||'#222';
+                        ctx.textAlign='center';
+                        ctx.font='600 16px Inter, system-ui, sans-serif';
+                        ctx.fillText(`${total}`, x, y-2);
+                        ctx.font='12px Inter, system-ui, sans-serif';
+                        ctx.fillStyle='rgba(100,100,100,0.8)';
+                        ctx.fillText('Trámites', x, y+14);
+                        ctx.restore();
+                    }
+                };
+                if (!Chart.registry.plugins.get('centerText')) Chart.register(centerTextPlugin);
+
+                const COLORS=['#4f46e5','#22c55e','#ef4444','#f59e0b','#06b6d4','#a855f7','#e11d48','#10b981','#0284c7','#84cc16'];
+                const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+                
+                this.charts.tramites=new Chart(ctx,{
+                    type:'doughnut',
+                    data:{ labels:chart.labels, datasets:[{ data:chart.data, backgroundColor:COLORS, borderWidth:2, borderColor:'#fff' }]},
+                    options:{
+                        responsive:true, maintainAspectRatio:false,
+                        cutout:'65%',
+                        plugins:{
+                            legend:{ 
+                                position:'bottom',
+                                labels: {
+                                    color: isDark ? '#ffffff' : '#000000',
+                                    font: { size: 12, weight: '600' },
+                                    padding: 12
+                                }
+                            },
+                            tooltip:{ callbacks:{ label:(c)=>`${c.label}: ${c.parsed}` } },
+                            datalabels: typeof ChartDataLabels !== 'undefined' ? {
+                                color:'#fff', anchor:'center', align:'center',
+                                formatter:(value, ctx)=>{
+                                    if (window._papCharts && window._papCharts.tramitesMode==='absolute') return String(value);
+                                    const data=ctx.chart.data.datasets[0].data; const total=data.reduce((a,b)=>a+(+b||0),0) || 1;
+                                    const pct=Math.round((value/total)*100); return pct>=8? pct+'%': '';
+                                }, font:{ weight:'600' }
+                            } : undefined,
+                            centerText:{}
+                        }
+                    }
+                });
+                // Aplicar modo actual por si el usuario cambió antes
+                this.setTramitesMode(this.tramitesMode);
+            }
+            createMonthly(chart) {
+                console.log('📊 ========== CREATE MONTHLY CHART ==========');
+                console.log('Chart data received:', JSON.stringify(chart, null, 2));
+                
+                const id = this.getCanvasIdForChart('monthly');
+                console.log('Target canvas ID:', id);
+                
+                if (!chart || !chart.labels || chart.labels.length === 0) { 
+                    console.warn('⚠️ No data for monthly chart - chart is empty or has no labels');
+                    this.showNoDataMessage(id, 'Sin historial de movimientos'); 
+                    return; 
+                }
+                
+                const canvas = document.getElementById(id);
+                if (!canvas) {
+                    console.error('❌ Canvas element not found:', id);
+                    return;
+                }
+                
+                console.log('✅ Canvas found:', canvas);
+                console.log('Canvas dimensions:', canvas.clientWidth, 'x', canvas.clientHeight);
+                console.log('Canvas parent dimensions:', canvas.parentElement.clientWidth, 'x', canvas.parentElement.clientHeight);
+                
+                const ctx = canvas.getContext('2d');
+                
+                // Gradiente suave para área de Ganancia
+                const h = canvas.clientHeight || 200; 
+                const grad = ctx.createLinearGradient(0, 0, 0, h);
+                grad.addColorStop(0, 'rgba(34,197,94,0.28)'); 
+                grad.addColorStop(1, 'rgba(34,197,94,0.04)');
+                
+                const UX = { ganancias: '#22c55e', ingresos: '#3b82f6', gastos: '#ef4444' };
+                const fmt = (v) => new Intl.NumberFormat('es-MX', {style: 'currency', currency: 'MXN'}).format(v);
+                
+                // Actualizar tarjetas de resumen
+                const totals = chart.totals || {total_ingresos: 0, total_gastos: 0, total_ganancia: 0};
+                const iEl = document.getElementById('client-total-ingresos'); 
+                if (iEl) iEl.textContent = fmt(totals.total_ingresos || 0);
+                
+                const gEl = document.getElementById('client-total-gastos'); 
+                if (gEl) gEl.textContent = fmt(totals.total_gastos || 0);
+                
+                const nEl = document.getElementById('client-ganancia-neta'); 
+                if (nEl && nEl.firstChild) nEl.firstChild.textContent = fmt(totals.total_ganancia || 0) + ' ';
+                
+                // Indicador de tendencia
+                const trend = document.getElementById('client-ganancia-trend'); 
+                if (trend) { 
+                    const arr = chart.ganancias || []; 
+                    if (arr.length >= 2) { 
+                        const a = arr[arr.length - 2], b = arr[arr.length - 1]; 
+                        trend.innerHTML = b > a ? '<i class="bi bi-arrow-up-circle-fill text-success"></i>' : 
+                                        b < a ? '<i class="bi bi-arrow-down-circle-fill text-danger"></i>' :
+                                        '<i class="bi bi-dash-circle-fill text-muted"></i>'; 
+                    } else trend.innerHTML = ''; 
+                }
+                
+                // Calcular estadísticas mejoradas
+                const gains = chart.ganancias || [];
+                let maxIdx = -1, minIdx = -1, maxVal = -Infinity, minVal = Infinity;
+                gains.forEach((v, i) => { 
+                    if (v > maxVal) { maxVal = v; maxIdx = i; } 
+                    if (v < minVal) { minVal = v; minIdx = i; } 
+                });
+                
+                // Calcular promedio y tendencia con protección contra división por cero
+                const promedio = gains.length > 0 ? gains.reduce((a, b) => a + b, 0) / gains.length : 0;
+                const mesesPositivos = gains.filter(v => v > 0).length;
+                const porcentajeExito = gains.length > 0 ? ((mesesPositivos / gains.length) * 100).toFixed(0) : 0;
+                
+                // Media móvil (opcional)
+                const ma = this._computeMovingAverage(gains, this.movingAvg);
+                const isBars = this.monthlyMode === 'bars';
+                
+                const datasets = isBars ? [
+                    { 
+                        type: 'bar', stack: 'flow', label: '💵 Ingresos', 
+                        data: chart.ingresos, 
+                        backgroundColor: 'rgba(59,130,246,0.65)', 
+                        borderColor: UX.ingresos, 
+                        borderWidth: 1 
+                    },
+                    { 
+                        type: 'bar', stack: 'flow', label: '💸 Costos', 
+                        data: chart.costos, 
+                        backgroundColor: 'rgba(239,68,68,0.65)', 
+                        borderColor: UX.gastos, 
+                        borderWidth: 1 
+                    },
+                    { 
+                        type: 'line', label: '💰 Ganancia', 
+                        data: gains, 
+                        borderColor: UX.ganancias, 
+                        backgroundColor: isBars ? 'transparent' : grad, 
+                        borderWidth: 3, 
+                        pointRadius: (ctx) => { 
+                            const i = ctx.dataIndex; 
+                            return (i === maxIdx || i === minIdx) ? 6 : 3; 
+                        }, 
+                        pointBackgroundColor: (ctx) => { 
+                            const i = ctx.dataIndex; 
+                            return (i === maxIdx) ? '#16a34a' : (i === minIdx) ? '#b91c1c' : UX.ganancias; 
+                        }, 
+                        tension: 0.35,
+                        datalabels: typeof ChartDataLabels !== 'undefined' ? { 
+                            align: 'top', 
+                            offset: 6, 
+                            borderRadius: 4, 
+                            backgroundColor: 'rgba(0,0,0,0.7)', 
+                            color: '#fff', 
+                            padding: 4, 
+                            font: { weight: 'bold', size: 11 },
+                            formatter: (value, ctx) => { 
+                                const i = ctx.dataIndex; 
+                                return (i === maxIdx || i === minIdx) ? fmt(value) : ''; 
+                            }, 
+                            display: (ctx) => { 
+                                const i = ctx.dataIndex; 
+                                return (i === maxIdx || i === minIdx); 
+                            } 
+                        } : undefined 
+                    }
+                ] : [
+                    { 
+                        label: '💰 Ganancia', 
+                        data: gains, 
+                        borderColor: UX.ganancias, 
+                        backgroundColor: grad, 
+                        borderWidth: 3, 
+                        pointRadius: (ctx) => { 
+                            const i = ctx.dataIndex; 
+                            return (i === maxIdx || i === minIdx) ? 6 : 3; 
+                        }, 
+                        pointBackgroundColor: (ctx) => { 
+                            const i = ctx.dataIndex; 
+                            return (i === maxIdx) ? '#16a34a' : (i === minIdx) ? '#b91c1c' : UX.ganancias; 
+                        }, 
+                        pointHoverRadius: 8, 
+                        fill: true, 
+                        tension: 0.35,
+                        datalabels: typeof ChartDataLabels !== 'undefined' ? { 
+                            align: 'top', 
+                            offset: 6, 
+                            borderRadius: 4, 
+                            backgroundColor: 'rgba(0,0,0,0.7)', 
+                            color: '#fff', 
+                            padding: 4,
+                            font: { weight: 'bold', size: 11 },
+                            formatter: (value, ctx) => { 
+                                const i = ctx.dataIndex; 
+                                return (i === maxIdx || i === minIdx) ? fmt(value) : ''; 
+                            }, 
+                            display: (ctx) => { 
+                                const i = ctx.dataIndex; 
+                                return (i === maxIdx || i === minIdx); 
+                            } 
+                        } : undefined 
+                    },
+                    { 
+                        label: '💵 Ingresos', 
+                        data: chart.ingresos, 
+                        borderColor: UX.ingresos, 
+                        borderWidth: 2, 
+                        pointRadius: 2, 
+                        tension: 0.35 
+                    },
+                    { 
+                        label: '💸 Costos', 
+                        data: chart.costos, 
+                        borderColor: UX.gastos, 
+                        borderWidth: 2, 
+                        pointRadius: 2, 
+                        tension: 0.35 
+                    }
+                ];
+                
+                if (ma && Array.isArray(ma)) {
+                    datasets.push({ 
+                        type: 'line', 
+                        label: `📊 Media Móvil (${this.movingAvg} meses)`, 
+                        data: ma, 
+                        borderColor: '#64748b', 
+                        borderDash: [6, 4], 
+                        pointRadius: 0, 
+                        tension: 0.35 
+                    });
+                }
+                
+                // Detectar tema actual para colores adaptativos
+                const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+                const titleColor = isDark ? '#f8fafc' : '#0f172a';
+                const subtitleColor = isDark ? '#cbd5e1' : '#475569';
+                const legendColor = isDark ? '#ffffff' : '#000000';
+                const gridColor = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)';
+                const borderColor = isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)';
+                const tickColor = isDark ? '#cbd5e1' : '#475569';
+                const tooltipBg = isDark ? 'rgba(15, 23, 42, 0.96)' : 'rgba(255, 255, 255, 0.96)';
+                const tooltipTitle = isDark ? '#f1f5f9' : '#0f172a';
+                const tooltipBody = isDark ? '#cbd5e1' : '#334155';
+                const tooltipBorder = isDark ? 'rgba(148, 163, 184, 0.5)' : 'rgba(203, 213, 225, 0.8)';
+                
+                this.charts.monthly = new Chart(ctx, {
+                    type: isBars ? 'bar' : 'line',
+                    data: { labels: chart.labels, datasets },
+                    options: {
+                        responsive: true, 
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: { 
+                            title: {
+                                display: true,
+                                text: [
+                                    '📈 EVOLUCIÓN MENSUAL',
+                                    `Promedio: ${fmt(promedio)}/mes | Meses rentables: ${mesesPositivos}/${gains.length} (${porcentajeExito}%)`
+                                ],
+                                font: [
+                                    { size: 15, weight: '700' },
+                                    { size: 12, weight: '600' }
+                                ],
+                                padding: { top: 12, bottom: 22 },
+                                color: titleColor
+                            },
+                            legend: { 
+                                position: 'top',
+                                labels: {
+                                    padding: 15,
+                                    font: { size: 12, weight: '600' },
+                                    usePointStyle: true,
+                                    color: legendColor
+                                }
+                            }, 
+                            tooltip: { 
+                                mode: 'index', 
+                                intersect: false,
+                                backgroundColor: tooltipBg,
+                                titleColor: tooltipTitle,
+                                bodyColor: tooltipBody,
+                                borderColor: tooltipBorder,
+                                borderWidth: 2,
+                                cornerRadius: 10,
+                                padding: 14,
+                                titleFont: { size: 14, weight: '700' },
+                                bodyFont: { size: 13, weight: '500' },
+                                callbacks: { 
+                                    title: (items) => { 
+                                        const d = new Date(items[0].label + '-02'); 
+                                        return new Intl.DateTimeFormat('es-MX', {month: 'long', year: 'numeric'}).format(d); 
+                                    },
+                                    label: (c) => ` ${c.dataset.label}: ${fmt(c.raw)}`,
+                                    footer: (items) => {
+                                        const idx = items[0].dataIndex;
+                                        const ganancia = gains[idx];
+                                        const ingreso = chart.ingresos[idx];
+                                        const margen = ingreso > 0 ? ((ganancia / ingreso) * 100).toFixed(1) : 0;
+                                        let extra = `\\nMargen de ganancia: ${margen}%`;
+                                        if (idx === maxIdx) extra += ' 🏆 MEJOR MES';
+                                        if (idx === minIdx) extra += ' ⚠️ PEOR MES';
+                                        return extra;
+                                    }
+                                } 
+                            } 
+                        },
+                        scales: { 
+                            y: { 
+                                beginAtZero: true, 
+                                stacked: isBars,
+                                grid: {
+                                    color: gridColor
+                                },
+                                border: {
+                                    color: borderColor
+                                },
+                                ticks: { 
+                                    callback: (v) => fmt(v),
+                                    color: tickColor,
+                                    font: { size: 11, weight: '600' }
+                                }
+                            }, 
+                            x: { 
+                                stacked: isBars,
+                                grid: {
+                                    color: gridColor
+                                },
+                                border: {
+                                    color: borderColor
+                                },
+                                ticks: {
+                                    color: tickColor,
+                                    font: { size: 11, weight: '600' },
+                                    callback: function(value) { 
+                                        const d = new Date(this.getLabelForValue(value) + '-02'); 
+                                        return new Intl.DateTimeFormat('es-MX', {month: 'short'}).format(d).replace('.', ''); 
+                                    } 
+                                } 
+                            } 
+                        }
+                    }
+                });
+                console.log('✅ Monthly chart created successfully:', this.charts.monthly);
+            }
+            async reinitialize(){ 
+                try{ 
+                    console.log('🚀 Initializing papeleria charts...');
+                    this.validateDependencies(); 
+                    this.updateTheme(); 
+                    if(this.isLoading) {
+                        console.log('⏳ Already loading, skipping...');
+                        return;
+                    }
+                    this.isLoading=true; 
+                    const data=await this.fetchData(); 
+                    this.validateApiResponse(data); 
+                    await this.createAll(data); 
+                    console.log('✅ Charts initialized successfully');
+                } catch(e){ 
+                    console.error('❌ PapeleriaChartManager error:', e); 
+                    this.showNoDataMessage('clientTramitesChart','Error cargando datos'); 
+                    this.showNoDataMessage('clientMonthlyChart','Error cargando datos'); 
+                } finally{ 
+                    this.isLoading=false; 
+                } 
+            }
+        }
+        window._papCharts = new PapeleriaChartManager();
+        window.initializePapeleriaScripts = () => window._papCharts.reinitialize();
+    })();
+
+    // Inicialización segura cuando el DOM esté listo
+    document.addEventListener('DOMContentLoaded', function(){
+        const fechaInicioInput = document.getElementById('fecha_inicio');
+        const fechaFinInput = document.getElementById('fecha_fin');
+        const btnPdf = document.getElementById('btnDownloadPdf');
+        const btnCsv = document.getElementById('btnDownloadCsv');
+        const btnPdfMain = document.getElementById('btnDownloadPdfMain');
+        const btnCsvMain = document.getElementById('btnDownloadCsvMain');
+        // Inicializar popovers informativos
+        try {
+            document.querySelectorAll('[data-bs-toggle="popover"]').forEach(el => new bootstrap.Popover(el));
+        } catch (e) { /* ignore if not available */ }
+
+        function updateExportLinks() {
+            if (!btnPdf || !btnCsv) return;
+            const params = new URLSearchParams({
+                fecha_inicio: (fechaInicioInput && fechaInicioInput.value) || '',
+                fecha_fin: (fechaFinInput && fechaFinInput.value) || ''
+            });
+            const queryString = params.toString();
+            const fullUrlPdf = `${PDF_DOWNLOAD_URL}${queryString ? '?' + queryString : ''}`;
+            const fullUrlCsv = `${CSV_DOWNLOAD_URL}${queryString ? '?' + queryString : ''}`;
+            
+            // Actualizar data-pdf-url en ambos botones PDF
+            if (btnPdf) btnPdf.dataset.pdfUrl = fullUrlPdf;
+            if (btnPdfMain) btnPdfMain.dataset.pdfUrl = fullUrlPdf;
+            
+            // Gestionar estado deshabilitado
+            const disable = TOTALES_CUANTOS === 0;
+            const setDisable = (el, disabled) => {
+                if (!el) return;
+                el.classList.toggle('disabled', !!disabled);
+                if (disabled) {
+                    el.setAttribute('aria-disabled', 'true');
+                    el.style.cursor = 'not-allowed';
+                    el.style.opacity = '0.6';
+                } else {
+                    el.removeAttribute('aria-disabled');
+                    el.style.cursor = 'pointer';
+                    el.style.opacity = '1';
+                }
+            };
+            setDisable(btnPdf, disable);
+            setDisable(btnPdfMain, disable);
+            
+            // Actualizar href en botones CSV (que son enlaces normales)
+            btnCsv.href = fullUrlCsv;
+            if (btnCsvMain) btnCsvMain.href = fullUrlCsv;
+        }
+
+        updateExportLinks();
+        
+        // Manejar clicks en botón PDF principal
+        if (btnPdfMain) {
+            btnPdfMain.addEventListener('click', function(e) {
+                e.preventDefault();
+                // Verificar si está deshabilitado
+                if (this.classList.contains('disabled') || this.getAttribute('aria-disabled') === 'true') {
+                    console.warn('PDF button is disabled');
+                    return false;
+                }
+                const url = this.dataset.pdfUrl;
+                if (url) {
+                    window.location.href = url;
+                }
+            });
+        }
+        
+        // Manejar clicks en botón PDF del dropdown
+        if (btnPdf) {
+            btnPdf.addEventListener('click', function(e) {
+                e.preventDefault();
+                // Verificar si está deshabilitado
+                if (this.classList.contains('disabled') || this.getAttribute('aria-disabled') === 'true') {
+                    console.warn('PDF button (dropdown) is disabled');
+                    return false;
+                }
+                const url = this.dataset.pdfUrl;
+                if (url) {
+                    window.location.href = url;
+                }
+            });
+        }
+        
+        const modeGroup = document.getElementById('tramites-mode-toggle');
+        if (modeGroup) {
+            modeGroup.addEventListener('click', function(e){
+                const btn = e.target.closest('button[data-mode]');
+                if (!btn) return;
+                const mode = btn.getAttribute('data-mode');
+                if (window._papCharts && mode) { window._papCharts.setTramitesMode(mode); }
+            });
+        }
+        // Toggle de vista mensual (líneas/barras)
+        const monthlyModeGroup = document.getElementById('monthly-mode-toggle');
+        if (monthlyModeGroup) {
+            monthlyModeGroup.addEventListener('click', function(e){
+                const btn = e.target.closest('button[data-mode]');
+                if (!btn) return;
+                const mode = btn.getAttribute('data-mode');
+                if (window._papCharts && mode) { window._papCharts.setMonthlyMode(mode); }
+            });
+        }
+        // Toggle de media móvil (off/3/6)
+        const monthlyMaGroup = document.getElementById('monthly-ma-toggle');
+        if (monthlyMaGroup) {
+            monthlyMaGroup.addEventListener('click', function(e){
+                const btn = e.target.closest('button[data-ma]');
+                if (!btn) return;
+                const ma = btn.getAttribute('data-ma');
+                if (window._papCharts && ma) { window._papCharts.setMovingAverage(ma); }
+            });
+        }
+        if (fechaInicioInput) fechaInicioInput.addEventListener('change', updateExportLinks);
+        if (fechaFinInput) fechaFinInput.addEventListener('change', updateExportLinks);
+
+        // Inicializar gráficos esperando que el layout esté completamente renderizado
+        // Usar requestAnimationFrame para asegurar que el DOM esté listo
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                try { 
+                    if (window.initializePapeleriaScripts) {
+                        console.log('🎬 Initializing charts after layout is ready');
+                        window.initializePapeleriaScripts(); 
+                    }
+                } catch(e) { 
+                    console.error('Error initializing charts:', e); 
+                }
+            });
+        });
+        
+        // Observer para detectar cambios de tema
+        const themeObserver = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'data-bs-theme') {
+                    console.log('🎨 Tema cambiado, recreando gráficos de papelería...');
+                    setTimeout(() => {
+                        try { 
+                            if (window.initializePapeleriaScripts) window.initializePapeleriaScripts(); 
+                        } catch(e) { 
+                            console.error('Error al recrear gráficos:', e); 
+                        }
+                    }, 100);
+                }
+            });
+        });
+        
+        // Observar cambios en el atributo data-bs-theme del elemento html
+        themeObserver.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['data-bs-theme']
+        });
+    });
+
+    // Re-render al aplicar tema
+    document.addEventListener('theme:applied', function(){
+        try { if (window.initializePapeleriaScripts) window.initializePapeleriaScripts(); } catch(e) { console.error(e); }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - DocuExpress{% endblock %}
+{% block extra_head %}
+<!-- Incluimos HTMX y Chart.js desde un CDN -->
+<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .chart-container {
+        position: relative;
+        height: 40vh;
+        width: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Contenedor para el dashboard que se actualizará dinámicamente -->
+<div id="dashboard-container" hx-get="{{ url_for('main.index') }}" hx-trigger="reload-dashboard from:body"
+    hx-target="this" hx-swap="outerHTML">
+    {% include 'dashboard_content.html' %}
+</div>
+
+<div class="row g-4 mt-1">
+    <!-- Fila de Formularios y Lista de Papelerías -->
+    <div class="col-lg-5">
+        <!-- Formulario para Registrar Trámite -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header">Registrar Trámite</div>
+            <div class="card-body">
+                {% include 'form_registrar_tramite.html' %}
+            </div>
+        </div>
+
+        <!-- Botón para abrir el modal de agregar papelería -->
+        <button type="button" class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#addPapeleriaModal">
+            <i class="bi bi-plus-circle"></i> Agregar Nueva Papelería
+        </button>
+    </div>
+
+    <div class="col-lg-7" id="papeleria-list-container" hx-trigger="refresh-papeleria-list from:body"
+        hx-get="{{ url_for('main.get_papeleria_list_partial') }}" hx-swap="innerHTML" hx-target="this">
+        {% include "lista_papelerias.html" %}
+    </div>
+</div>
+
+<!-- Modal para Agregar Papelería -->
+<div class="modal fade" id="addPapeleriaModal" tabindex="-1" aria-labelledby="addPapeleriaModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addPapeleriaModalLabel">Agregar Nueva Papelería</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="add-papeleria-form-container">
+                {% include 'form_agregar_papeleria.html' %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    function initializeDashboardScripts() {
+        // --- Lógica para adaptar los gráficos al tema (claro/oscuro) ---
+        const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+        const gridColor = currentTheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+        const textColor = currentTheme === 'dark' ? '#dee2e6' : '#212529';
+        Chart.defaults.color = textColor;
+        Chart.defaults.borderColor = gridColor;
+
+        // Destruir gráficos existentes para evitar duplicados
+        if (window.myCharts) {
+            Object.values(window.myCharts).forEach(chart => chart.destroy());
+        }
+        window.myCharts = {};
+
+        const CHART_COLORS = {
+            red: 'rgb(255, 99, 132)',
+            orange: 'rgb(255, 159, 64)',
+            yellow: 'rgb(255, 205, 86)',
+            green: 'rgb(75, 192, 192)',
+            blue: 'rgb(54, 162, 235)',
+            purple: 'rgb(153, 102, 255)',
+            grey: 'rgb(201, 203, 207)'
+        };
+        const CHART_COLORS_ARRAY = Object.values(CHART_COLORS);
+
+        // --- Gráfico 1: Top Papelerías por Ganancia (Barra) ---
+        if (document.getElementById('topPapeleriasChart') && document.getElementById('monthlySummaryChart')) {
+            fetch("{{ url_for('api.dashboard_charts_data') }}", { headers: { 'Cache-Control': 'no-cache' } })
+                .then(response => response.json())
+                .then(chartsData => {
+                    const ctx = document.getElementById('topPapeleriasChart').getContext('2d');
+                    window.myCharts.topPapelerias = new Chart(ctx, {
+                        type: 'bar',
+                        data: { labels: chartsData.topPapelerias.labels, datasets: [{ label: 'Ganancia Total ($)', data: chartsData.topPapelerias.data, backgroundColor: 'rgba(54, 162, 235, 0.6)', borderColor: 'rgba(54, 162, 235, 1)', borderWidth: 1 }] },
+                        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+                    });
+
+                    // Gráfico 2
+                    const monthlyCtx = document.getElementById('monthlySummaryChart').getContext('2d');
+                    window.myCharts.monthlySummary = new Chart(monthlyCtx, {
+                        type: 'line',
+                        data: {
+                            labels: chartsData.monthlySummary.labels,
+                            datasets: [
+                                {
+                                    label: 'Ingresos',
+                                    data: chartsData.monthlySummary.ingresos,
+                                    borderColor: CHART_COLORS.green,
+                                },
+                                {
+                                    label: 'Costos',
+                                    data: chartsData.monthlySummary.costos,
+                                    borderColor: CHART_COLORS.red,
+                                },
+                                {
+                                    label: 'Ganancias',
+                                    data: chartsData.monthlySummary.ganancias,
+                                    borderColor: CHART_COLORS.blue,
+                                }
+                            ]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false }
+                    });
+
+                    // Gráfico 3
+                    const tramitesCtx = document.getElementById('tramitesDistributionChart').getContext('2d');
+                    window.myCharts.tramitesDist = new Chart(tramitesCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: chartsData.tramitesDistribution.labels,
+                            datasets: [{
+                                label: 'Cantidad de Trámites',
+                                data: chartsData.tramitesDistribution.data,
+                                backgroundColor: CHART_COLORS_ARRAY,
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false }
+                    });
+
+                    // Gráfico 4
+                    const gastosCtx = document.getElementById('gastosDistributionChart').getContext('2d');
+                    window.myCharts.gastosDist = new Chart(gastosCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: chartsData.gastosDistribution.labels,
+                            datasets: [{
+                                label: 'Monto Gastado ($)',
+                                data: chartsData.gastosDistribution.data,
+                                backgroundColor: CHART_COLORS_ARRAY,
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false }
+                    });
+                });
+        }
+
+        // --- Lógica para el formulario dinámico de registro de trámites ---
+        const tramiteSelect = document.getElementById('tramiteSelect');
+        const tramiteManualContainer = document.getElementById('tramiteManualContainer');
+        const papeleriaSelect = document.getElementById('tramitePapeleria');
+        const costoInput = document.getElementById('tramiteCosto');
+        const precioInput = document.getElementById('tramitePrecio');
+
+        function toggleManualInput() {
+            if (tramiteSelect.value === 'OTRO') {
+                tramiteManualContainer.style.display = 'block';
+            } else {
+                tramiteManualContainer.style.display = 'none';
+            }
+        }
+
+        async function fetchDefaults() {
+            const tramiteNombre = tramiteSelect.value === 'OTRO' ? '' : tramiteSelect.value;
+            const papeleriaId = papeleriaSelect ? papeleriaSelect.value : null;
+
+            if (!tramiteNombre || !papeleriaId) {
+                precioInput.value = '';
+                costoInput.value = '0.00';
+                return;
+            }
+
+            // Fetch Precio y Costo en una sola llamada optimizada
+            try {
+                const response = await fetch(`/api/get-precio-costo/${papeleriaId}/${tramiteNombre}`);
+                const data = await response.json();
+
+                // Dejamos el precio en blanco para que el usuario lo ponga si no hay predefinido
+                precioInput.value = data.precio || '';
+                costoInput.value = data.costo || '0.00';
+
+            } catch (error) { console.error('Error fetching defaults:', error); }
+        }
+
+        if (tramiteSelect) tramiteSelect.addEventListener('change', toggleManualInput);
+        if (tramiteSelect) tramiteSelect.addEventListener('change', fetchDefaults);
+        if (papeleriaSelect) papeleriaSelect.addEventListener('change', fetchDefaults);
+
+        // Ejecutar al cargar para el estado inicial
+        toggleManualInput();
+    }
+
+    // Después de que HTMX intercambie cualquier contenido en la página, reiniciamos los scripts de los gráficos.
+    document.body.addEventListener('htmx:afterSwap', function (event) {
+        initializeDashboardScripts();
+    });
+
+    // Llamada inicial para la carga de la página
+    document.addEventListener('DOMContentLoaded', initializeDashboardScripts);
+</script>
+{% endblock %}

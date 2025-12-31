@@ -1,0 +1,1682 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - DocuExpress{% endblock %}
+{% block extra_head %}
+<!-- Incluimos Chart.js desde un CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .chart-container {
+        position: relative;
+        height: 40vh;
+        min-height: 300px; /* Evita el colapso visual "se quita y se pone" */
+        width: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Encabezado -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0 fw-bold">Panel de Control</h4>
+    
+    <!-- Botón de exportación a PDF eliminado por requerimiento -->
+</div>
+
+<!-- Contenedor para el dashboard que se actualizará dinámicamente -->
+<div id="dashboard-container" hx-get="{{ url_for('main.index') }}" hx-trigger="reload-dashboard from:body"
+    hx-target="this" hx-swap="innerHTML">
+    {% include 'dashboard_content.html' %}
+</div>
+
+<div class="row g-4 mt-1">
+    <!-- Fila de Formularios y Lista de Papelerías -->
+    <div class="col-lg-5 col-md-12 order-lg-1 order-2">
+        <!-- Formulario para Registrar Trámite -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Registrar Trámite</span>
+                <i class="bi bi-file-earmark-plus text-primary"></i>
+            </div>
+            <div class="card-body">
+                {% include 'form_registrar_tramite.html' %}
+            </div>
+        </div>
+
+        <!-- Botón para abrir el modal de agregar papelería -->
+        <div class="d-grid">
+            <button type="button" class="btn btn-success btn-lg mb-3" data-bs-toggle="modal" data-bs-target="#addPapeleriaModal">
+                <i class="bi bi-plus-circle me-2"></i>Agregar Nueva Papelería
+            </button>
+        </div>
+    </div>
+
+    <!-- Columna de Lista de Papelerías (se cargará dinámicamente) -->
+    <div class="col-lg-7 col-md-12 order-lg-2 order-1" id="papeleria-list-container" hx-trigger="refresh-papeleria-list from:body"
+        hx-get="{{ url_for('main.get_papeleria_list_partial') }}" hx-swap="innerHTML" hx-target="this">
+        {% include "lista_papelerias.html" %}
+    </div>
+</div>
+
+<!-- Modal para Agregar Papelería -->
+<div class="modal fade" id="addPapeleriaModal" tabindex="-1" aria-labelledby="addPapeleriaModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addPapeleriaModalLabel">Agregar Nueva Papelería</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="add-papeleria-form-container">
+                {% include 'form_agregar_papeleria.html' %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    // --- CONFIGURACIÓN DINÁMICA DEL TEMA ---
+    function updateChartTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+        const isDark = currentTheme === 'dark';
+        
+        // Actualizar globales de Chart.js para mejor visibilidad y elegancia
+        Chart.defaults.color = isDark ? '#f1f5f9' : '#0f172a';
+        Chart.defaults.borderColor = isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)';
+        
+        // Tipografía profesional consistente
+        Chart.defaults.font.family = "'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+        Chart.defaults.font.size = 13;
+        Chart.defaults.font.weight = '500';
+        
+        // Configurar grid para mejor contraste y elegancia
+        Chart.defaults.scale.grid.color = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)';
+        Chart.defaults.scale.grid.lineWidth = 1;
+        
+        // Tooltips con diseño moderno
+        Chart.defaults.plugins.tooltip.backgroundColor = isDark ? 'rgba(15, 23, 42, 0.96)' : 'rgba(255, 255, 255, 0.96)';
+        Chart.defaults.plugins.tooltip.titleColor = isDark ? '#f1f5f9' : '#0f172a';
+        Chart.defaults.plugins.tooltip.bodyColor = isDark ? '#cbd5e1' : '#334155';
+        Chart.defaults.plugins.tooltip.borderColor = isDark ? 'rgba(148, 163, 184, 0.5)' : 'rgba(203, 213, 225, 0.8)';
+        Chart.defaults.plugins.tooltip.borderWidth = 2;
+        Chart.defaults.plugins.tooltip.cornerRadius = 12;
+        Chart.defaults.plugins.tooltip.padding = 14;
+        Chart.defaults.plugins.tooltip.titleFont = { size: 15, weight: '700' };
+        Chart.defaults.plugins.tooltip.bodyFont = { size: 13, weight: '500' };
+        Chart.defaults.plugins.tooltip.boxPadding = 6;
+        
+        // Títulos elegantes
+        Chart.defaults.plugins.title.color = isDark ? '#f8fafc' : '#0f172a';
+        Chart.defaults.plugins.title.font = { size: 17, weight: '700' };
+        Chart.defaults.plugins.title.padding = { top: 14, bottom: 20 };
+        
+        // Leyendas profesionales
+        Chart.defaults.plugins.legend.labels.color = isDark ? '#e2e8f0' : '#1e293b';
+        Chart.defaults.plugins.legend.labels.font = { size: 13, weight: '600' };
+        Chart.defaults.plugins.legend.labels.padding = 16;
+        Chart.defaults.plugins.legend.labels.usePointStyle = true;
+        Chart.defaults.plugins.legend.labels.pointStyle = 'circle';
+        
+        console.log(`🎨 Chart theme updated to: ${currentTheme}`);
+    }
+
+    // Exportar dashboard a PDF eliminado completamente
+
+    // --- FUNCIONES DE UTILIDAD ---
+    const formatCurrency = (value) => new Intl.NumberFormat('es-MX', {
+        style: 'currency',
+        currency: 'MXN',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(value);
+
+    const formatNumber = (value) => new Intl.NumberFormat('es-MX').format(value);
+
+    // --- COLORES CONSISTENTES PARA UX PROFESIONAL ---
+    const UX_COLORS = {
+        ganancias: 'rgba(16, 185, 129, 0.88)',    // Verde esmeralda elegante
+        ingresos: 'rgba(59, 130, 246, 0.88)',     // Azul profundo
+        gastos: 'rgba(239, 68, 68, 0.88)',        // Rojo coral
+        warning: 'rgba(251, 146, 60, 0.88)',      // Naranja cálido
+        neutral: 'rgba(148, 163, 184, 0.85)',     // Gris azulado
+        gradients: {
+            primary: ['rgba(59, 130, 246, 0.85)', 'rgba(99, 102, 241, 0.85)'],
+            success: ['rgba(16, 185, 129, 0.85)', 'rgba(5, 150, 105, 0.85)'],
+            danger: ['rgba(239, 68, 68, 0.85)', 'rgba(220, 38, 38, 0.85)']
+        },
+        // Paleta profesional inspirada en diseño moderno
+        palette: [
+            'rgba(59, 130, 246, 0.92)',   // Blue - Azul corporativo
+            'rgba(16, 185, 129, 0.92)',   // Emerald - Verde éxito
+            'rgba(239, 68, 68, 0.92)',    // Red - Rojo alerta
+            'rgba(251, 146, 60, 0.92)',   // Orange - Naranja energético
+            'rgba(139, 92, 246, 0.92)',   // Violet - Violeta premium
+            'rgba(236, 72, 153, 0.92)',   // Pink - Rosa vibrante
+            'rgba(6, 182, 212, 0.92)',    // Cyan - Cian tecnológico
+            'rgba(245, 158, 11, 0.92)',   // Amber - Ámbar cálido
+            'rgba(99, 102, 241, 0.92)',   // Indigo - Índigo profundo
+            'rgba(168, 85, 247, 0.92)',   // Purple - Púrpura real
+            'rgba(20, 184, 166, 0.92)',   // Teal - Verde azulado
+            'rgba(244, 114, 182, 0.92)',  // Fuchsia - Fucsia brillante
+            'rgba(34, 211, 238, 0.92)',   // Sky - Celeste claro
+            'rgba(124, 58, 237, 0.92)',   // Violet dark - Violeta oscuro
+            'rgba(14, 165, 233, 0.92)',   // Light blue - Azul claro
+            'rgba(234, 88, 12, 0.92)'     // Orange dark - Naranja oscuro
+        ],
+        // Colores para bordes (más sólidos y elegantes)
+        borders: {
+            ganancias: '#059669',
+            ingresos: '#2563eb',
+            gastos: '#dc2626',
+            warning: '#ea580c'
+        }
+    };
+
+    // --- CONFIGURACIÓN COMÚN PARA TODOS LOS GRÁFICOS ---
+    const commonOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: {
+            duration: 1000,
+            easing: 'easeInOutQuart'
+        }
+        // NOTA: No incluimos plugins aquí para permitir configuración específica por gráfico
+    };
+
+    // --- CONFIGURACIÓN EXTERNA PARA PRODUCCIÓN ---
+    const CHART_CONFIG = {
+        enableCaching: true,
+        cacheTimeout: 5 * 60 * 1000, // 5 minutos
+        retryAttempts: 3,
+        retryDelay: 1000,
+        enablePerformanceMonitoring: true,
+        animationDuration: 1000,
+        themeUpdateDelay: 50
+    };
+
+    // --- CACHÉ PARA DATOS DE GRÁFICOS ---
+    const chartDataCache = {
+        data: null,
+        timestamp: null,
+        isValid: function() {
+            if (!CHART_CONFIG.enableCaching || !this.timestamp) return false;
+            return (Date.now() - this.timestamp) < CHART_CONFIG.cacheTimeout;
+        },
+        set: function(data) {
+            this.data = data;
+            this.timestamp = Date.now();
+        },
+        get: function() {
+            return this.isValid() ? this.data : null;
+        },
+        clear: function() {
+            this.data = null;
+            this.timestamp = null;
+        }
+    };
+
+    // --- VARIABLES DE FILTRO DE RANGO TEMPORAL (GLOBALES) ---
+    let currentDateRange = 30; // Default: 30 días
+    let customStartDate = null;
+    let customEndDate = null;
+
+    // --- CLASE PARA GESTIÓN DE GRÁFICOS ---
+    class ChartManager {
+        constructor() {
+            this.charts = {};
+            this.isInitialized = false;
+            this.isLoading = false;
+            this.performanceMetrics = {
+                loadTimes: [],
+                errorCount: 0,
+                lastLoadTime: null
+            };
+        }
+        
+        // Mostrar skeleton loaders
+        showSkeletons() {
+            const chartContainers = [
+                'topPapeleriasChart',
+                'monthlySummaryChart',
+                'tramitesDistributionChart',
+                'gastosDistributionChart'
+            ];
+            
+            chartContainers.forEach(id => {
+                const canvas = document.getElementById(id);
+                if (canvas) {
+                    const container = canvas.parentElement;
+                    container.innerHTML = `
+                        <div class="skeleton skeleton-chart"></div>
+                        <div class="skeleton skeleton-text w-75 mt-3"></div>
+                        <div class="skeleton skeleton-text w-50"></div>
+                    `;
+                }
+            });
+        }
+        
+        // Restaurar canvas después de skeleton
+        restoreCanvas(canvasId) {
+            const container = document.getElementById(canvasId)?.parentElement;
+            if (container && !container.querySelector('canvas')) {
+                container.innerHTML = `<canvas id="${canvasId}" style="max-height: 400px;"></canvas>`;
+            }
+        }
+        
+        // Animar conteo de números en tarjetas
+        animateMetricCards() {
+            const metricValues = document.querySelectorAll('.metric-card .value[data-target]');
+            
+            metricValues.forEach(element => {
+                const target = parseFloat(element.dataset.target);
+                const duration = 1500; // 1.5 segundos
+                const startTime = Date.now();
+                const startValue = 0;
+                
+                const isCurrency = element.textContent.includes('$');
+                
+                const animate = () => {
+                    const now = Date.now();
+                    const elapsed = now - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    
+                    // Ease out cubic
+                    const easeProgress = 1 - Math.pow(1 - progress, 3);
+                    const currentValue = startValue + (target - startValue) * easeProgress;
+                    
+                    if (isCurrency) {
+                        element.textContent = `$${currentValue.toFixed(2)}`;
+                    } else {
+                        element.textContent = Math.round(currentValue);
+                    }
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    }
+                };
+                
+                animate();
+            });
+        }
+
+        // Validar dependencias críticas
+        validateDependencies() {
+            const required = [
+                { name: 'Chart.js', check: () => typeof Chart !== 'undefined' },
+                { name: 'UX_COLORS', check: () => typeof UX_COLORS !== 'undefined' && UX_COLORS.palette },
+                { name: 'commonOptions', check: () => typeof commonOptions !== 'undefined' },
+                { name: 'formatCurrency', check: () => typeof formatCurrency === 'function' },
+                { name: 'formatNumber', check: () => typeof formatNumber === 'function' }
+            ];
+
+            const missing = required.filter(dep => !dep.check());
+            if (missing.length > 0) {
+                const names = missing.map(dep => dep.name).join(', ');
+                throw new Error(`Dependencias faltantes: ${names}`);
+            }
+            console.log('✅ Todas las dependencias validadas');
+        }
+
+        // Validar tipo de datos de la API
+        validateApiResponse(data) {
+            if (!data || typeof data !== 'object') {
+                throw new Error('Respuesta de API inválida: no es un objeto');
+            }
+
+            const requiredKeys = ['topPapelerias', 'monthlySummary', 'tramitesDistribution', 'gastosDistribution'];
+            const missingKeys = requiredKeys.filter(key => !(key in data));
+            if (missingKeys.length > 0) {
+                throw new Error(`Claves faltantes en respuesta: ${missingKeys.join(', ')}`);
+            }
+
+            // Validar estructura de cada gráfico
+            this.validateChartStructure(data.topPapelerias, 'topPapelerias', ['labels', 'data']);
+            this.validateChartStructure(data.monthlySummary, 'monthlySummary', ['labels', 'ingresos', 'costos', 'ganancias']);
+            this.validateChartStructure(data.tramitesDistribution, 'tramitesDistribution', ['labels', 'data']);
+            this.validateChartStructure(data.gastosDistribution, 'gastosDistribution', ['labels', 'data']);
+
+            console.log('✅ Estructura de datos de API validada');
+        }
+
+        // Validar estructura de un gráfico individual
+        validateChartStructure(chartData, chartName, requiredFields) {
+            if (!chartData || typeof chartData !== 'object') {
+                throw new Error(`${chartName}: datos inválidos`);
+            }
+
+            const missing = requiredFields.filter(field => !(field in chartData));
+            if (missing.length > 0) {
+                throw new Error(`${chartName}: campos faltantes: ${missing.join(', ')}`);
+            }
+
+            // Validar arrays
+            requiredFields.forEach(field => {
+                if (Array.isArray(chartData[field])) {
+                    if (chartData[field].some(item => item === null || item === undefined)) {
+                        console.warn(`⚠️ ${chartName}.${field}: contiene valores null/undefined`);
+                    }
+                }
+            });
+        }
+
+        // Verificar que todos los elementos canvas existen
+        getCanvasElements() {
+            const requiredCanvases = [
+                'topPapeleriasChart',
+                'monthlySummaryChart',
+                'tramitesDistributionChart',
+                'gastosDistributionChart'
+            ];
+
+            // Retorna solo los canvas que existen actualmente en el DOM
+            return requiredCanvases.filter(id => document.getElementById(id));
+        }
+
+        // Destruir un gráfico específico
+        destroy(chartName) {
+            try {
+                if (this.charts[chartName]) {
+                    this.charts[chartName].destroy();
+                    this.charts[chartName] = null;
+                    console.log(`🗑️ Destroyed chart: ${chartName}`);
+                }
+            } catch (error) {
+                console.error(`❌ Error destroying chart ${chartName}:`, error);
+                this.performanceMetrics.errorCount++;
+                // Forzar limpieza
+                this.charts[chartName] = null;
+            }
+        }
+
+        // Destruir todos los gráficos
+        destroyAll() {
+            Object.keys(this.charts).forEach(name => this.destroy(name));
+            console.log('🗑️ All charts destroyed');
+        }
+
+        // Mostrar mensaje mejorado cuando no hay datos con ilustración SVG
+        showNoDataMessage(canvasId, message = 'No hay datos disponibles') {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            
+            const container = canvas.parentElement;
+            const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+            
+            // Reemplazar canvas con mensaje visual
+            container.innerHTML = `
+                <div class="text-center py-5" style="opacity: 0; transition: opacity 0.3s ease;">
+                    <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="60" cy="60" r="55" fill="none" stroke="${isDark ? '#475569' : '#e2e8f0'}" stroke-width="2" stroke-dasharray="5,5"/>
+                        <path d="M40 70 L60 50 L80 70" fill="none" stroke="${isDark ? '#64748b' : '#cbd5e1'}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="45" cy="75" r="3" fill="${isDark ? '#64748b' : '#cbd5e1'}"/>
+                        <circle cx="75" cy="75" r="3" fill="${isDark ? '#64748b' : '#cbd5e1'}"/>
+                        <text x="60" y="100" text-anchor="middle" font-size="12" fill="${isDark ? '#94a3b8' : '#64748b'}">Sin datos</text>
+                    </svg>
+                    <p class="text-muted mt-3 mb-0">${message}</p>
+                    <small class="text-muted">Los datos aparecerán cuando registres información</small>
+                </div>
+            `;
+            
+            // Animar entrada
+            setTimeout(() => {
+                const emptyState = container.querySelector('div');
+                if (emptyState) emptyState.style.opacity = '1';
+            }, 50);
+        }
+
+        // Animar entrada de gráfico
+        animateEntrance(chartElement) {
+            if (!chartElement) return;
+
+            chartElement.style.opacity = '0';
+            chartElement.style.transform = 'translateY(20px)';
+
+            setTimeout(() => {
+                chartElement.style.transition = 'all 0.8s ease-out';
+                chartElement.style.opacity = '1';
+                chartElement.style.transform = 'translateY(0)';
+            }, 100);
+        }
+
+        // Inicializar todos los gráficos
+        async initialize() {
+            const startTime = Date.now();
+
+            try {
+                // Validar dependencias críticas
+                this.validateDependencies();
+
+                // Asegurar que tenemos los colores correctos antes de crear nada
+                updateChartTheme();
+
+                // Verificar si ya se está inicializando
+                if (this.isLoading) {
+                    console.log('⏳ Initialization already in progress, skipping...');
+                    return;
+                }
+
+                // Verificar caché
+                const cachedData = chartDataCache.get();
+                if (cachedData) {
+                    console.log('📋 Using cached chart data');
+                    await this.createAllCharts(cachedData);
+                    this.isInitialized = true;
+                    this.recordPerformance(startTime);
+                    return;
+                }
+
+                const availableCanvases = this.getCanvasElements();
+                if (availableCanvases.length === 0) {
+                    console.log('ℹ️ No chart canvases found in DOM.');
+                    return;
+                }
+
+                this.isLoading = true;
+                console.log('🔄 Fetching chart data...');
+
+                const chartsData = await this.fetchChartDataWithRetry();
+                console.log('✅ Chart data received:', chartsData);
+
+                // Validar respuesta de API
+                this.validateApiResponse(chartsData);
+
+                // Cachear datos
+                chartDataCache.set(chartsData);
+
+                // Crear gráficos
+                await this.createAllCharts(chartsData);
+
+                this.isInitialized = true;
+                this.recordPerformance(startTime);
+                console.log('🎉 All charts initialized successfully');
+
+            } catch (error) {
+                console.error('❌ Error initializing charts:', error);
+                this.performanceMetrics.errorCount++;
+                this.showErrorState(error.message);
+                this.recordPerformance(startTime, true);
+            } finally {
+                this.isLoading = false;
+            }
+        }
+
+        // Fetch con reintentos
+        async fetchChartDataWithRetry(attempt = 1) {
+            try {
+                // Construir URL con parámetros de fecha si existen
+                let url = "{{ url_for('api.dashboard_charts_data') }}";
+                
+                // Agregar parámetros de fecha personalizada si están definidos
+                if (customStartDate && customEndDate) {
+                    url += '?fecha_inicio=' + encodeURIComponent(customStartDate) + 
+                           '&fecha_fin=' + encodeURIComponent(customEndDate);
+                    console.log('📅 Aplicando filtro personalizado:', customStartDate, 'a', customEndDate);
+                }
+                
+                const response = await fetch(url, {
+                    headers: { 'Cache-Control': 'no-cache' },
+                    method: 'GET'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                return await response.json();
+            } catch (error) {
+                if (attempt < CHART_CONFIG.retryAttempts) {
+                    console.warn(`⚠️ Fetch attempt ${attempt} failed, retrying in ${CHART_CONFIG.retryDelay}ms...`);
+                    await new Promise(resolve => setTimeout(resolve, CHART_CONFIG.retryDelay));
+                    return this.fetchChartDataWithRetry(attempt + 1);
+                }
+                throw error;
+            }
+        }
+
+        // Registrar métricas de rendimiento
+        recordPerformance(startTime, isError = false) {
+            if (!CHART_CONFIG.enablePerformanceMonitoring) return;
+
+            const duration = Date.now() - startTime;
+            this.performanceMetrics.loadTimes.push(duration);
+            this.performanceMetrics.lastLoadTime = duration;
+
+            // Mantener solo las últimas 10 mediciones
+            if (this.performanceMetrics.loadTimes.length > 10) {
+                this.performanceMetrics.loadTimes.shift();
+            }
+
+            console.log(`📊 Performance: ${duration}ms ${isError ? '(error)' : ''}`);
+        }
+
+
+
+        // Crear todos los gráficos
+        async createAllCharts(data) {
+            // Destruir gráficos existentes
+            this.destroyAll();
+
+            // Crear cada gráfico individualmente con manejo de errores
+            const chartPromises = [
+                this.createChartSafely('topPapelerias', () => this.createTopPapeleriasChart(data.topPapelerias)),
+                this.createChartSafely('monthlySummary', () => this.createMonthlySummaryChart(data.monthlySummary)),
+                this.createChartSafely('tramitesDistribution', () => this.createTramitesDistributionChart(data.tramitesDistribution)),
+                this.createChartSafely('gastosDistribution', () => this.createGastosDistributionChart(data.gastosDistribution))
+            ];
+
+            // Ejecutar en paralelo pero manejar errores individualmente
+            const results = await Promise.allSettled(chartPromises);
+            
+            const successful = results.filter(r => r.status === 'fulfilled').length;
+            const failed = results.filter(r => r.status === 'rejected').length;
+            
+            console.log(`📊 Charts creation: ${successful} successful, ${failed} failed`);
+            
+            if (failed > 0) {
+                console.warn('⚠️ Some charts failed to create, but others succeeded');
+            }
+        }
+
+        // Crear gráfico de forma segura con manejo de errores
+        async createChartSafely(chartName, createFunction) {
+            try {
+                await createFunction();
+                console.log(`✅ ${chartName} chart created successfully`);
+            } catch (error) {
+                console.error(`❌ Error creating ${chartName} chart:`, error);
+                this.performanceMetrics.errorCount++;
+                // Mostrar mensaje de error en el canvas correspondiente
+                const canvasId = this.getCanvasIdForChart(chartName);
+                if (canvasId) {
+                    this.showNoDataMessage(canvasId, `Error: ${error.message}`);
+                }
+                throw error; // Re-throw para Promise.allSettled
+            }
+        }
+
+        // Obtener ID del canvas para un gráfico
+        getCanvasIdForChart(chartName) {
+            const mapping = {
+                topPapelerias: 'topPapeleriasChart',
+                monthlySummary: 'monthlySummaryChart',
+                tramitesDistribution: 'tramitesDistributionChart',
+                gastosDistribution: 'gastosDistributionChart'
+            };
+            return mapping[chartName];
+        }
+
+        // Crear gráfico de Top Papelerías
+        async createTopPapeleriasChart(chartData) {
+            if (!chartData || !chartData.data || chartData.data.length === 0) {
+                this.showNoDataMessage('topPapeleriasChart', 'Sin datos de papelerías registradas');
+                return;
+            }
+
+            const ctx = document.getElementById('topPapeleriasChart').getContext('2d');
+            const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+
+            this.charts.topPapelerias = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [{
+                        label: 'Ganancia Total',
+                        data: chartData.data,
+                        backgroundColor: chartData.data.map(value =>
+                            value >= 0 ? UX_COLORS.ganancias : UX_COLORS.gastos
+                        ),
+                        borderColor: chartData.data.map(value =>
+                            value >= 0 ? 'rgba(16, 185, 129, 1)' : 'rgba(239, 68, 68, 1)'
+                        ),
+                        borderWidth: 2,
+                        borderRadius: 8,
+                        borderSkipped: false,
+                        barThickness: 36,
+                        // Sombra sutil para profundidad
+                        shadowOffsetX: 2,
+                        shadowOffsetY: 2,
+                        shadowBlur: 4,
+                        shadowColor: isDark ? 'rgba(0, 0, 0, 0.4)' : 'rgba(0, 0, 0, 0.15)'
+                    }]
+                },
+                options: {
+                    ...commonOptions,
+                    indexAxis: 'y',
+                    layout: {
+                        padding: { left: 10, right: 20, top: 10, bottom: 10 }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '🏆 Top 10 Papelerías por Ganancia',
+                            font: { size: 18, weight: '700', family: "'Inter', sans-serif" },
+                            padding: { top: 14, bottom: 24 },
+                            color: isDark ? '#f8fafc' : '#0f172a'
+                        },
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: isDark ? 'rgba(15, 23, 42, 0.96)' : 'rgba(255, 255, 255, 0.96)',
+                            titleColor: isDark ? '#f1f5f9' : '#0f172a',
+                            bodyColor: isDark ? '#cbd5e1' : '#334155',
+                            borderColor: isDark ? 'rgba(148, 163, 184, 0.5)' : 'rgba(203, 213, 225, 0.8)',
+                            borderWidth: 2,
+                            padding: 14,
+                            cornerRadius: 10,
+                            titleFont: { size: 15, weight: '700' },
+                            bodyFont: { size: 13, weight: '500' },
+                            callbacks: {
+                                title: (context) => `🏪 ${context[0].label}`,
+                                label: (context) => {
+                                    const value = context.raw;
+                                    const sign = value >= 0 ? '+' : '';
+                                    const estado = value >= 0 ? '✅ Ganancia' : '⚠️ Pérdida';
+                                    return [
+                                        ` ${estado}`,
+                                        ` Monto: ${sign}${formatCurrency(value)}`
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            grid: {
+                                color: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)',
+                                lineWidth: 1
+                            },
+                            border: {
+                                display: true,
+                                color: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)',
+                                width: 2
+                            },
+                            ticks: { 
+                                callback: (value) => formatCurrency(value),
+                                font: { size: 12, weight: '600' },
+                                color: isDark ? '#94a3b8' : '#64748b',
+                                padding: 8
+                            }
+                        },
+                        y: {
+                            grid: {
+                                display: false
+                            },
+                            border: {
+                                display: true,
+                                color: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)',
+                                width: 2
+                            },
+                            ticks: {
+                                font: { size: 13, weight: '600' },
+                                color: isDark ? '#e2e8f0' : '#1e293b',
+                                padding: 12,
+                                callback: function(value, index) {
+                                    const label = this.getLabelForValue(value);
+                                    return label.length > 20 ? label.substring(0, 17) + '...' : label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            this.animateEntrance(document.getElementById('topPapeleriasChart'));
+        }
+
+        // Crear gráfico de Evolución Mensual MEJORADO V2
+        async createMonthlySummaryChart(chartData) {
+            if (!chartData || !chartData.data || chartData.data.length === 0) {
+                this.showNoDataMessage('monthlySummaryChart', 'Sin historial de movimientos');
+                return;
+            }
+
+            const ctx = document.getElementById('monthlySummaryChart').getContext('2d');
+            
+            // Obtener tema actual para colores adaptativos
+            const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+
+            // Calcular estadísticas completas
+            const totalIngresos = chartData.ingresos.reduce((a, b) => a + b, 0);
+            const totalGastos = chartData.costos.reduce((a, b) => a + b, 0);
+            const totalGanancias = chartData.ganancias.reduce((a, b) => a + b, 0);
+            const promedioMensual = totalGanancias / chartData.labels.length;
+            const margen = totalIngresos > 0 ? ((totalGanancias / totalIngresos) * 100).toFixed(1) : 0;
+            
+            // Meses con ganancia positiva
+            const mesesPositivos = chartData.ganancias.filter(g => g > 0).length;
+            const porcentajeExito = ((mesesPositivos / chartData.ganancias.length) * 100).toFixed(0);
+
+            // Detectar tendencia (comparar últimos 3 meses vs 3 anteriores)
+            const ultimos3 = chartData.ganancias.slice(-3).reduce((a, b) => a + b, 0) / 3;
+            const anteriores3 = chartData.ganancias.slice(-6, -3).reduce((a, b) => a + b, 0) / 3;
+            const tendencia = ultimos3 > anteriores3 ? '📈 Creciendo' : ultimos3 < anteriores3 ? '📉 Decreciendo' : '➡️ Estable';
+            const cambio = anteriores3 > 0 ? (((ultimos3 - anteriores3) / anteriores3) * 100).toFixed(1) : 0;
+            
+            // Identificar mejor y peor mes
+            const maxGanancia = Math.max(...chartData.ganancias);
+            const minGanancia = Math.min(...chartData.ganancias);
+            const maxIndex = chartData.ganancias.indexOf(maxGanancia);
+            const minIndex = chartData.ganancias.indexOf(minGanancia);
+            
+            // Crear gradientes para las líneas
+            const gradientIngresos = ctx.createLinearGradient(0, 0, 0, 400);
+            gradientIngresos.addColorStop(0, 'rgba(34, 197, 94, 0.3)');
+            gradientIngresos.addColorStop(0.5, 'rgba(34, 197, 94, 0.15)');
+            gradientIngresos.addColorStop(1, 'rgba(34, 197, 94, 0.02)');
+            
+            const gradientGastos = ctx.createLinearGradient(0, 0, 0, 400);
+            gradientGastos.addColorStop(0, 'rgba(239, 68, 68, 0.25)');
+            gradientGastos.addColorStop(0.5, 'rgba(239, 68, 68, 0.12)');
+            gradientGastos.addColorStop(1, 'rgba(239, 68, 68, 0.02)');
+            
+            const gradientGanancias = ctx.createLinearGradient(0, 0, 0, 400);
+            gradientGanancias.addColorStop(0, 'rgba(59, 130, 246, 0.35)');
+            gradientGanancias.addColorStop(0.5, 'rgba(59, 130, 246, 0.18)');
+            gradientGanancias.addColorStop(1, 'rgba(59, 130, 246, 0.03)');
+
+            this.charts.monthlySummary = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [{
+                        label: '💵 Ingresos',
+                        data: chartData.ingresos,
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: gradientIngresos,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 6,
+                        pointHoverRadius: 10,
+                        pointBackgroundColor: 'rgb(34, 197, 94)',
+                        pointBorderColor: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.95)',
+                        pointBorderWidth: 2,
+                        pointHoverBorderWidth: 3,
+                        borderWidth: 3,
+                        order: 3
+                    }, {
+                        label: '💸 Gastos',
+                        data: chartData.costos,
+                        borderColor: 'rgb(239, 68, 68)',
+                        backgroundColor: gradientGastos,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 5,
+                        pointHoverRadius: 9,
+                        pointBackgroundColor: 'rgb(239, 68, 68)',
+                        pointBorderColor: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.95)',
+                        pointBorderWidth: 2,
+                        pointHoverBorderWidth: 3,
+                        borderWidth: 2,
+                        order: 2
+                    }, {
+                        label: '💰 Ganancias Netas',
+                        data: chartData.ganancias,
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: gradientGanancias,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: (ctx) => {
+                            const idx = ctx.dataIndex;
+                            return (idx === maxIndex || idx === minIndex) ? 10 : 7;
+                        },
+                        pointHoverRadius: 12,
+                        pointBackgroundColor: (ctx) => {
+                            const idx = ctx.dataIndex;
+                            if (idx === maxIndex) return 'rgb(16, 185, 129)'; // Verde brillante
+                            if (idx === minIndex) return 'rgb(220, 38, 38)'; // Rojo brillante
+                            return 'rgb(59, 130, 246)';
+                        },
+                        pointBorderColor: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.95)',
+                        pointBorderWidth: 3,
+                        pointHoverBorderWidth: 4,
+                        pointStyle: (ctx) => {
+                            const idx = ctx.dataIndex;
+                            if (idx === maxIndex || idx === minIndex) return 'star';
+                            return 'circle';
+                        },
+                        borderWidth: 4,
+                        order: 1
+                    }]
+                },
+                options: {
+                    ...commonOptions,
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: [
+                                '📊 Evolución Mensual de Este Cliente (Últimos 12 meses)',
+                                `${tendencia} ${cambio > 0 ? '+' : ''}${cambio}% | 💰 Ganancia Neta: ${formatCurrency(totalGanancias)}`
+                            ],
+                            font: { 
+                                size: [17, 13],
+                                weight: ['700', '600'],
+                                family: "'Inter', sans-serif"
+                            },
+                            padding: { top: 14, bottom: 24 },
+                            color: isDark ? '#f8fafc' : '#0f172a'  // Color principal para ambas líneas
+                        },
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            align: 'center',
+                            labels: {
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                padding: 20,
+                                font: { size: 13, weight: '600', family: "'Inter', sans-serif" },
+                                color: isDark ? '#ffffff' : '#000000',
+                                generateLabels: function(chart) {
+                                    const original = Chart.defaults.plugins.legend.labels.generateLabels;
+                                    const labels = original.call(this, chart);
+                                    
+                                    // Agregar totales a las etiquetas
+                                    labels.forEach((label, i) => {
+                                        if (i === 0) label.text += ` → ${formatCurrency(totalIngresos)}`;
+                                        if (i === 1) label.text += ` → ${formatCurrency(totalGastos)}`;
+                                        if (i === 2) label.text += ` → ${formatCurrency(totalGanancias)}`;
+                                        // Mejorar contraste de color
+                                        label.fontColor = isDark ? '#ffffff' : '#000000';
+                                    });
+                                    
+                                    return labels;
+                                }
+                            }
+                        },
+                        tooltip: {
+                            enabled: true,
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: isDark ? 'rgba(15, 23, 42, 0.97)' : 'rgba(0, 0, 0, 0.90)',
+                            titleColor: '#fff',
+                            bodyColor: '#e2e8f0',
+                            borderColor: isDark ? 'rgba(148, 163, 184, 0.4)' : 'rgba(203, 213, 225, 0.6)',
+                            borderWidth: 2,
+                            padding: 16,
+                            displayColors: true,
+                            boxWidth: 12,
+                            boxHeight: 12,
+                            boxPadding: 6,
+                            cornerRadius: 8,
+                            titleFont: { size: 14, weight: 'bold' },
+                            bodyFont: { size: 13 },
+                            footerFont: { size: 12, weight: '600' },
+                            callbacks: {
+                                title: (context) => {
+                                    const mes = context[0].label;
+                                    const idx = context[0].dataIndex;
+                                    const ganancia = chartData.ganancias[idx];
+                                    let prefix = '';
+                                    if (idx === maxIndex) prefix = '🏆 MEJOR MES - ';
+                                    if (idx === minIndex) prefix = '⚠️ PEOR MES - ';
+                                    const simbolo = ganancia >= 0 ? '✅' : '❌';
+                                    return `${prefix}${simbolo} ${mes}`;
+                                },
+                                label: (context) => {
+                                    const valor = formatCurrency(context.raw);
+                                    let emoji = '';
+                                    if (context.datasetIndex === 0) emoji = '💵';
+                                    if (context.datasetIndex === 1) emoji = '💸';
+                                    if (context.datasetIndex === 2) emoji = '💰';
+                                    return ` ${emoji} ${context.dataset.label}: ${valor}`;
+                                },
+                                footer: (context) => {
+                                    const idx = context[0].dataIndex;
+                                    const ganancia = chartData.ganancias[idx];
+                                    const ingreso = chartData.ingresos[idx];
+                                    const margenMes = ingreso > 0 ? ((ganancia / ingreso) * 100).toFixed(1) : 0;
+                                    const estado = ganancia >= 0 ? 'Ganancia ✅' : 'Pérdida ❌';
+                                    const promedio = ganancia / 30; // Aproximado por día
+                                    return [
+                                        `━━━━━━━━━━━━━━━━━━━━━━`,
+                                        `📊 Margen de Ganancia: ${margenMes}%`,
+                                        `📈 Estado: ${estado}`,
+                                        `📅 Promedio diario: ~${formatCurrency(promedio)}`
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: true,
+                                drawBorder: true,
+                                color: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)',
+                                lineWidth: 1
+                            },
+                            border: {
+                                display: true,
+                                color: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
+                                width: 2
+                            },
+                            ticks: {
+                                font: { size: 12, weight: '600', family: "'Inter', sans-serif" },
+                                color: isDark ? '#cbd5e1' : '#475569',
+                                padding: 10
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                display: true,
+                                drawBorder: true,
+                                color: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)',
+                                lineWidth: 1
+                            },
+                            border: {
+                                display: true,
+                                color: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
+                                width: 2,
+                                dash: [5, 5]
+                            },
+                            ticks: { 
+                                callback: (value) => formatCurrency(value),
+                                font: { size: 12, weight: '600' },
+                                color: isDark ? '#cbd5e1' : '#475569',
+                                padding: 12
+                            }
+                        }
+                    }
+                }
+            });
+
+            this.animateEntrance(document.getElementById('monthlySummaryChart'));
+        }
+
+        // Crear gráfico de Distribución de Trámites
+        async createTramitesDistributionChart(chartData) {
+            if (!chartData || !chartData.data || chartData.data.length === 0) {
+                this.showNoDataMessage('tramitesDistributionChart', 'Sin trámites registrados');
+                return;
+            }
+
+            const ctx = document.getElementById('tramitesDistributionChart').getContext('2d');
+            
+            // Obtener tema actual para colores adaptativos
+            const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+            
+            // Calcular total y porcentajes
+            const total = chartData.data.reduce((a, b) => a + b, 0);
+            const porcentajes = chartData.data.map(val => ((val / total) * 100).toFixed(1));
+
+            // Colores iPhone-style: vibrantes, modernos y elegantes
+            const iphoneColors = [
+                '#007AFF', // Blue
+                '#34C759', // Green
+                '#FF9500', // Orange
+                '#FF3B30', // Red
+                '#AF52DE', // Purple
+                '#5856D6', // Indigo
+                '#FF2D55', // Pink
+                '#FFCC00', // Yellow
+                '#00C7BE', // Teal
+                '#5AC8FA', // Light Blue
+            ];
+
+            this.charts.tramitesDistribution = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [{
+                        data: chartData.data,
+                        backgroundColor: iphoneColors,
+                        borderWidth: 0,
+                        hoverBorderWidth: 3,
+                        hoverBorderColor: '#ffffff',
+                        hoverOffset: 8,
+                        spacing: 3
+                    }]
+                },
+                options: {
+                    ...commonOptions,
+                    cutout: '72%', // Dona más delgada estilo iPhone
+                    plugins: {
+                        title: {
+                            display: false // Ocultar título para diseño más limpio
+                        },
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            align: 'center',
+                            labels: { 
+                                padding: 15,
+                                font: { 
+                                    size: 13, 
+                                    weight: '600',
+                                    family: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif"
+                                },
+                                color: isDark ? '#ffffff' : '#000000',
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                boxWidth: 10,
+                                boxHeight: 10,
+                                generateLabels: function(chart) {
+                                    const data = chart.data;
+                                    const labelColor = isDark ? '#ffffff' : '#000000';
+                                    return data.labels.map((label, i) => {
+                                        const labelTexto = label.length > 20 ? label.substring(0, 17) + '...' : label;
+                                        const pct = porcentajes[i];
+                                        return {
+                                            text: `${labelTexto} (${pct}%)`,
+                                            fillStyle: data.datasets[0].backgroundColor[i],
+                                            hidden: false,
+                                            index: i,
+                                            fontColor: labelColor
+                                        };
+                                    });
+                                }
+                            }
+                        },
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: isDark ? 'rgba(31, 41, 55, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                            titleColor: isDark ? '#f9fafb' : '#111827',
+                            bodyColor: isDark ? '#d1d5db' : '#374151',
+                            borderColor: isDark ? 'rgba(75, 85, 99, 0.3)' : 'rgba(209, 213, 219, 0.5)',
+                            borderWidth: 1,
+                            padding: 12,
+                            cornerRadius: 8,
+                            displayColors: true,
+                            titleFont: {
+                                size: 13,
+                                weight: '600',
+                                family: "-apple-system, BlinkMacSystemFont, sans-serif"
+                            },
+                            bodyFont: {
+                                size: 12,
+                                weight: '400',
+                                family: "-apple-system, BlinkMacSystemFont, sans-serif"
+                            },
+                            callbacks: {
+                                title: (context) => context[0].label,
+                                label: (context) => {
+                                    const valor = context.raw;
+                                    const pct = ((valor / total) * 100).toFixed(1);
+                                    return `${formatNumber(valor)} trámites (${pct}%)`;
+                                }
+                            }
+                        },
+                        datalabels: {
+                            display: true,
+                            color: '#ffffff',
+                            font: {
+                                size: 13,
+                                weight: 'bold',
+                                family: "-apple-system, BlinkMacSystemFont, sans-serif"
+                            },
+                            formatter: (value, context) => {
+                                const pct = ((value / total) * 100).toFixed(1);
+                                return pct >= 5 ? `${pct}%` : ''; // Solo mostrar si es >= 5%
+                            },
+                            anchor: 'center',
+                            align: 'center'
+                        }
+                    }
+                },
+                plugins: [{
+                    // Plugin personalizado para texto en el centro (estilo iPhone)
+                    id: 'centerText',
+                    beforeDraw: (chart) => {
+                        const { ctx, chartArea: { top, width, height } } = chart;
+                        ctx.save();
+                        
+                        const centerX = width / 2;
+                        const centerY = top + height / 2;
+                        
+                        // Texto principal: total de trámites
+                        ctx.font = `bold ${isDark ? '32' : '36'}px -apple-system, BlinkMacSystemFont, sans-serif`;
+                        ctx.fillStyle = isDark ? '#f9fafb' : '#111827';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(formatNumber(total), centerX, centerY - 8);
+                        
+                        // Texto secundario: "Trámites"
+                        ctx.font = `500 ${isDark ? '13' : '14'}px -apple-system, BlinkMacSystemFont, sans-serif`;
+                        ctx.fillStyle = isDark ? '#9ca3af' : '#6b7280';
+                        ctx.fillText('Trámites', centerX, centerY + 18);
+                        
+                        ctx.restore();
+                    }
+                }]
+            });
+
+            this.animateEntrance(document.getElementById('tramitesDistributionChart'));
+        }
+
+        // Crear gráfico de Distribución de Gastos
+        async createGastosDistributionChart(chartData) {
+            if (!chartData || !chartData.data || chartData.data.length === 0) {
+                this.showNoDataMessage('gastosDistributionChart', 'Sin gastos registrados');
+                return;
+            }
+
+            const ctx = document.getElementById('gastosDistributionChart').getContext('2d');
+            
+            // Obtener tema actual para colores adaptativos
+            const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+            
+            // Calcular total y porcentajes
+            const total = chartData.data.reduce((a, b) => a + b, 0);
+            const porcentajes = chartData.data.map(val => ((val / total) * 100).toFixed(1));
+            
+            // Encontrar categoría con mayor gasto
+            const maxIndex = chartData.data.indexOf(Math.max(...chartData.data));
+            const maxCategoria = chartData.labels[maxIndex];
+
+            // Colores iPhone-style para gastos: tonos cálidos y financieros
+            const iphoneColors = [
+                '#FF3B30', // Red (gastos altos)
+                '#FF9500', // Orange
+                '#FFCC00', // Yellow
+                '#34C759', // Green (gastos bajos/positivos)
+                '#00C7BE', // Teal
+                '#007AFF', // Blue
+                '#5856D6', // Indigo
+                '#AF52DE', // Purple
+                '#FF2D55', // Pink
+                '#5AC8FA', // Light Blue
+            ];
+
+            this.charts.gastosDistribution = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [{
+                        data: chartData.data,
+                        backgroundColor: iphoneColors,
+                        borderWidth: 0,
+                        hoverBorderWidth: 3,
+                        hoverBorderColor: '#ffffff',
+                        hoverOffset: 8,
+                        spacing: 3
+                    }]
+                },
+                options: {
+                    ...commonOptions,
+                    cutout: '72%', // Dona más delgada estilo iPhone
+                    plugins: {
+                        title: {
+                            display: false // Ocultar título para diseño más limpio
+                        },
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            align: 'center',
+                            labels: { 
+                                padding: 15,
+                                font: { 
+                                    size: 13, 
+                                    weight: '600',
+                                    family: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif"
+                                },
+                                color: isDark ? '#ffffff' : '#000000',
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                boxWidth: 10,
+                                boxHeight: 10,
+                                generateLabels: function(chart) {
+                                    const data = chart.data;
+                                    const labelColor = isDark ? '#ffffff' : '#000000';
+                                    return data.labels.map((label, i) => {
+                                        const esMaximo = i === maxIndex;
+                                        const labelTexto = label.length > 20 ? label.substring(0, 17) + '...' : label;
+                                        const pct = porcentajes[i];
+                                        return {
+                                            text: `${esMaximo ? '⭐ ' : ''}${labelTexto} (${pct}%)`,
+                                            fillStyle: data.datasets[0].backgroundColor[i],
+                                            hidden: false,
+                                            index: i,
+                                            fontColor: labelColor
+                                        };
+                                    });
+                                }
+                            }
+                        },
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: isDark ? 'rgba(31, 41, 55, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                            titleColor: isDark ? '#f9fafb' : '#111827',
+                            bodyColor: isDark ? '#d1d5db' : '#374151',
+                            borderColor: isDark ? 'rgba(75, 85, 99, 0.3)' : 'rgba(209, 213, 219, 0.5)',
+                            borderWidth: 1,
+                            padding: 12,
+                            cornerRadius: 8,
+                            displayColors: true,
+                            titleFont: {
+                                size: 13,
+                                weight: '600',
+                                family: "-apple-system, BlinkMacSystemFont, sans-serif"
+                            },
+                            bodyFont: {
+                                size: 12,
+                                weight: '400',
+                                family: "-apple-system, BlinkMacSystemFont, sans-serif"
+                            },
+                            callbacks: {
+                                title: (context) => {
+                                    const idx = context[0].dataIndex;
+                                    const esMaximo = idx === maxIndex;
+                                    return `${esMaximo ? '⭐ ' : ''}${context[0].label}`;
+                                },
+                                label: (context) => {
+                                    const valor = context.raw;
+                                    const pct = ((valor / total) * 100).toFixed(1);
+                                    return `${formatCurrency(valor)} (${pct}%)`;
+                                }
+                            }
+                        },
+                        datalabels: {
+                            display: true,
+                            color: '#ffffff',
+                            font: {
+                                size: 13,
+                                weight: 'bold',
+                                family: "-apple-system, BlinkMacSystemFont, sans-serif"
+                            },
+                            formatter: (value, context) => {
+                                const pct = ((value / total) * 100).toFixed(1);
+                                return pct >= 5 ? `${pct}%` : ''; // Solo mostrar si es >= 5%
+                            },
+                            anchor: 'center',
+                            align: 'center'
+                        }
+                    }
+                },
+                plugins: [{
+                    // Plugin personalizado para texto en el centro (estilo iPhone)
+                    id: 'centerText',
+                    beforeDraw: (chart) => {
+                        const { ctx, chartArea: { top, width, height } } = chart;
+                        ctx.save();
+                        
+                        const centerX = width / 2;
+                        const centerY = top + height / 2;
+                        
+                        // Texto principal: total de gastos
+                        ctx.font = `bold ${isDark ? '28' : '32'}px -apple-system, BlinkMacSystemFont, sans-serif`;
+                        ctx.fillStyle = isDark ? '#f9fafb' : '#111827';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(formatCurrency(total), centerX, centerY - 8);
+                        
+                        // Texto secundario: "Total Gastos"
+                        ctx.font = `500 ${isDark ? '12' : '13'}px -apple-system, BlinkMacSystemFont, sans-serif`;
+                        ctx.fillStyle = isDark ? '#9ca3af' : '#6b7280';
+                        ctx.fillText('Total Gastos', centerX, centerY + 18);
+                        
+                        ctx.restore();
+                    }
+                }]
+            });
+
+            this.animateEntrance(document.getElementById('gastosDistributionChart'));
+        }
+
+        // Mostrar estado de error
+        showErrorState(message) {
+            const canvases = ['topPapeleriasChart', 'monthlySummaryChart', 'tramitesDistributionChart', 'gastosDistributionChart'];
+            canvases.forEach(id => this.showNoDataMessage(id, `Error: ${message}`));
+        }
+
+        // Re-inicializar (útil para cambios de tema o actualización de datos)
+        reinitialize(options = {}) {
+            if (options.clearCache) {
+                chartDataCache.clear();
+                console.log('🗑️ Cache cleared');
+            }
+            this.isInitialized = false;
+            this.initialize();
+        }
+    }
+
+    // --- INSTANCIA GLOBAL DEL GESTOR DE GRÁFICOS ---
+    const chartManager = new ChartManager();
+
+    // --- FUNCIÓN PRINCIPAL DE INICIALIZACIÓN ---
+    function initializeDashboardScripts() {
+        console.log('🚀 Initializing dashboard scripts...');
+        chartManager.reinitialize();
+    }
+
+    // --- FUNCIONES PARA FORMULARIOS ---
+    function toggleManualInput() {
+        const tramiteSelect = document.getElementById('tramite');
+        const papeleriaSelect = document.getElementById('papeleria');
+        const manualInputDiv = document.getElementById('manual-input');
+
+        if (!tramiteSelect || !papeleriaSelect || !manualInputDiv) return;
+
+        const tramiteValue = tramiteSelect.value;
+        const papeleriaValue = papeleriaSelect.value;
+
+        if (tramiteValue && papeleriaValue) {
+            manualInputDiv.style.display = 'none';
+        } else {
+            manualInputDiv.style.display = 'block';
+        }
+    }
+    
+    // --- FUNCIÓN PARA EXPORTAR DATOS DE GRÁFICOS ---
+    function exportChartData(chartName) {
+        const data = chartDataCache.get();
+        if (!data || !data[chartName]) {
+            alert('No hay datos disponibles para exportar');
+            return;
+        }
+        
+        const chartData = data[chartName];
+        let csvContent = '';
+        let filename = '';
+        
+        switch(chartName) {
+            case 'topPapelerias':
+                filename = 'top_papelerias.csv';
+                csvContent = 'Papelería,Ganancia\n';
+                chartData.labels.forEach((label, i) => {
+                    csvContent += `"${label}",${chartData.data[i]}\n`;
+                });
+                break;
+                
+            case 'monthlySummary':
+                filename = 'evolucion_mensual.csv';
+                csvContent = 'Mes,Ingresos,Gastos,Ganancias\n';
+                chartData.labels.forEach((label, i) => {
+                    csvContent += `"${label}",${chartData.ingresos[i]},${chartData.costos[i]},${chartData.ganancias[i]}\n`;
+                });
+                break;
+                
+            case 'tramitesDistribution':
+                filename = 'distribucion_tramites.csv';
+                csvContent = 'Trámite,Cantidad\n';
+                chartData.labels.forEach((label, i) => {
+                    csvContent += `"${label}",${chartData.data[i]}\n`;
+                });
+                break;
+                
+            case 'gastosDistribution':
+                filename = 'distribucion_gastos.csv';
+                csvContent = 'Categoría,Monto\n';
+                chartData.labels.forEach((label, i) => {
+                    csvContent += `"${label}",${chartData.data[i]}\n`;
+                });
+                break;
+        }
+        
+        // Crear y descargar el archivo
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        console.log(`✅ Datos exportados: ${filename}`);
+    }
+
+    async function fetchDefaults() {
+        const tramiteSelect = document.getElementById('tramite');
+        const papeleriaSelect = document.getElementById('papeleria');
+        const precioInput = document.getElementById('precio');
+        const costoInput = document.getElementById('costo');
+
+        if (!tramiteSelect || !papeleriaSelect) return;
+
+        const tramiteNombre = tramiteSelect.value;
+        const papeleriaId = papeleriaSelect.value;
+
+        // Limpiar campos primero
+        if (precioInput) precioInput.value = '';
+        if (costoInput) costoInput.value = '';
+
+        // Si no hay datos suficientes o es OTRO, salir después de limpiar
+        if (!tramiteNombre || !papeleriaId || tramiteNombre === 'OTRO') return;
+
+        try {
+            const response = await fetch(`/api/get-precio-costo/${papeleriaId}/${encodeURIComponent(tramiteNombre)}`);
+            if (response.ok) {
+                const data = await response.json();
+
+                if (precioInput && data.precio) {
+                    precioInput.value = data.precio;
+                    console.log(`✅ Precio autocompleted para ${tramiteNombre} en papelería ${papeleriaId}: ${data.precio}`);
+                }
+                if (costoInput && data.costo) {
+                    costoInput.value = data.costo;
+                    console.log(`✅ Costo autocompleted para ${tramiteNombre} en papelería ${papeleriaId}: ${data.costo}`);
+                }
+            }
+        } catch (error) {
+            console.error('❌ Error fetching defaults:', error);
+        }
+    }
+
+    // Función para inicializar event listeners del formulario de trámites
+    function initFormListeners() {
+        const tramiteSelect = document.getElementById('tramite');
+        const papeleriaSelect = document.getElementById('papeleria');
+
+        if (tramiteSelect) {
+            // Remover listeners previos si existen
+            tramiteSelect.removeEventListener('change', toggleManualInput);
+            tramiteSelect.removeEventListener('change', fetchDefaults);
+            // Agregar nuevos listeners
+            tramiteSelect.addEventListener('change', toggleManualInput);
+            tramiteSelect.addEventListener('change', fetchDefaults);
+        }
+        
+        if (papeleriaSelect) {
+            papeleriaSelect.removeEventListener('change', fetchDefaults);
+            papeleriaSelect.addEventListener('change', fetchDefaults);
+        }
+
+        // Ejecutar al cargar para el estado inicial
+        toggleManualInput();
+    }
+
+    // --- EVENT LISTENERS ---
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar funciones de formulario
+        initFormListeners();
+
+        // Inicialización inmediata al cargar el DOM
+        // Pequeño delay para asegurar que el layout esté listo
+        setTimeout(initializeDashboardScripts, 100);
+    });
+
+    // Usar htmx:afterSettle en lugar de afterSwap para asegurar que el DOM está listo
+    // y las transiciones han terminado.
+    document.body.addEventListener('htmx:afterSettle', function (event) {
+        if (event.detail.target.id === 'dashboard-container' || event.detail.target.id === 'main-dashboard-content') {
+            console.log('HTMX settle detected for dashboard, clearing cache and re-initializing charts...');
+            // IMPORTANTE: Limpiar caché para forzar recarga de datos
+            chartDataCache.clear();
+            // Delay crítico para permitir que el navegador renderice el nuevo HTML antes de dibujar el canvas
+            setTimeout(initializeDashboardScripts, 50);
+        }
+        
+        // Reinicializar listeners del formulario de trámites cuando se carga dinámicamente
+        const formTramite = document.getElementById('form-registrar-tramite');
+        if (formTramite) {
+            console.log('Formulario de trámite detectado, inicializando listeners de autocompletado...');
+            initFormListeners();
+        }
+    });
+
+    // Re-inicializar gráficos cuando cambie el tema
+    document.addEventListener('theme:applied', function() {
+        console.log('Theme applied, reinitializing dashboard scripts...');
+        // Pequeño delay solo para el tema para permitir que CSS variables se actualicen
+        requestAnimationFrame(() => initializeDashboardScripts());
+    });
+
+    // Listener para cerrar modales dinámicamente
+    document.body.addEventListener('closeModal', function(event) {
+        const modalId = event.detail.value;
+        if (modalId) {
+            const modalElement = document.getElementById(modalId);
+            if (modalElement) {
+                const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+                modal.hide();
+                console.log(`✅ Modal ${modalId} cerrado automáticamente`);
+            }
+        }
+    });
+
+    // --- FILTROS DE RANGO TEMPORAL ---
+    // Las variables están declaradas globalmente arriba
+
+    // Listener para cambios en filtros de rango
+    document.body.addEventListener('change', function(event) {
+        if (event.target.name === 'dateRange') {
+            const value = event.target.value;
+            const customPanel = document.getElementById('customRangePanel');
+            
+            if (value === 'custom') {
+                customPanel.style.display = 'block';
+            } else {
+                customPanel.style.display = 'none';
+                currentDateRange = parseInt(value);
+                applyDateFilter();
+            }
+        }
+    });
+
+    // Aplicar filtro personalizado
+    document.body.addEventListener('click', function(event) {
+        if (event.target.id === 'applyCustomRange' || event.target.closest('#applyCustomRange')) {
+            const startInput = document.getElementById('customStartDate');
+            const endInput = document.getElementById('customEndDate');
+            
+            if (startInput.value && endInput.value) {
+                customStartDate = startInput.value;
+                customEndDate = endInput.value;
+                
+                // Validar que la fecha de inicio sea anterior a la de fin
+                if (new Date(customStartDate) > new Date(customEndDate)) {
+                    alert('La fecha de inicio debe ser anterior a la fecha de fin');
+                    return;
+                }
+                
+                applyDateFilter();
+            } else {
+                alert('Por favor selecciona ambas fechas');
+            }
+        }
+    });
+
+    function applyDateFilter() {
+        console.log(`📅 Aplicando filtro de rango: ${currentDateRange} días`);
+        
+        // Limpiar caché para recargar con nuevo rango
+        chartDataCache.clear();
+        
+        // Mostrar skeleton mientras se recargan datos
+        showSkeletons();
+        
+        // Reinicializar gráficos con el nuevo rango
+        setTimeout(() => {
+            initializeDashboardScripts();
+        }, 300);
+    }
+
+    // Función helper para obtener fecha inicial según el rango
+    function getStartDate() {
+        if (customStartDate && customEndDate) {
+            return customStartDate;
+        }
+        
+        const date = new Date();
+        date.setDate(date.getDate() - currentDateRange);
+        return date.toISOString().split('T')[0];
+    }
+
+    function getEndDate() {
+        if (customStartDate && customEndDate) {
+            return customEndDate;
+        }
+        
+        return new Date().toISOString().split('T')[0];
+    }
+    
+    // --- CALCULADORA RÁPIDA ---
+    document.body.addEventListener('click', function(event) {
+        if (event.target.id === 'btnCalcular' || event.target.closest('#btnCalcular')) {
+            const tramites = parseFloat(document.getElementById('calcTramites').value) || 0;
+            const ganancia = parseFloat(document.getElementById('calcGanancia').value) || 0;
+            
+            if (tramites <= 0 || ganancia <= 0) {
+                alert('Por favor ingresa valores válidos');
+                return;
+            }
+            
+            const total = tramites * ganancia;
+            const resultDiv = document.getElementById('calcResult');
+            const totalSpan = document.getElementById('calcTotal');
+            const detailsSpan = document.getElementById('calcDetails');
+            
+            // Animar el resultado
+            resultDiv.style.display = 'block';
+            totalSpan.textContent = '$0.00';
+            
+            setTimeout(() => {
+                // Animación de conteo
+                let current = 0;
+                const increment = total / 20;
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= total) {
+                        current = total;
+                        clearInterval(timer);
+                    }
+                    totalSpan.textContent = `$${current.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
+                }, 30);
+                
+                detailsSpan.textContent = `${tramites} trámites × $${ganancia.toFixed(2)}`;
+            }, 100);
+        }
+    });
+    
+    // --- OBSERVER PARA CAMBIOS DE TEMA ---
+    // Detectar cuando cambia el tema y recrear los gráficos con los colores correctos
+    const dashboardThemeObserver = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'data-bs-theme') {
+                console.log('🎨 Tema cambiado en dashboard, actualizando gráficos...');
+                // Actualizar tema de Chart.js
+                updateChartTheme();
+                // Recrear todos los gráficos con pequeño delay
+                setTimeout(() => {
+                    try {
+                        // Limpiar caché para forzar recreación
+                        chartDataCache.clear();
+                        // Reinicializar los gráficos
+                        if (typeof chartManager !== 'undefined' && chartManager.reinitialize) {
+                            chartManager.reinitialize({ clearCache: true });
+                        } else if (typeof initializeDashboardScripts === 'function') {
+                            initializeDashboardScripts();
+                        }
+                    } catch (e) {
+                        console.error('Error al recrear gráficos del dashboard:', e);
+                    }
+                }, 150);
+            }
+        });
+    });
+    
+    // Observar cambios en el atributo data-bs-theme del elemento html
+    dashboardThemeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['data-bs-theme']
+    });
+</script>
+{% endblock %}

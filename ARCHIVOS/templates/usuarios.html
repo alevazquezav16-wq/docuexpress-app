@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Gestionar Usuarios{% endblock %}
+
+{% block content %}
+<header class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="display-5">Gestionar Usuarios</h1>
+        <p class="lead">Crea, edita y elimina usuarios del sistema.</p>
+    </div>
+    <a href="{{ url_for('auth.crear_usuario') }}" class="btn btn-primary"><i class="bi bi-plus-circle-fill"></i> Crear Nuevo Usuario</a>
+</header>
+
+<!-- Mensajes Flash -->
+<!-- MEJORA DE CONSISTENCIA: Se utiliza un include para renderizar los mensajes flash, evitando código duplicado. -->
+{% include 'flash_messages.html' %}
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-striped table-hover mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Nombre de Usuario</th>
+                    <th>Rol</th>
+                    <th class="text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for usuario in usuarios %}
+                <tr>
+                    <td>{{ usuario.username }}</td>
+                    <td><span class="badge {% if usuario.role == 'admin' %}bg-success{% else %}bg-secondary{% endif %}">{{ usuario.role|capitalize }}</span></td>
+                    <td class="text-center">
+                        <a href="{{ url_for('auth.editar_usuario', user_id=usuario.id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil-fill"></i> Editar</a>
+                        <a href="{{ url_for('auth.view_user_dashboard', user_id=usuario.id) }}" class="btn btn-sm btn-info ms-1">
+                            <i class="bi bi-eye-fill"></i> Ver Actividad
+                        </a>
+                        <button type="button" class="btn btn-sm btn-outline-warning ms-1" data-bs-toggle="modal" data-bs-target="#resetPasswordModal-{{ usuario.id }}">
+                            <i class="bi bi-key-fill"></i> Restablecer Contraseña
+                        </button>
+                        <form action="{{ url_for('auth.eliminar_usuario', user_id=usuario.id) }}" method="post" class="d-inline" onsubmit="return confirm('¿Estás seguro de que quieres eliminar a este usuario?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger ms-1"><i class="bi bi-trash-fill"></i> Eliminar</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modales para Restablecer Contraseña -->
+{% for usuario in usuarios %}
+<div class="modal fade" id="resetPasswordModal-{{ usuario.id }}" tabindex="-1" aria-labelledby="resetPasswordModalLabel-{{ usuario.id }}" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="resetPasswordModalLabel-{{ usuario.id }}">Restablecer Contraseña para {{ usuario.username }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('auth.reset_password_admin', user_id=usuario.id) }}" method="post" novalidate>
+                <div class="modal-body">
+                    {{ reset_form.hidden_tag() }}
+                    {{ render_field(reset_form.nuevo_password, placeholder="Introduce la nueva contraseña") }}
+                    {{ render_field(reset_form.confirmar_password, placeholder="Confirma la nueva contraseña") }}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    {{ reset_form.submit(class="btn btn-warning") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

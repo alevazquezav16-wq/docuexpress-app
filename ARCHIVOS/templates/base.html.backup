@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<script>
+    // Este script se ejecuta antes de que se renderice el body para evitar el "flash" de tema incorrecto.
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-bs-theme', savedTheme);
+</script>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Control DocuExpress{% endblock %}</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('main.index') }}">
+                {% if logo_path %}
+                <img src="{{ logo_path }}" alt="Logo" height="30" class="d-inline-block align-text-top">
+                {% else %}
+                DocuExpress
+                {% endif %}
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('gastos.gestion_gastos') }}"><i
+                                class="bi bi-receipt-cutoff me-1"></i>Gestión de Gastos</a>
+                    </li>
+                    <!-- CORRECCIÓN: Movido fuera del menú de admin para que todos los usuarios puedan gestionar sus proveedores. -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('gastos.gestion_proveedores') }}"><i
+                                class="bi bi-truck me-1"></i>Gestionar Proveedores</a>
+                    </li>
+
+                    {% if current_user.role == 'admin' %}
+                    <li class="nav-item">
+                        <a class="nav-link dropdown-toggle" href="#" id="configMenu" role="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-gear"></i> Configuración
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="configMenu">
+                            <li><a class="dropdown-item" href="{{ url_for('config.configuracion') }}"><i
+                                        class="bi bi-currency-dollar me-2"></i>Costos y Logo</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="{{ url_for('auth.listar_usuarios') }}"><i
+                                        class="bi bi-people-fill me-2"></i>Gestionar Usuarios</a></li>
+                        </ul>
+                    </li>
+                    {% endif %}
+
+                    <!-- Centro de Notificaciones -->
+                    {# Mostramos notificaciones solo a los admins #}
+                    {% if current_user.role == 'admin' and notifications %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link" href="#" id="notificationsMenu" role="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            <i class="bi bi-bell-fill"></i>
+                            <span
+                                class="position-absolute top-2 start-100 translate-middle badge rounded-pill bg-danger">
+                                {{ notifications|length }}
+                                <span class="visually-hidden">notificaciones sin leer</span>
+                            </span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationsMenu">
+                            <li>
+                                <h6 class="dropdown-header">Centro de Notificaciones</h6>
+                            </li>
+                            {% for notification in notifications %}
+                            <li hx-post="{{ url_for('main.dismiss_notification') }}"
+                                hx-vals='{"text": "{{ notification.text }}"}' hx-target="this" hx-swap="outerHTML"
+                                title="Clic para descartar esta notificación">
+                                <a class="dropdown-item" href="{{ notification.url }}">
+                                    <i class="bi {{ notification.icon }} me-2"></i>{{ notification.text|safe }}
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                    {% endif %}
+
+                    <!-- Interruptor de Modo Oscuro -->
+                    <li class="nav-item ms-lg-3">
+                        <div class="form-check form-switch nav-link">
+                            <input class="form-check-input" type="checkbox" role="switch" id="themeSwitcher">
+                            <label class="form-check-label" for="themeSwitcher"><i id="themeIcon"
+                                    class="bi bi-sun-fill"></i></label>
+                        </div>
+                    </li>
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item dropdown ms-lg-2">
+                        <a class="nav-link dropdown-toggle" href="#" id="userMenu" role="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle"></i> {{ current_user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+                            <li><a class="dropdown-item" href="{{ url_for('auth.perfil') }}"><i
+                                        class="bi bi-person-fill-gear"></i> Mi Perfil</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}"><i
+                                        class="bi bi-box-arrow-right"></i> Cerrar Sesión</a></li>
+                        </ul>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4">
+        <!-- Banner para el modo "Ver como" -->
+        {% if session.viewing_user_id %}
+        <div class="alert alert-warning d-flex justify-content-between align-items-center" role="alert">
+            <div>
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                Estás viendo el panel como <strong>{{ session.viewing_user_name }}</strong>.
+            </div>
+            <a href="{{ url_for('auth.stop_viewing') }}" class="btn btn-sm btn-secondary">Volver a mi panel</a>
+        </div>
+        {% endif %}
+        <!-- Contenedor dedicado para los mensajes flash que se recargará con HTMX -->
+        <div id="flash-container" hx-swap-oob="innerHTML:#flash-container">
+            {% include 'flash_messages.html' %}
+        </div>
+        <!-- CORRECCIÓN: Envolvemos el contenido principal en un div que escucha el evento 'reload-dashboard'. -->
+        <!-- Cuando se registra un trámite, este div se recargará automáticamente. -->
+        <div id="main-dashboard-content" hx-get="{{ url_for('main.index') }}" hx-trigger="reload-dashboard from:body"
+            hx-target="this">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    {% block scripts %}
+    <script>
+        // Script global para deshabilitar botones de submit y mostrar spinner
+        document.addEventListener('DOMContentLoaded', function () {
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                form.addEventListener('submit', function () {
+                    const submitButton = this.querySelector('button[type="submit"]');
+                    if (submitButton) {
+                        submitButton.disabled = true;
+                        submitButton.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Procesando...`;
+                    }
+                });
+            });
+        });
+
+        // --- Lógica para el Modo Oscuro ---
+        document.addEventListener('DOMContentLoaded', function () {
+            const themeSwitcher = document.getElementById('themeSwitcher');
+            const htmlElement = document.documentElement;
+            const themeIcon = document.getElementById('themeIcon');
+
+            // Función para aplicar el tema
+            const applyTheme = (theme) => {
+                htmlElement.setAttribute('data-bs-theme', theme);
+                if (theme === 'dark') {
+                    themeSwitcher.checked = true;
+                    themeIcon.className = 'bi bi-moon-stars-fill';
+                } else {
+                    themeSwitcher.checked = false;
+                    themeIcon.className = 'bi bi-sun-fill';
+                }
+            };
+
+            // Cargar el tema guardado al iniciar
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            applyTheme(savedTheme);
+
+            // Evento para cambiar el tema
+            themeSwitcher.addEventListener('change', function () {
+                const newTheme = this.checked ? 'dark' : 'light';
+                localStorage.setItem('theme', newTheme);
+                applyTheme(newTheme);
+            });
+        });
+
+        // --- Lógica para el Modal de Agregar Papelería con HTMX ---
+        document.addEventListener('DOMContentLoaded', function () {
+            // Escucha el evento personalizado para cerrar el modal
+            document.body.addEventListener('close-add-papeleria-modal', function (evt) {
+                var modalElement = document.getElementById('addPapeleriaModal');
+                var modal = bootstrap.Modal.getInstance(modalElement);
+                if (modal) {
+                    modal.hide();
+                }
+                // Opcionalmente, reinicia el formulario dentro del modal después de cerrarlo
+                var form = document.getElementById('add-papeleria-form');
+                if (form) {
+                    form.reset();
+                    // También limpia cualquier mensaje de validación si persisten
+                    form.querySelectorAll('.text-danger').forEach(el => el.remove());
+                }
+            });
+
+            // Cuando el modal se muestra, asegúrate de que el formulario se reinicie para un nuevo inicio
+            var addPapeleriaModal = document.getElementById('addPapeleriaModal');
+            if (addPapeleriaModal) {
+                addPapeleriaModal.addEventListener('show.bs.modal', function () {
+                    var form = document.getElementById('add-papeleria-form');
+                    if (form) {
+                        form.reset();
+                        form.querySelectorAll('.text-danger').forEach(el => el.remove());
+                    }
+                });
+            }
+        });
+    </script>
+    {% endblock %}
+</body>
+
+</html>

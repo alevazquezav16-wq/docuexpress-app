@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Proveedor{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: auto;">
+    <header class="mb-4">
+        <a href="{{ url_for('gastos.gestion_proveedores') }}" class="btn btn-outline-secondary mb-2"><i class="bi bi-arrow-left"></i> Volver a Proveedores</a>
+        <h1 class="display-5">Editar Proveedor</h1>
+    </header>
+
+    <!-- Mensajes Flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form method="post" novalidate>
+                {{ form.hidden_tag() }}
+                <div class="mb-3">
+                    {{ form.nombre.label(class="form-label") }}
+                    {{ form.nombre(class="form-control" + (" is-invalid" if form.nombre.errors else "")) }}
+                    {% for error in form.nombre.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                </div>
+                {{ form.submit(class="btn btn-primary w-100") }}
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+<form action="{{ url_for('gastos.gestion_gastos') }}"
+      method="POST"
+      hx-post="{{ url_for('gastos.gestion_gastos') }}"
+      hx-encoding="multipart/form-data"
+      hx-target="#form-gasto-container"
+      hx-swap="outerHTML"
+      novalidate>
+    {{ form.hidden_tag() }}
+    <div class="mb-3">
+        {{ form.proveedor_id.label(class="form-label") }}
+        {{ form.proveedor_id(class="form-select" + (" is-invalid" if form.proveedor_id.errors else ""), id="proveedor_id") }}
+        {% for error in form.proveedor_id.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+    </div>
+    <div class="mb-3">
+        {{ form.categoria.label(class="form-label") }}
+        {{ form.categoria(class="form-select" + (" is-invalid" if form.categoria.errors else "")) }}
+        {% for error in form.categoria.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+    </div>
+    <div class="mb-3">
+        {{ form.descripcion.label(class="form-label") }}
+        {{ form.descripcion(class="form-control" + (" is-invalid" if form.descripcion.errors else ""), placeholder="Ej: Pago de factura de luz de Mayo") }}
+        {% for error in form.descripcion.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+    </div>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            {{ form.monto.label(class="form-label") }}
+            <div class="input-group">
+                <span class="input-group-text">$</span>
+                {{ form.monto(class="form-control" + (" is-invalid" if form.monto.errors else ""), step="0.01", placeholder="0.00") }}
+                {% for error in form.monto.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            {{ form.fecha.label(class="form-label") }}
+            {{ form.fecha(class="form-control" + (" is-invalid" if form.fecha.errors else "")) }}
+            {% for error in form.fecha.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+        </div>
+    </div>
+    <div class="mb-3">
+        {{ form.recibo.label(class="form-label") }}
+        {{ form.recibo(class="form-control" + (" is-invalid" if form.recibo.errors else "")) }}
+        <div class="form-text">Archivos permitidos: jpg, png, pdf. Tamaño máx: 16MB.</div>
+        {% for error in form.recibo.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+    </div>
+    <div class="d-grid">
+        <button type="submit" class="btn btn-primary btn-lg">
+            <i class="bi bi-plus-circle-fill me-2"></i> Registrar Gasto
+        </button>
+    </div>
+</form>

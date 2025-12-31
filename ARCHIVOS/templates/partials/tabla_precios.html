@@ -1,0 +1,30 @@
+<table class="table table-hover align-middle">
+    <thead class="table-light">
+        <tr>
+            <th scope="col">Trámite</th>
+            <th scope="col" style="width: 200px;">Precio (MXN)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for tramite, precio in precios.items() %}
+        <tr>
+            <td>
+                <label for="precio-{{ tramite }}" class="form-label mb-0">{{ tramite }}</label>
+            </td>
+            <td>
+                <div class="input-group">
+                    <span class="input-group-text">$</span>
+                    <input type="number" 
+                           class="form-control" 
+                           id="precio-{{ tramite }}" 
+                           name="{{ tramite }}" 
+                           value="{{ precio.precio_especifico if precio and precio.precio_especifico is not none else '' }}"
+                           step="0.01" 
+                           min="0"
+                           placeholder="Ej: 150.00">
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

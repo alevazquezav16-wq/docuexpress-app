@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Configuración de Costos{% endblock %}
+
+{% block content %}
+<header class="mb-4">
+    <h1 class="display-5">Configuración de Costos por Trámite</h1>
+    <p class="lead">Define aquí el costo por defecto que pagas a tu proveedor por cada tipo de trámite. Esto autocompletará el campo "Costo" al registrar un nuevo trámite.</p>
+
+    <!-- Mensajes Flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+</header>
+
+<div class="card shadow-sm" style="max-width: 700px; margin: auto;">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-currency-dollar"></i> Costos por Defecto</h5>
+    </div>
+    <div class="card-body">
+        <form action="{{ url_for('config.guardar_costos') }}" method="post">
+            {{ form.hidden_tag() }}
+            {% for tramite in tramites %}
+            <div class="row g-3 align-items-center mb-3">
+                <div class="col-sm-5">
+                    <label for="{{ tramite }}" class="col-form-label">{{ tramite }}</label>
+                </div>
+                <div class="col-sm-7">
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        <input type="number" step="0.01" name="{{ tramite }}" id="{{ tramite }}" class="form-control" value="{{ costos.get(tramite, '') }}" placeholder="0.00">
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            <button type="submit" class="btn btn-primary w-100 mt-3">Guardar Cambios</button>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm mt-4" style="max-width: 700px; margin: auto;">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-arrow-clockwise"></i> Actualizar Registros Antiguos</h5>
+    </div>
+    <div class="card-body">
+        <p>Si has registrado trámites antes de definir sus costos, estos aparecerán con un costo de $0.00.</p>
+        <p>Usa este botón para aplicar los costos guardados arriba a todos los trámites antiguos que tengan costo cero. Esta acción no se puede deshacer.</p>
+        <form action="{{ url_for('config.actualizar_costos_viejos') }}" method="post" onsubmit="return confirm('¿Estás seguro de que quieres actualizar los costos de todos los trámites anteriores? Esta acción es permanente.');">
+            {{ form.hidden_tag() }}
+            <button type="submit" class="btn btn-warning w-100">Actualizar Trámites Anteriores</button>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm mt-4" style="max-width: 700px; margin: auto;">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-image"></i> Personalización de Marca</h5>
+    </div>
+    <div class="card-body">
+        <p>Sube el logo de tu empresa. Se mostrará en la barra de navegación y en los reportes PDF.</p>
+        <form action="{{ url_for('config.manage_logo') }}" method="post" enctype="multipart/form-data" class="mb-3">
+            <input type="hidden" name="action" value="upload">
+            {{ form.hidden_tag() }}
+            <div class="mb-3">
+                <label for="logo" class="form-label">Seleccionar archivo de logo (se recomienda formato PNG con fondo transparente):</label>
+                <input class="form-control" type="file" id="logo" name="logo" accept="image/png, image/jpeg">
+            </div>
+            <button type="submit" class="btn btn-info w-100">Subir o Cambiar Logo</button>
+        </form>
+
+        {% if logo_path %}
+        <hr>
+        <p class="text-muted">Ya tienes un logo. Si deseas eliminarlo, usa el siguiente botón.</p>
+        <form action="{{ url_for('config.manage_logo') }}" method="post" onsubmit="return confirm('¿Estás seguro de que quieres eliminar tu logo? Esta acción es permanente.');">
+            <input type="hidden" name="action" value="delete">
+            {{ form.hidden_tag() }}
+            <button type="submit" class="btn btn-danger w-100"><i class="bi bi-trash"></i> Eliminar Logo Actual</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
