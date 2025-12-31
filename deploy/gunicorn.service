@@ -1,0 +1,14 @@
+[Unit]
+Description=Gunicorn instance to serve DocuExpress
+After=network.target
+
+[Service]
+User=vladtrix
+Group=www-data
+WorkingDirectory=/home/vladtrix/DOCUEXPRESS PAGINA
+Environment=PATH=/home/vladtrix/.venvs/docuexpress/bin
+Environment=RATELIMIT_ENABLED=False
+ExecStart=/home/vladtrix/.venvs/docuexpress/bin/gunicorn --workers 3 --bind unix:/run/gunicorn-docuexpress.sock wsgi:application
+
+[Install]
+WantedBy=multi-user.target
