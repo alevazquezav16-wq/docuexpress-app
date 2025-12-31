@@ -2202,3 +2202,413 @@
 2025-12-30 19:50:16,598 - root - INFO - ✓ Blueprint registrado: Principal
 2025-12-30 19:50:16,600 - root - INFO - ✓ Blueprint registrado: Configuración
 2025-12-30 19:50:16,603 - root - INFO - ✓ Blueprint registrado: API
+2025-12-30 19:52:43,956 - root - INFO - ✅ SECRET_KEY cargado desde variables de entorno
+2025-12-30 19:52:43,993 - root - INFO - ⚠️ Rate Limiting deshabilitado
+2025-12-30 19:52:43,994 - ARCHIVOS.backup_manager - INFO - ⏰ Backups programados: diariamente (2 AM)
+2025-12-30 19:52:43,995 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 19:52:43,995 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 19:52:43,995 - apscheduler.scheduler - INFO - Added job "Backup automático de base de datos" to job store "default"
+2025-12-30 19:52:43,995 - apscheduler.scheduler - INFO - Added job "Backup inicial al arrancar" to job store "default"
+2025-12-30 19:52:43,996 - apscheduler.scheduler - INFO - Scheduler started
+2025-12-30 19:52:43,996 - ARCHIVOS.backup_manager - INFO - ✅ Scheduler de backups iniciado
+2025-12-30 19:52:43,996 - ARCHIVOS.backup_manager - INFO - 📦 Backups automáticos habilitados
+2025-12-30 19:52:43,996 - ARCHIVOS.backup_manager - INFO -    Directorio: /home/vladtrix/DOCUEXPRESS PAGINA/ARCHIVOS/backups
+2025-12-30 19:52:43,996 - ARCHIVOS.backup_manager - INFO -    Retención: 30 días
+2025-12-30 19:52:44,002 - root - INFO - ✓ Blueprint registrado: Autenticación
+2025-12-30 19:52:44,005 - root - INFO - ✓ Blueprint registrado: Papelerías
+2025-12-30 19:52:44,007 - root - INFO - ✓ Blueprint registrado: Gastos
+2025-12-30 19:52:44,009 - root - INFO - ✓ Blueprint registrado: Principal
+2025-12-30 19:52:44,011 - root - INFO - ✓ Blueprint registrado: Configuración
+2025-12-30 19:52:44,013 - root - INFO - ✓ Blueprint registrado: API
+2025-12-30 19:52:44,021 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:8083
+2025-12-30 19:52:44,021 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-12-30 19:52:44,021 - werkzeug - INFO -  * Restarting with stat
+2025-12-30 19:52:44,439 - root - INFO - ✅ SECRET_KEY cargado desde variables de entorno
+2025-12-30 19:52:44,476 - root - INFO - ⚠️ Rate Limiting deshabilitado
+2025-12-30 19:52:44,477 - ARCHIVOS.backup_manager - INFO - ⏰ Backups programados: diariamente (2 AM)
+2025-12-30 19:52:44,477 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 19:52:44,478 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 19:52:44,478 - apscheduler.scheduler - INFO - Added job "Backup automático de base de datos" to job store "default"
+2025-12-30 19:52:44,478 - apscheduler.scheduler - INFO - Added job "Backup inicial al arrancar" to job store "default"
+2025-12-30 19:52:44,478 - apscheduler.scheduler - INFO - Scheduler started
+2025-12-30 19:52:44,479 - ARCHIVOS.backup_manager - INFO - ✅ Scheduler de backups iniciado
+2025-12-30 19:52:44,479 - ARCHIVOS.backup_manager - INFO - 📦 Backups automáticos habilitados
+2025-12-30 19:52:44,479 - ARCHIVOS.backup_manager - INFO -    Directorio: /home/vladtrix/DOCUEXPRESS PAGINA/ARCHIVOS/backups
+2025-12-30 19:52:44,479 - ARCHIVOS.backup_manager - INFO -    Retención: 30 días
+2025-12-30 19:52:44,485 - root - INFO - ✓ Blueprint registrado: Autenticación
+2025-12-30 19:52:44,488 - root - INFO - ✓ Blueprint registrado: Papelerías
+2025-12-30 19:52:44,490 - root - INFO - ✓ Blueprint registrado: Gastos
+2025-12-30 19:52:44,492 - root - INFO - ✓ Blueprint registrado: Principal
+2025-12-30 19:52:44,494 - root - INFO - ✓ Blueprint registrado: Configuración
+2025-12-30 19:52:44,497 - root - INFO - ✓ Blueprint registrado: API
+2025-12-30 19:52:44,502 - werkzeug - WARNING -  * Debugger is active!
+2025-12-30 19:52:44,502 - werkzeug - INFO -  * Debugger PIN: 999-301-296
+2025-12-30 19:52:53,995 - apscheduler.executors.default - INFO - Running job "Backup inicial al arrancar (trigger: date[2025-12-30 19:52:53 MST], next run at: 2025-12-30 19:52:53 MST)" (scheduled at 2025-12-30 19:52:53.995128-07:00)
+2025-12-30 19:52:53,995 - apscheduler.scheduler - INFO - Removed job startup_backup
+2025-12-30 19:52:53,996 - ARCHIVOS.backup_manager - INFO - ✅ Backup creado exitosamente: control_papelerias_backup_20251230_195253.db
+2025-12-30 19:52:53,996 - ARCHIVOS.backup_manager - INFO -    Tamaño: 144.00 KB
+2025-12-30 19:52:53,997 - apscheduler.executors.default - INFO - Job "Backup inicial al arrancar (trigger: date[2025-12-30 19:52:53 MST], next run at: 2025-12-30 19:52:53 MST)" executed successfully
+2025-12-30 19:52:54,478 - apscheduler.executors.default - INFO - Running job "Backup inicial al arrancar (trigger: date[2025-12-30 19:52:54 MST], next run at: 2025-12-30 19:52:54 MST)" (scheduled at 2025-12-30 19:52:54.477860-07:00)
+2025-12-30 19:52:54,478 - apscheduler.scheduler - INFO - Removed job startup_backup
+2025-12-30 19:52:54,478 - ARCHIVOS.backup_manager - INFO - ✅ Backup creado exitosamente: control_papelerias_backup_20251230_195254.db
+2025-12-30 19:52:54,479 - ARCHIVOS.backup_manager - INFO -    Tamaño: 144.00 KB
+2025-12-30 19:52:54,480 - apscheduler.executors.default - INFO - Job "Backup inicial al arrancar (trigger: date[2025-12-30 19:52:54 MST], next run at: 2025-12-30 19:52:54 MST)" executed successfully
+2025-12-30 19:52:57,675 - werkzeug - INFO - 127.0.0.1 - - [30/Dec/2025 19:52:57] "[32mGET / HTTP/1.1[0m" 302 -
+2025-12-30 19:52:57,699 - werkzeug - INFO - 127.0.0.1 - - [30/Dec/2025 19:52:57] "GET /auth/login HTTP/1.1" 200 -
+2025-12-30 19:52:57,711 - werkzeug - INFO - 127.0.0.1 - - [30/Dec/2025 19:52:57] "GET /health HTTP/1.1" 200 -
+2025-12-30 19:52:57,722 - root - WARNING - 404 error: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2025-12-30 19:52:57,750 - werkzeug - INFO - 127.0.0.1 - - [30/Dec/2025 19:52:57] "[33mGET /api/ HTTP/1.1[0m" 404 -
+2025-12-30 19:54:48,939 - root - INFO - ✅ SECRET_KEY cargado desde variables de entorno
+2025-12-30 19:54:48,969 - root - INFO - ✅ Rate Limiting habilitado (Redis)
+2025-12-30 19:54:48,969 - root - INFO -    Límites por defecto: 200 per day;50 per hour
+2025-12-30 19:54:48,970 - ARCHIVOS.backup_manager - INFO - ⏰ Backups programados: diariamente (2 AM)
+2025-12-30 19:54:48,971 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 19:54:48,971 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 19:54:48,971 - apscheduler.scheduler - INFO - Added job "Backup automático de base de datos" to job store "default"
+2025-12-30 19:54:48,971 - apscheduler.scheduler - INFO - Added job "Backup inicial al arrancar" to job store "default"
+2025-12-30 19:54:48,972 - apscheduler.scheduler - INFO - Scheduler started
+2025-12-30 19:54:48,972 - ARCHIVOS.backup_manager - INFO - ✅ Scheduler de backups iniciado
+2025-12-30 19:54:48,972 - ARCHIVOS.backup_manager - INFO - 📦 Backups automáticos habilitados
+2025-12-30 19:54:48,972 - ARCHIVOS.backup_manager - INFO -    Directorio: /home/vladtrix/DOCUEXPRESS PAGINA/ARCHIVOS/backups
+2025-12-30 19:54:48,972 - ARCHIVOS.backup_manager - INFO -    Retención: 30 días
+2025-12-30 19:54:48,977 - root - INFO - ✓ Blueprint registrado: Autenticación
+2025-12-30 19:54:48,979 - root - INFO - ✓ Blueprint registrado: Papelerías
+2025-12-30 19:54:48,981 - root - INFO - ✓ Blueprint registrado: Gastos
+2025-12-30 19:54:48,982 - root - INFO - ✓ Blueprint registrado: Principal
+2025-12-30 19:54:48,983 - root - INFO - ✓ Blueprint registrado: Configuración
+2025-12-30 19:54:48,986 - root - INFO - ✓ Blueprint registrado: API
+2025-12-30 19:54:58,971 - apscheduler.executors.default - INFO - Running job "Backup inicial al arrancar (trigger: date[2025-12-30 19:54:58 MST], next run at: 2025-12-30 19:54:58 MST)" (scheduled at 2025-12-30 19:54:58.971169-07:00)
+2025-12-30 19:54:58,971 - apscheduler.scheduler - INFO - Removed job startup_backup
+2025-12-30 19:54:58,972 - ARCHIVOS.backup_manager - INFO - ✅ Backup creado exitosamente: control_papelerias_backup_20251230_195458.db
+2025-12-30 19:54:58,972 - ARCHIVOS.backup_manager - INFO -    Tamaño: 144.00 KB
+2025-12-30 19:54:58,975 - apscheduler.executors.default - INFO - Job "Backup inicial al arrancar (trigger: date[2025-12-30 19:54:58 MST], next run at: 2025-12-30 19:54:58 MST)" executed successfully
+2025-12-30 19:57:11,221 - root - INFO - ✅ SECRET_KEY cargado desde variables de entorno
+2025-12-30 19:57:11,250 - root - INFO - ✅ Rate Limiting habilitado (Redis)
+2025-12-30 19:57:11,250 - root - INFO -    Límites por defecto: 200 per day;50 per hour
+2025-12-30 19:57:11,251 - ARCHIVOS.backup_manager - INFO - ⏰ Backups programados: diariamente (2 AM)
+2025-12-30 19:57:11,252 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 19:57:11,252 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 19:57:11,252 - apscheduler.scheduler - INFO - Added job "Backup automático de base de datos" to job store "default"
+2025-12-30 19:57:11,252 - apscheduler.scheduler - INFO - Added job "Backup inicial al arrancar" to job store "default"
+2025-12-30 19:57:11,252 - apscheduler.scheduler - INFO - Scheduler started
+2025-12-30 19:57:11,253 - ARCHIVOS.backup_manager - INFO - ✅ Scheduler de backups iniciado
+2025-12-30 19:57:11,253 - ARCHIVOS.backup_manager - INFO - 📦 Backups automáticos habilitados
+2025-12-30 19:57:11,253 - ARCHIVOS.backup_manager - INFO -    Directorio: /home/vladtrix/DOCUEXPRESS PAGINA/ARCHIVOS/backups
+2025-12-30 19:57:11,253 - ARCHIVOS.backup_manager - INFO -    Retención: 30 días
+2025-12-30 19:57:11,257 - root - INFO - ✓ Blueprint registrado: Autenticación
+2025-12-30 19:57:11,260 - root - INFO - ✓ Blueprint registrado: Papelerías
+2025-12-30 19:57:11,262 - root - INFO - ✓ Blueprint registrado: Gastos
+2025-12-30 19:57:11,263 - root - INFO - ✓ Blueprint registrado: Principal
+2025-12-30 19:57:11,264 - root - INFO - ✓ Blueprint registrado: Configuración
+2025-12-30 19:57:11,266 - root - INFO - ✓ Blueprint registrado: API
+2025-12-30 19:57:21,252 - apscheduler.executors.default - INFO - Running job "Backup inicial al arrancar (trigger: date[2025-12-30 19:57:21 MST], next run at: 2025-12-30 19:57:21 MST)" (scheduled at 2025-12-30 19:57:21.252109-07:00)
+2025-12-30 19:57:21,252 - apscheduler.scheduler - INFO - Removed job startup_backup
+2025-12-30 19:57:21,253 - ARCHIVOS.backup_manager - INFO - ✅ Backup creado exitosamente: control_papelerias_backup_20251230_195721.db
+2025-12-30 19:57:21,253 - ARCHIVOS.backup_manager - INFO -    Tamaño: 144.00 KB
+2025-12-30 19:57:21,255 - apscheduler.executors.default - INFO - Job "Backup inicial al arrancar (trigger: date[2025-12-30 19:57:21 MST], next run at: 2025-12-30 19:57:21 MST)" executed successfully
+2025-12-30 20:02:20,045 - root - INFO - ✅ SECRET_KEY cargado desde variables de entorno
+2025-12-30 20:02:46,137 - root - INFO - ✅ SECRET_KEY cargado desde variables de entorno
+2025-12-30 20:02:46,168 - root - INFO - ⚠️ Rate Limiting deshabilitado
+2025-12-30 20:02:46,169 - ARCHIVOS.backup_manager - INFO - ⏰ Backups programados: diariamente (2 AM)
+2025-12-30 20:02:46,169 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 20:02:46,169 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 20:02:46,170 - apscheduler.scheduler - INFO - Added job "Backup automático de base de datos" to job store "default"
+2025-12-30 20:02:46,170 - apscheduler.scheduler - INFO - Added job "Backup inicial al arrancar" to job store "default"
+2025-12-30 20:02:46,171 - apscheduler.scheduler - INFO - Scheduler started
+2025-12-30 20:02:46,171 - ARCHIVOS.backup_manager - INFO - ✅ Scheduler de backups iniciado
+2025-12-30 20:02:46,171 - ARCHIVOS.backup_manager - INFO - 📦 Backups automáticos habilitados
+2025-12-30 20:02:46,171 - ARCHIVOS.backup_manager - INFO -    Directorio: /home/vladtrix/DOCUEXPRESS PAGINA/ARCHIVOS/backups
+2025-12-30 20:02:46,171 - ARCHIVOS.backup_manager - INFO -    Retención: 30 días
+2025-12-30 20:02:46,175 - root - INFO - ✓ Blueprint registrado: Autenticación
+2025-12-30 20:02:46,178 - root - INFO - ✓ Blueprint registrado: Papelerías
+2025-12-30 20:02:46,180 - root - INFO - ✓ Blueprint registrado: Gastos
+2025-12-30 20:02:46,181 - root - INFO - ✓ Blueprint registrado: Principal
+2025-12-30 20:02:46,182 - root - INFO - ✓ Blueprint registrado: Configuración
+2025-12-30 20:02:46,185 - root - INFO - ✓ Blueprint registrado: API
+2025-12-30 20:02:46,190 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:8083
+2025-12-30 20:02:46,190 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-12-30 20:02:46,191 - werkzeug - INFO -  * Restarting with stat
+2025-12-30 20:02:46,506 - root - INFO - ✅ SECRET_KEY cargado desde variables de entorno
+2025-12-30 20:02:46,534 - root - INFO - ⚠️ Rate Limiting deshabilitado
+2025-12-30 20:02:46,536 - ARCHIVOS.backup_manager - INFO - ⏰ Backups programados: diariamente (2 AM)
+2025-12-30 20:02:46,536 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 20:02:46,536 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 20:02:46,537 - apscheduler.scheduler - INFO - Added job "Backup automático de base de datos" to job store "default"
+2025-12-30 20:02:46,537 - apscheduler.scheduler - INFO - Added job "Backup inicial al arrancar" to job store "default"
+2025-12-30 20:02:46,537 - apscheduler.scheduler - INFO - Scheduler started
+2025-12-30 20:02:46,538 - ARCHIVOS.backup_manager - INFO - ✅ Scheduler de backups iniciado
+2025-12-30 20:02:46,538 - ARCHIVOS.backup_manager - INFO - 📦 Backups automáticos habilitados
+2025-12-30 20:02:46,538 - ARCHIVOS.backup_manager - INFO -    Directorio: /home/vladtrix/DOCUEXPRESS PAGINA/ARCHIVOS/backups
+2025-12-30 20:02:46,538 - ARCHIVOS.backup_manager - INFO -    Retención: 30 días
+2025-12-30 20:02:46,542 - root - INFO - ✓ Blueprint registrado: Autenticación
+2025-12-30 20:02:46,544 - root - INFO - ✓ Blueprint registrado: Papelerías
+2025-12-30 20:02:46,546 - root - INFO - ✓ Blueprint registrado: Gastos
+2025-12-30 20:02:46,547 - root - INFO - ✓ Blueprint registrado: Principal
+2025-12-30 20:02:46,549 - root - INFO - ✓ Blueprint registrado: Configuración
+2025-12-30 20:02:46,551 - root - INFO - ✓ Blueprint registrado: API
+2025-12-30 20:02:46,555 - werkzeug - WARNING -  * Debugger is active!
+2025-12-30 20:02:46,555 - werkzeug - INFO -  * Debugger PIN: 848-376-851
+2025-12-30 20:02:56,170 - apscheduler.executors.default - INFO - Running job "Backup inicial al arrancar (trigger: date[2025-12-30 20:02:56 MST], next run at: 2025-12-30 20:02:56 MST)" (scheduled at 2025-12-30 20:02:56.169490-07:00)
+2025-12-30 20:02:56,170 - apscheduler.scheduler - INFO - Removed job startup_backup
+2025-12-30 20:02:56,171 - ARCHIVOS.backup_manager - INFO - ✅ Backup creado exitosamente: control_papelerias_backup_20251230_200256.db
+2025-12-30 20:02:56,171 - ARCHIVOS.backup_manager - INFO -    Tamaño: 144.00 KB
+2025-12-30 20:02:56,173 - apscheduler.executors.default - INFO - Job "Backup inicial al arrancar (trigger: date[2025-12-30 20:02:56 MST], next run at: 2025-12-30 20:02:56 MST)" executed successfully
+2025-12-30 20:02:56,537 - apscheduler.executors.default - INFO - Running job "Backup inicial al arrancar (trigger: date[2025-12-30 20:02:56 MST], next run at: 2025-12-30 20:02:56 MST)" (scheduled at 2025-12-30 20:02:56.536433-07:00)
+2025-12-30 20:02:56,537 - apscheduler.scheduler - INFO - Removed job startup_backup
+2025-12-30 20:02:56,538 - ARCHIVOS.backup_manager - INFO - ✅ Backup creado exitosamente: control_papelerias_backup_20251230_200256.db
+2025-12-30 20:02:56,538 - ARCHIVOS.backup_manager - INFO -    Tamaño: 144.00 KB
+2025-12-30 20:02:56,540 - apscheduler.executors.default - INFO - Job "Backup inicial al arrancar (trigger: date[2025-12-30 20:02:56 MST], next run at: 2025-12-30 20:02:56 MST)" executed successfully
+2025-12-30 20:03:40,218 - root - INFO - ✅ SECRET_KEY cargado desde variables de entorno
+2025-12-30 20:03:40,246 - root - INFO - ⚠️ Rate Limiting deshabilitado
+2025-12-30 20:03:40,247 - ARCHIVOS.backup_manager - INFO - ⏰ Backups programados: diariamente (2 AM)
+2025-12-30 20:03:40,247 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 20:03:40,247 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 20:03:40,248 - apscheduler.scheduler - INFO - Added job "Backup automático de base de datos" to job store "default"
+2025-12-30 20:03:40,249 - apscheduler.scheduler - INFO - Added job "Backup inicial al arrancar" to job store "default"
+2025-12-30 20:03:40,249 - apscheduler.scheduler - INFO - Scheduler started
+2025-12-30 20:03:40,249 - ARCHIVOS.backup_manager - INFO - ✅ Scheduler de backups iniciado
+2025-12-30 20:03:40,249 - ARCHIVOS.backup_manager - INFO - 📦 Backups automáticos habilitados
+2025-12-30 20:03:40,249 - ARCHIVOS.backup_manager - INFO -    Directorio: /home/vladtrix/DOCUEXPRESS PAGINA/ARCHIVOS/backups
+2025-12-30 20:03:40,249 - ARCHIVOS.backup_manager - INFO -    Retención: 30 días
+2025-12-30 20:03:40,253 - root - INFO - ✓ Blueprint registrado: Autenticación
+2025-12-30 20:03:40,255 - root - INFO - ✓ Blueprint registrado: Papelerías
+2025-12-30 20:03:40,257 - root - INFO - ✓ Blueprint registrado: Gastos
+2025-12-30 20:03:40,258 - root - INFO - ✓ Blueprint registrado: Principal
+2025-12-30 20:03:40,259 - root - INFO - ✓ Blueprint registrado: Configuración
+2025-12-30 20:03:40,262 - root - INFO - ✓ Blueprint registrado: API
+2025-12-30 20:03:40,267 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:8083
+2025-12-30 20:03:40,267 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-12-30 20:03:40,268 - werkzeug - INFO -  * Restarting with stat
+2025-12-30 20:03:40,589 - root - INFO - ✅ SECRET_KEY cargado desde variables de entorno
+2025-12-30 20:03:40,618 - root - INFO - ⚠️ Rate Limiting deshabilitado
+2025-12-30 20:03:40,619 - ARCHIVOS.backup_manager - INFO - ⏰ Backups programados: diariamente (2 AM)
+2025-12-30 20:03:40,619 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 20:03:40,619 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 20:03:40,620 - apscheduler.scheduler - INFO - Added job "Backup automático de base de datos" to job store "default"
+2025-12-30 20:03:40,621 - apscheduler.scheduler - INFO - Added job "Backup inicial al arrancar" to job store "default"
+2025-12-30 20:03:40,621 - apscheduler.scheduler - INFO - Scheduler started
+2025-12-30 20:03:40,621 - ARCHIVOS.backup_manager - INFO - ✅ Scheduler de backups iniciado
+2025-12-30 20:03:40,621 - ARCHIVOS.backup_manager - INFO - 📦 Backups automáticos habilitados
+2025-12-30 20:03:40,621 - ARCHIVOS.backup_manager - INFO -    Directorio: /home/vladtrix/DOCUEXPRESS PAGINA/ARCHIVOS/backups
+2025-12-30 20:03:40,621 - ARCHIVOS.backup_manager - INFO -    Retención: 30 días
+2025-12-30 20:03:40,625 - root - INFO - ✓ Blueprint registrado: Autenticación
+2025-12-30 20:03:40,627 - root - INFO - ✓ Blueprint registrado: Papelerías
+2025-12-30 20:03:40,629 - root - INFO - ✓ Blueprint registrado: Gastos
+2025-12-30 20:03:40,630 - root - INFO - ✓ Blueprint registrado: Principal
+2025-12-30 20:03:40,632 - root - INFO - ✓ Blueprint registrado: Configuración
+2025-12-30 20:03:40,634 - root - INFO - ✓ Blueprint registrado: API
+2025-12-30 20:03:40,638 - werkzeug - WARNING -  * Debugger is active!
+2025-12-30 20:03:40,638 - werkzeug - INFO -  * Debugger PIN: 848-376-851
+2025-12-30 20:03:41,357 - werkzeug - INFO - 127.0.0.1 - - [30/Dec/2025 20:03:41] "GET /health HTTP/1.1" 200 -
+2025-12-30 20:05:12,246 - root - INFO - ✅ SECRET_KEY cargado desde variables de entorno
+2025-12-30 20:05:12,275 - root - INFO - ⚠️ Rate Limiting deshabilitado
+2025-12-30 20:05:12,277 - ARCHIVOS.backup_manager - INFO - ⏰ Backups programados: diariamente (2 AM)
+2025-12-30 20:05:12,277 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 20:05:12,277 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 20:05:12,278 - apscheduler.scheduler - INFO - Added job "Backup automático de base de datos" to job store "default"
+2025-12-30 20:05:12,278 - apscheduler.scheduler - INFO - Added job "Backup inicial al arrancar" to job store "default"
+2025-12-30 20:05:12,278 - apscheduler.scheduler - INFO - Scheduler started
+2025-12-30 20:05:12,278 - ARCHIVOS.backup_manager - INFO - ✅ Scheduler de backups iniciado
+2025-12-30 20:05:12,278 - ARCHIVOS.backup_manager - INFO - 📦 Backups automáticos habilitados
+2025-12-30 20:05:12,278 - ARCHIVOS.backup_manager - INFO -    Directorio: /home/vladtrix/DOCUEXPRESS PAGINA/ARCHIVOS/backups
+2025-12-30 20:05:12,278 - ARCHIVOS.backup_manager - INFO -    Retención: 30 días
+2025-12-30 20:05:12,282 - root - INFO - ✓ Blueprint registrado: Autenticación
+2025-12-30 20:05:12,284 - root - INFO - ✓ Blueprint registrado: Papelerías
+2025-12-30 20:05:12,286 - root - INFO - ✓ Blueprint registrado: Gastos
+2025-12-30 20:05:12,287 - root - INFO - ✓ Blueprint registrado: Principal
+2025-12-30 20:05:12,289 - root - INFO - ✓ Blueprint registrado: Configuración
+2025-12-30 20:05:12,291 - root - INFO - ✓ Blueprint registrado: API
+2025-12-30 20:05:12,297 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:8083
+2025-12-30 20:05:12,297 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-12-30 20:05:12,297 - werkzeug - INFO -  * Restarting with stat
+2025-12-30 20:05:12,612 - root - INFO - ✅ SECRET_KEY cargado desde variables de entorno
+2025-12-30 20:05:12,642 - root - INFO - ⚠️ Rate Limiting deshabilitado
+2025-12-30 20:05:12,643 - ARCHIVOS.backup_manager - INFO - ⏰ Backups programados: diariamente (2 AM)
+2025-12-30 20:05:12,644 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 20:05:12,644 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 20:05:12,644 - apscheduler.scheduler - INFO - Added job "Backup automático de base de datos" to job store "default"
+2025-12-30 20:05:12,644 - apscheduler.scheduler - INFO - Added job "Backup inicial al arrancar" to job store "default"
+2025-12-30 20:05:12,644 - apscheduler.scheduler - INFO - Scheduler started
+2025-12-30 20:05:12,645 - ARCHIVOS.backup_manager - INFO - ✅ Scheduler de backups iniciado
+2025-12-30 20:05:12,645 - ARCHIVOS.backup_manager - INFO - 📦 Backups automáticos habilitados
+2025-12-30 20:05:12,645 - ARCHIVOS.backup_manager - INFO -    Directorio: /home/vladtrix/DOCUEXPRESS PAGINA/ARCHIVOS/backups
+2025-12-30 20:05:12,645 - ARCHIVOS.backup_manager - INFO -    Retención: 30 días
+2025-12-30 20:05:12,649 - root - INFO - ✓ Blueprint registrado: Autenticación
+2025-12-30 20:05:12,651 - root - INFO - ✓ Blueprint registrado: Papelerías
+2025-12-30 20:05:12,653 - root - INFO - ✓ Blueprint registrado: Gastos
+2025-12-30 20:05:12,654 - root - INFO - ✓ Blueprint registrado: Principal
+2025-12-30 20:05:12,655 - root - INFO - ✓ Blueprint registrado: Configuración
+2025-12-30 20:05:12,658 - root - INFO - ✓ Blueprint registrado: API
+2025-12-30 20:05:12,662 - werkzeug - WARNING -  * Debugger is active!
+2025-12-30 20:05:12,662 - werkzeug - INFO -  * Debugger PIN: 848-376-851
+2025-12-30 20:05:13,274 - werkzeug - INFO - 127.0.0.1 - - [30/Dec/2025 20:05:13] "GET /health HTTP/1.1" 200 -
+2025-12-30 20:05:22,278 - apscheduler.executors.default - INFO - Running job "Backup inicial al arrancar (trigger: date[2025-12-30 20:05:22 MST], next run at: 2025-12-30 20:05:22 MST)" (scheduled at 2025-12-30 20:05:22.277432-07:00)
+2025-12-30 20:05:22,278 - apscheduler.scheduler - INFO - Removed job startup_backup
+2025-12-30 20:05:22,279 - ARCHIVOS.backup_manager - INFO - ✅ Backup creado exitosamente: control_papelerias_backup_20251230_200522.db
+2025-12-30 20:05:22,279 - ARCHIVOS.backup_manager - INFO -    Tamaño: 144.00 KB
+2025-12-30 20:05:22,280 - apscheduler.executors.default - INFO - Job "Backup inicial al arrancar (trigger: date[2025-12-30 20:05:22 MST], next run at: 2025-12-30 20:05:22 MST)" executed successfully
+2025-12-30 20:05:22,644 - apscheduler.executors.default - INFO - Running job "Backup inicial al arrancar (trigger: date[2025-12-30 20:05:22 MST], next run at: 2025-12-30 20:05:22 MST)" (scheduled at 2025-12-30 20:05:22.644132-07:00)
+2025-12-30 20:05:22,644 - apscheduler.scheduler - INFO - Removed job startup_backup
+2025-12-30 20:05:22,645 - ARCHIVOS.backup_manager - INFO - ✅ Backup creado exitosamente: control_papelerias_backup_20251230_200522.db
+2025-12-30 20:05:22,645 - ARCHIVOS.backup_manager - INFO -    Tamaño: 144.00 KB
+2025-12-30 20:05:22,646 - apscheduler.executors.default - INFO - Job "Backup inicial al arrancar (trigger: date[2025-12-30 20:05:22 MST], next run at: 2025-12-30 20:05:22 MST)" executed successfully
+2025-12-30 20:06:28,627 - root - INFO - ✅ SECRET_KEY cargado desde variables de entorno
+2025-12-30 20:06:28,668 - root - INFO - ⚠️ Rate Limiting deshabilitado
+2025-12-30 20:06:28,670 - ARCHIVOS.backup_manager - INFO - ⏰ Backups programados: diariamente (2 AM)
+2025-12-30 20:06:28,670 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 20:06:28,670 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 20:06:28,671 - apscheduler.scheduler - INFO - Added job "Backup automático de base de datos" to job store "default"
+2025-12-30 20:06:28,671 - apscheduler.scheduler - INFO - Added job "Backup inicial al arrancar" to job store "default"
+2025-12-30 20:06:28,671 - apscheduler.scheduler - INFO - Scheduler started
+2025-12-30 20:06:28,671 - ARCHIVOS.backup_manager - INFO - ✅ Scheduler de backups iniciado
+2025-12-30 20:06:28,671 - ARCHIVOS.backup_manager - INFO - 📦 Backups automáticos habilitados
+2025-12-30 20:06:28,672 - ARCHIVOS.backup_manager - INFO -    Directorio: /home/vladtrix/DOCUEXPRESS PAGINA/ARCHIVOS/backups
+2025-12-30 20:06:28,672 - ARCHIVOS.backup_manager - INFO -    Retención: 30 días
+2025-12-30 20:06:28,677 - root - INFO - ✓ Blueprint registrado: Autenticación
+2025-12-30 20:06:28,680 - root - INFO - ✓ Blueprint registrado: Papelerías
+2025-12-30 20:06:28,683 - root - INFO - ✓ Blueprint registrado: Gastos
+2025-12-30 20:06:28,684 - root - INFO - ✓ Blueprint registrado: Principal
+2025-12-30 20:06:28,686 - root - INFO - ✓ Blueprint registrado: Configuración
+2025-12-30 20:06:28,689 - root - INFO - ✓ Blueprint registrado: API
+2025-12-30 20:06:29,008 - werkzeug - INFO - 127.0.0.1 - - [30/Dec/2025 20:06:29] "[32mGET / HTTP/1.1[0m" 302 -
+2025-12-30 20:06:29,020 - werkzeug - INFO - 127.0.0.1 - - [30/Dec/2025 20:06:29] "GET /auth/login HTTP/1.1" 200 -
+2025-12-30 20:06:29,028 - werkzeug - INFO - 127.0.0.1 - - [30/Dec/2025 20:06:29] "GET /health HTTP/1.1" 200 -
+2025-12-30 20:09:16,788 - root - INFO - ✅ SECRET_KEY cargado desde variables de entorno
+2025-12-30 20:09:16,831 - root - INFO - ⚠️ Rate Limiting deshabilitado
+2025-12-30 20:09:16,832 - ARCHIVOS.backup_manager - INFO - ⏰ Backups programados: diariamente (2 AM)
+2025-12-30 20:09:16,833 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 20:09:16,833 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 20:09:16,834 - apscheduler.scheduler - INFO - Added job "Backup automático de base de datos" to job store "default"
+2025-12-30 20:09:16,834 - apscheduler.scheduler - INFO - Added job "Backup inicial al arrancar" to job store "default"
+2025-12-30 20:09:16,834 - apscheduler.scheduler - INFO - Scheduler started
+2025-12-30 20:09:16,834 - ARCHIVOS.backup_manager - INFO - ✅ Scheduler de backups iniciado
+2025-12-30 20:09:16,834 - ARCHIVOS.backup_manager - INFO - 📦 Backups automáticos habilitados
+2025-12-30 20:09:16,834 - ARCHIVOS.backup_manager - INFO -    Directorio: /home/vladtrix/DOCUEXPRESS PAGINA/ARCHIVOS/backups
+2025-12-30 20:09:16,835 - ARCHIVOS.backup_manager - INFO -    Retención: 30 días
+2025-12-30 20:09:16,840 - root - INFO - ✓ Blueprint registrado: Autenticación
+2025-12-30 20:09:16,843 - root - INFO - ✓ Blueprint registrado: Papelerías
+2025-12-30 20:09:16,846 - root - INFO - ✓ Blueprint registrado: Gastos
+2025-12-30 20:09:16,847 - root - INFO - ✓ Blueprint registrado: Principal
+2025-12-30 20:09:16,850 - root - INFO - ✓ Blueprint registrado: Configuración
+2025-12-30 20:09:16,853 - root - INFO - ✓ Blueprint registrado: API
+2025-12-30 20:09:16,860 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:8083
+2025-12-30 20:09:16,860 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-12-30 20:09:16,861 - werkzeug - INFO -  * Restarting with stat
+2025-12-30 20:09:17,169 - root - INFO - ✅ SECRET_KEY cargado desde variables de entorno
+2025-12-30 20:09:17,200 - root - INFO - ⚠️ Rate Limiting deshabilitado
+2025-12-30 20:09:17,201 - ARCHIVOS.backup_manager - INFO - ⏰ Backups programados: diariamente (2 AM)
+2025-12-30 20:09:17,201 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 20:09:17,201 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 20:09:17,201 - apscheduler.scheduler - INFO - Added job "Backup automático de base de datos" to job store "default"
+2025-12-30 20:09:17,202 - apscheduler.scheduler - INFO - Added job "Backup inicial al arrancar" to job store "default"
+2025-12-30 20:09:17,202 - apscheduler.scheduler - INFO - Scheduler started
+2025-12-30 20:09:17,202 - ARCHIVOS.backup_manager - INFO - ✅ Scheduler de backups iniciado
+2025-12-30 20:09:17,202 - ARCHIVOS.backup_manager - INFO - 📦 Backups automáticos habilitados
+2025-12-30 20:09:17,202 - ARCHIVOS.backup_manager - INFO -    Directorio: /home/vladtrix/DOCUEXPRESS PAGINA/ARCHIVOS/backups
+2025-12-30 20:09:17,202 - ARCHIVOS.backup_manager - INFO -    Retención: 30 días
+2025-12-30 20:09:17,206 - root - INFO - ✓ Blueprint registrado: Autenticación
+2025-12-30 20:09:17,208 - root - INFO - ✓ Blueprint registrado: Papelerías
+2025-12-30 20:09:17,210 - root - INFO - ✓ Blueprint registrado: Gastos
+2025-12-30 20:09:17,211 - root - INFO - ✓ Blueprint registrado: Principal
+2025-12-30 20:09:17,212 - root - INFO - ✓ Blueprint registrado: Configuración
+2025-12-30 20:09:17,215 - root - INFO - ✓ Blueprint registrado: API
+2025-12-30 20:09:17,219 - werkzeug - WARNING -  * Debugger is active!
+2025-12-30 20:09:17,219 - werkzeug - INFO -  * Debugger PIN: 848-376-851
+2025-12-30 20:09:17,227 - werkzeug - INFO - 127.0.0.1 - - [30/Dec/2025 20:09:17] "[32mGET / HTTP/1.1[0m" 302 -
+2025-12-30 20:09:17,241 - werkzeug - INFO - 127.0.0.1 - - [30/Dec/2025 20:09:17] "GET /auth/login HTTP/1.1" 200 -
+2025-12-30 20:09:17,249 - werkzeug - INFO - 127.0.0.1 - - [30/Dec/2025 20:09:17] "GET /health HTTP/1.1" 200 -
+2025-12-30 20:12:28,819 - root - INFO - ✅ SECRET_KEY cargado desde variables de entorno
+2025-12-30 20:12:28,862 - root - INFO - ⚠️ Rate Limiting deshabilitado
+2025-12-30 20:12:28,863 - ARCHIVOS.backup_manager - INFO - ⏰ Backups programados: diariamente (2 AM)
+2025-12-30 20:12:28,864 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 20:12:28,864 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 20:12:28,865 - apscheduler.scheduler - INFO - Added job "Backup automático de base de datos" to job store "default"
+2025-12-30 20:12:28,865 - apscheduler.scheduler - INFO - Added job "Backup inicial al arrancar" to job store "default"
+2025-12-30 20:12:28,865 - apscheduler.scheduler - INFO - Scheduler started
+2025-12-30 20:12:28,865 - ARCHIVOS.backup_manager - INFO - ✅ Scheduler de backups iniciado
+2025-12-30 20:12:28,865 - ARCHIVOS.backup_manager - INFO - 📦 Backups automáticos habilitados
+2025-12-30 20:12:28,865 - ARCHIVOS.backup_manager - INFO -    Directorio: /home/vladtrix/DOCUEXPRESS PAGINA/ARCHIVOS/backups
+2025-12-30 20:12:28,865 - ARCHIVOS.backup_manager - INFO -    Retención: 30 días
+2025-12-30 20:12:28,871 - root - INFO - ✓ Blueprint registrado: Autenticación
+2025-12-30 20:12:28,874 - root - INFO - ✓ Blueprint registrado: Papelerías
+2025-12-30 20:12:28,877 - root - INFO - ✓ Blueprint registrado: Gastos
+2025-12-30 20:12:28,878 - root - INFO - ✓ Blueprint registrado: Principal
+2025-12-30 20:12:28,880 - root - INFO - ✓ Blueprint registrado: Configuración
+2025-12-30 20:12:28,883 - root - INFO - ✓ Blueprint registrado: API
+2025-12-30 20:12:28,891 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:8083
+2025-12-30 20:12:28,891 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-12-30 20:12:28,891 - werkzeug - INFO -  * Restarting with stat
+2025-12-30 20:12:29,263 - root - INFO - ✅ SECRET_KEY cargado desde variables de entorno
+2025-12-30 20:12:29,292 - root - INFO - ⚠️ Rate Limiting deshabilitado
+2025-12-30 20:12:29,293 - ARCHIVOS.backup_manager - INFO - ⏰ Backups programados: diariamente (2 AM)
+2025-12-30 20:12:29,293 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 20:12:29,293 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 20:12:29,293 - apscheduler.scheduler - INFO - Added job "Backup automático de base de datos" to job store "default"
+2025-12-30 20:12:29,294 - apscheduler.scheduler - INFO - Added job "Backup inicial al arrancar" to job store "default"
+2025-12-30 20:12:29,294 - apscheduler.scheduler - INFO - Scheduler started
+2025-12-30 20:12:29,294 - ARCHIVOS.backup_manager - INFO - ✅ Scheduler de backups iniciado
+2025-12-30 20:12:29,294 - ARCHIVOS.backup_manager - INFO - 📦 Backups automáticos habilitados
+2025-12-30 20:12:29,294 - ARCHIVOS.backup_manager - INFO -    Directorio: /home/vladtrix/DOCUEXPRESS PAGINA/ARCHIVOS/backups
+2025-12-30 20:12:29,294 - ARCHIVOS.backup_manager - INFO -    Retención: 30 días
+2025-12-30 20:12:29,298 - root - INFO - ✓ Blueprint registrado: Autenticación
+2025-12-30 20:12:29,300 - root - INFO - ✓ Blueprint registrado: Papelerías
+2025-12-30 20:12:29,302 - root - INFO - ✓ Blueprint registrado: Gastos
+2025-12-30 20:12:29,303 - root - INFO - ✓ Blueprint registrado: Principal
+2025-12-30 20:12:29,305 - root - INFO - ✓ Blueprint registrado: Configuración
+2025-12-30 20:12:29,307 - root - INFO - ✓ Blueprint registrado: API
+2025-12-30 20:12:29,311 - werkzeug - WARNING -  * Debugger is active!
+2025-12-30 20:12:29,311 - werkzeug - INFO -  * Debugger PIN: 848-376-851
+2025-12-30 20:12:29,319 - werkzeug - INFO - 127.0.0.1 - - [30/Dec/2025 20:12:29] "[32mGET / HTTP/1.1[0m" 302 -
+2025-12-30 20:12:29,341 - werkzeug - INFO - 127.0.0.1 - - [30/Dec/2025 20:12:29] "GET /auth/login HTTP/1.1" 200 -
+2025-12-30 20:12:29,355 - werkzeug - INFO - 127.0.0.1 - - [30/Dec/2025 20:12:29] "GET /health HTTP/1.1" 200 -
+2025-12-30 20:12:56,231 - root - INFO - ✅ SECRET_KEY cargado desde variables de entorno
+2025-12-30 20:12:56,276 - root - INFO - ⚠️ Rate Limiting deshabilitado
+2025-12-30 20:12:56,278 - ARCHIVOS.backup_manager - INFO - ⏰ Backups programados: diariamente (2 AM)
+2025-12-30 20:12:56,278 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 20:12:56,279 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 20:12:56,279 - apscheduler.scheduler - INFO - Added job "Backup automático de base de datos" to job store "default"
+2025-12-30 20:12:56,279 - apscheduler.scheduler - INFO - Added job "Backup inicial al arrancar" to job store "default"
+2025-12-30 20:12:56,279 - apscheduler.scheduler - INFO - Scheduler started
+2025-12-30 20:12:56,280 - ARCHIVOS.backup_manager - INFO - ✅ Scheduler de backups iniciado
+2025-12-30 20:12:56,280 - ARCHIVOS.backup_manager - INFO - 📦 Backups automáticos habilitados
+2025-12-30 20:12:56,280 - ARCHIVOS.backup_manager - INFO -    Directorio: /home/vladtrix/DOCUEXPRESS PAGINA/ARCHIVOS/backups
+2025-12-30 20:12:56,280 - ARCHIVOS.backup_manager - INFO -    Retención: 30 días
+2025-12-30 20:12:56,286 - root - INFO - ✓ Blueprint registrado: Autenticación
+2025-12-30 20:12:56,290 - root - INFO - ✓ Blueprint registrado: Papelerías
+2025-12-30 20:12:56,292 - root - INFO - ✓ Blueprint registrado: Gastos
+2025-12-30 20:12:56,294 - root - INFO - ✓ Blueprint registrado: Principal
+2025-12-30 20:12:56,296 - root - INFO - ✓ Blueprint registrado: Configuración
+2025-12-30 20:12:56,299 - root - INFO - ✓ Blueprint registrado: API
+2025-12-30 20:12:56,307 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:8083
+2025-12-30 20:12:56,307 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-12-30 20:12:56,308 - werkzeug - INFO -  * Restarting with stat
+2025-12-30 20:12:56,693 - root - INFO - ✅ SECRET_KEY cargado desde variables de entorno
+2025-12-30 20:12:56,721 - root - INFO - ⚠️ Rate Limiting deshabilitado
+2025-12-30 20:12:56,723 - ARCHIVOS.backup_manager - INFO - ⏰ Backups programados: diariamente (2 AM)
+2025-12-30 20:12:56,723 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 20:12:56,723 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-12-30 20:12:56,723 - apscheduler.scheduler - INFO - Added job "Backup automático de base de datos" to job store "default"
+2025-12-30 20:12:56,724 - apscheduler.scheduler - INFO - Added job "Backup inicial al arrancar" to job store "default"
+2025-12-30 20:12:56,724 - apscheduler.scheduler - INFO - Scheduler started
+2025-12-30 20:12:56,724 - ARCHIVOS.backup_manager - INFO - ✅ Scheduler de backups iniciado
+2025-12-30 20:12:56,724 - ARCHIVOS.backup_manager - INFO - 📦 Backups automáticos habilitados
+2025-12-30 20:12:56,724 - ARCHIVOS.backup_manager - INFO -    Directorio: /home/vladtrix/DOCUEXPRESS PAGINA/ARCHIVOS/backups
+2025-12-30 20:12:56,724 - ARCHIVOS.backup_manager - INFO -    Retención: 30 días
+2025-12-30 20:12:56,729 - root - INFO - ✓ Blueprint registrado: Autenticación
+2025-12-30 20:12:56,731 - root - INFO - ✓ Blueprint registrado: Papelerías
+2025-12-30 20:12:56,733 - root - INFO - ✓ Blueprint registrado: Gastos
+2025-12-30 20:12:56,734 - root - INFO - ✓ Blueprint registrado: Principal
+2025-12-30 20:12:56,735 - root - INFO - ✓ Blueprint registrado: Configuración
+2025-12-30 20:12:56,737 - root - INFO - ✓ Blueprint registrado: API
+2025-12-30 20:12:56,741 - werkzeug - WARNING -  * Debugger is active!
+2025-12-30 20:12:56,742 - werkzeug - INFO -  * Debugger PIN: 848-376-851
+2025-12-30 20:12:56,750 - werkzeug - INFO - 127.0.0.1 - - [30/Dec/2025 20:12:56] "[32mGET / HTTP/1.1[0m" 302 -
+2025-12-30 20:12:56,763 - werkzeug - INFO - 127.0.0.1 - - [30/Dec/2025 20:12:56] "GET /auth/login HTTP/1.1" 200 -
+2025-12-30 20:12:56,772 - werkzeug - INFO - 127.0.0.1 - - [30/Dec/2025 20:12:56] "GET /health HTTP/1.1" 200 -
