@@ -1,0 +1,23 @@
+# Paquetes mínimos para producción en PythonAnywhere
+# Instalar con: pip install --no-cache-dir -r requirements_prod.txt
+
+# Framework Flask y extensiones
+Flask==3.1.2
+Flask-Caching==2.3.1
+Flask-Compress==1.15
+Flask-Limiter==3.5.0
+Flask-Login==0.6.3
+Flask-SQLAlchemy==3.1.1
+Flask-WTF==1.2.2
+
+# Base de datos y utilidades
+SQLAlchemy==2.0.44
+python-dotenv==1.0.0
+email-validator==2.3.0
+
+# Scheduler para backups
+APScheduler==3.10.4
+
+# Dependencias necesarias (se instalan automáticamente)
+# Werkzeug, Jinja2, MarkupSafe, itsdangerous, click, blinker
+# WTForms, greenlet, typing_extensions
