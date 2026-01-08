@@ -1,31 +1,51 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app
 from flask_login import login_required
-from flask import current_app
+import logging
 
-from ..utils import get_effective_user_id, check_papeleria_owner
+from ..utils import get_effective_user_id, check_papeleria_owner, get_user_data_version
 from ..database import papeleria_repository, tramite_repository, gasto_repository, analytics_repository
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 
+# Endpoint para totales del dashboard con filtro de fechas
+@api_bp.route('/dashboard-totals')
+@login_required
+def dashboard_totals():
+    """Devuelve los totales de las tarjetas del dashboard según el rango de fechas."""
+    effective_user_id = get_effective_user_id()
+    fecha_inicio = request.args.get('fecha_inicio')
+    fecha_fin = request.args.get('fecha_fin')
 
-from flask_caching import Cache
-from flask import current_app
+    # --- CACHÉ INTELIGENTE PARA TOTALES ---
+    version = get_user_data_version(effective_user_id)
+    cache = getattr(current_app, 'cache', None)
+    cache_key = f"totals:{effective_user_id}:{version}:{fecha_inicio}:{fecha_fin}"
+    
+    if cache and version:
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            return jsonify(cached_data)
 
+    # Ganancia total
+    totales = papeleria_repository.get_totales_usuario(effective_user_id, fecha_inicio, fecha_fin)
+    # Trámites de hoy (en rango, si aplica)
+    tramites_de_hoy = tramite_repository.get_tramites_hoy(effective_user_id, fecha_inicio, fecha_fin)
+    # Papelerías activas (con movimientos en el rango)
+    num_papelerias = papeleria_repository.get_num_papelerias_activas(effective_user_id, fecha_inicio, fecha_fin)
+    # Gastos operativos
+    total_gastos_operativos = gasto_repository.get_total_gastos(effective_user_id, fecha_inicio, fecha_fin)
 
-def _get_cache_decorator(timeout=300):
-    """Devuelve un decorador cached si la extensión de caché está disponible.
+    response_data = {
+        'ganancia': totales.get('ganancia', 0),
+        'tramites_de_hoy': tramites_de_hoy,
+        'num_papelerias': num_papelerias,
+        'total_gastos_operativos': total_gastos_operativos
+    }
 
-    Si no hay un objeto de caché con método `cached`, devuelve un decorador identidad
-    que deja la función sin cambios (fallback seguro en desarrollo).
-    """
-    cache_obj = getattr(current_app, 'cache', None) or current_app.extensions.get('cache')
-    if cache_obj and hasattr(cache_obj, 'cached'):
-        return cache_obj.cached(timeout=timeout)
+    if cache:
+        cache.set(cache_key, response_data, timeout=300)
 
-    def _identity(f):
-        return f
-
-    return _identity
+    return jsonify(response_data)
 
 
 @api_bp.route('/dashboard-charts')
@@ -38,6 +58,18 @@ def dashboard_charts_data():
     fecha_inicio = request.args.get('fecha_inicio')
     fecha_fin = request.args.get('fecha_fin')
     
+    # --- CACHÉ INTELIGENTE ---
+    version = get_user_data_version(effective_user_id)
+    cache = getattr(current_app, 'cache', None)
+    cache_key = f"charts:{effective_user_id}:{version}:{fecha_inicio}:{fecha_fin}"
+    
+    if cache and version:
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            logging.info(f"[CACHE HIT] Gráficos dashboard servidos desde caché (v:{version})")
+            return jsonify(cached_data)
+
+    logging.info(f"[CACHE MISS] Calculando gráficos dashboard (v:{version})")
     # 1. Top Papelerías
     top_papelerias = papeleria_repository.get_top_by_ganancia(
         effective_user_id, 
@@ -79,12 +111,17 @@ def dashboard_charts_data():
     )
     gastos_dist = {'labels': [row['categoria'] for row in gastos_data], 'data': [row['total_monto'] for row in gastos_data]}
 
-    return jsonify({
+    response_data = {
         'topPapelerias': top_papelerias_data,
         'monthlySummary': monthly_summary,
         'tramitesDistribution': tramites_dist,
         'gastosDistribution': gastos_dist
-    })
+    }
+
+    if cache:
+        cache.set(cache_key, response_data, timeout=300) # 5 minutos de caché (o hasta que cambie la versión)
+
+    return jsonify(response_data)
 
 @api_bp.route('/test-charts')
 def test_charts_data():

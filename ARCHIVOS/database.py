@@ -69,6 +69,44 @@ class UserRepository:
         return False
 
 class PapeleriaRepository:
+    def get_num_papelerias_activas(self, user_id, fecha_inicio=None, fecha_fin=None):
+        """
+        Devuelve el número de papelerías activas para un usuario, opcionalmente filtrando por rango de fechas de actividad (basado en trámites).
+        Si no se especifica rango, cuenta todas las papelerías activas del usuario.
+        """
+        query = Papeleria.query.filter_by(user_id=user_id, is_active=True)
+        if fecha_inicio and fecha_fin:
+            # Solo contar papelerías con al menos un trámite en el rango
+            subq = db.session.query(Tramite.papeleria_id).filter(
+                Tramite.user_id == user_id,
+                Tramite.fecha >= fecha_inicio,
+                Tramite.fecha <= fecha_fin
+            ).distinct().subquery()
+            query = query.filter(Papeleria.id.in_(subq))
+        return query.count()
+    def get_totales_usuario(self, user_id, fecha_inicio=None, fecha_fin=None):
+        """
+        Calcula los totales de ingresos, costos y ganancia para el usuario, opcionalmente filtrando por rango de fechas.
+        """
+        query = db.session.query(
+            func.sum(Tramite.precio).label('total_ingresos'),
+            func.sum(Tramite.costo).label('total_costos')
+        ).join(Papeleria, Tramite.papeleria_id == Papeleria.id)
+        query = query.filter(
+            Tramite.user_id == user_id,
+            Papeleria.is_active == True
+        )
+        if fecha_inicio and fecha_fin:
+            query = query.filter(Tramite.fecha >= fecha_inicio, Tramite.fecha <= fecha_fin)
+        result = query.first()
+        total_ingresos = float(result.total_ingresos or 0)
+        total_costos = float(result.total_costos or 0)
+        total_ganancia = total_ingresos - total_costos
+        return {
+            'total_ingresos': total_ingresos,
+            'total_costos': total_costos,
+            'ganancia': total_ganancia
+        }
     """Repository for Papeleria and PapeleriaPrecio related operations."""
 
     def add(self, nombre, user_id):
@@ -460,10 +498,18 @@ class TramiteRepository:
             'ganancia': ingresos - costos
         }
 
-    def get_tramites_hoy(self, user_id):
-        """Returns the number of tramites registered today."""
-        hoy_str = datetime.now().strftime("%Y-%m-%d")
-        return Tramite.query.filter(Tramite.fecha == hoy_str, Tramite.user_id == user_id).count()
+    def get_tramites_hoy(self, user_id, fecha_inicio=None, fecha_fin=None):
+        """
+        Returns the number of tramites registered today or in a given date range.
+        If fecha_inicio and fecha_fin are provided, counts tramites in that range; otherwise, counts only today.
+        """
+        query = Tramite.query.filter(Tramite.user_id == user_id)
+        if fecha_inicio and fecha_fin:
+            query = query.filter(Tramite.fecha >= fecha_inicio, Tramite.fecha <= fecha_fin)
+        else:
+            hoy_str = datetime.now().strftime("%Y-%m-%d")
+            query = query.filter(Tramite.fecha == hoy_str)
+        return query.count()
     
     def get_all_tramites(self, user_id, limit=100):
         """Gets recent tramites for search functionality."""

@@ -1,32 +1,3 @@
-import smtplib
-from email.message import EmailMessage
-def send_error_email(subject, body):
-    """Envía un email de alerta en caso de error crítico."""
-    EMAIL_ENABLED = os.environ.get('ERROR_EMAIL_ENABLED', 'False').lower() == 'true'
-    if not EMAIL_ENABLED:
-        return
-    EMAIL_TO = os.environ.get('ERROR_EMAIL_TO')
-    EMAIL_FROM = os.environ.get('ERROR_EMAIL_FROM')
-    EMAIL_HOST = os.environ.get('ERROR_EMAIL_HOST')
-    EMAIL_PORT = int(os.environ.get('ERROR_EMAIL_PORT', 587))
-    EMAIL_USER = os.environ.get('ERROR_EMAIL_USER')
-    EMAIL_PASS = os.environ.get('ERROR_EMAIL_PASS')
-    if not all([EMAIL_TO, EMAIL_FROM, EMAIL_HOST, EMAIL_USER, EMAIL_PASS]):
-        logging.error("Faltan variables de entorno para email de error.")
-        return
-    try:
-        msg = EmailMessage()
-        msg.set_content(body)
-        msg['Subject'] = subject
-        msg['From'] = EMAIL_FROM
-        msg['To'] = EMAIL_TO
-        with smtplib.SMTP(EMAIL_HOST, EMAIL_PORT) as server:
-            server.starttls()
-            server.login(EMAIL_USER, EMAIL_PASS)
-            server.send_message(msg)
-        logging.info(f"Alerta de error enviada a {EMAIL_TO}")
-    except Exception as e:
-        logging.error(f"Error enviando email de alerta: {e}")
 """
 DocuExpress - Sistema de Gestión de Papelerías
 Aplicación Flask principal con configuración mejorada y seguridad reforzada.
@@ -64,6 +35,7 @@ load_dotenv()
 
 from ARCHIVOS.models import db, User
 from ARCHIVOS.backup_manager import backup_manager
+from ARCHIVOS.utils import send_error_email_async
 
 # Importa tus Blueprints
 # MEJORA DE ESTRUCTURA: Se actualizan las rutas de importación tras mover los archivos a la carpeta 'routes'.
@@ -381,7 +353,7 @@ def register_error_handlers(app):
         except Exception as e:
             logging.error(f"Error during DB rollback on 500 error: {e}")
         # Enviar alerta por email
-        send_error_email(
+        send_error_email_async(
             subject="DocuExpress - Error 500",
             body=f"Error interno del servidor: {error}"
         )
@@ -419,6 +391,17 @@ def register_blueprints(app):
         logging.info(f"✓ Blueprint registrado: {name}")
 
 
-# Para despliegue en PythonAnywhere, no se debe usar app.run().
-# El objeto 'app' debe estar disponible para WSGI:
-# from ARCHIVOS.app import app
+
+# ==================== EJECUCIÓN LOCAL SEGURA ====================
+# Para desarrollo local, permite ejecutar el servidor solo si el archivo es ejecutado como script principal.
+if __name__ == "__main__":
+    import sys
+    if sys.argv[0].endswith("app.py"):
+        print("\n[INFO] Para evitar errores de importación, ejecuta la app desde la raíz del proyecto con:\n")
+        print("    python3 -m ARCHIVOS.app\n")
+        print("Esto asegura que los imports funcionen correctamente.\n")
+        # Opción de ejecución directa para desarrollo rápido:
+        app = create_app()
+        app.run(debug=True, host="127.0.0.1", port=5000)
+    else:
+        print("[ERROR] Ejecuta el archivo como módulo: python3 -m ARCHIVOS.app\n")

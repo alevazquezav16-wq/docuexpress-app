@@ -1536,16 +1536,18 @@
     // --- FILTROS DE RANGO TEMPORAL ---
     // Las variables están declaradas globalmente arriba
 
+
     // Listener para cambios en filtros de rango
     document.body.addEventListener('change', function(event) {
         if (event.target.name === 'dateRange') {
             const value = event.target.value;
             const customPanel = document.getElementById('customRangePanel');
-            
             if (value === 'custom') {
                 customPanel.style.display = 'block';
             } else {
                 customPanel.style.display = 'none';
+                customStartDate = null;
+                customEndDate = null;
                 currentDateRange = parseInt(value);
                 applyDateFilter();
             }
@@ -1554,20 +1556,18 @@
 
     // Aplicar filtro personalizado
     document.body.addEventListener('click', function(event) {
-        if (event.target.id === 'applyCustomRange' || event.target.closest('#applyCustomRange')) {
+        if (event.target.id === 'applyCustomRange' || (event.target.closest && event.target.closest('#applyCustomRange'))) {
             const startInput = document.getElementById('customStartDate');
             const endInput = document.getElementById('customEndDate');
-            
             if (startInput.value && endInput.value) {
-                customStartDate = startInput.value;
-                customEndDate = endInput.value;
-                
                 // Validar que la fecha de inicio sea anterior a la de fin
-                if (new Date(customStartDate) > new Date(customEndDate)) {
+                if (new Date(startInput.value) > new Date(endInput.value)) {
                     alert('La fecha de inicio debe ser anterior a la fecha de fin');
                     return;
                 }
-                
+                customStartDate = startInput.value;
+                customEndDate = endInput.value;
+                currentDateRange = null;
                 applyDateFilter();
             } else {
                 alert('Por favor selecciona ambas fechas');

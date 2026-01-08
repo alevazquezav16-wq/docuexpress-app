@@ -6,7 +6,7 @@ import logging
 from werkzeug.utils import secure_filename
 
 from ..forms import GastoForm, EditarGastoForm, ProveedorForm, EditarProveedorForm, CATEGORIAS_GASTOS, DeleteForm
-from ..utils import get_effective_user_id
+from ..utils import get_effective_user_id, bump_user_data_version
 from ..database import gasto_repository, proveedor_repository
 
 gastos_bp = Blueprint('gastos', __name__)
@@ -51,6 +51,7 @@ def gestion_gastos():
             user_id=effective_user_id,
             receipt_filename=receipt_filename
         )
+        bump_user_data_version(effective_user_id) # Invalidar caché
         flash('Gasto registrado con éxito.', 'success')
 
         if request.headers.get('HX-Request'):
@@ -121,6 +122,7 @@ def editar_gasto(gasto_id):
             categoria=form.categoria.data,
             receipt_filename=receipt_filename
         )
+        bump_user_data_version(effective_user_id) # Invalidar caché
         flash('Gasto actualizado con éxito.', 'success')
         return redirect(url_for('gastos.gestion_gastos'))
 
@@ -136,6 +138,7 @@ def eliminar_gasto(gasto_id):
     if form.validate_on_submit():
         effective_user_id = get_effective_user_id()
         gasto_repository.delete(gasto_id, effective_user_id)
+        bump_user_data_version(effective_user_id) # Invalidar caché
         flash('Gasto eliminado con éxito.', 'success')
     else:
         flash('Error de validación al intentar eliminar el gasto.', 'danger')
@@ -163,6 +166,7 @@ def gestion_proveedores():
     form = ProveedorForm()
     if form.validate_on_submit():
         proveedor_repository.add(form.nombre.data, effective_user_id)
+        bump_user_data_version(effective_user_id) # Invalidar caché
         flash(f'Proveedor "{form.nombre.data}" agregado con éxito.', 'success')
         return redirect(url_for('gastos.gestion_proveedores'))
 
@@ -182,6 +186,7 @@ def editar_proveedor(proveedor_id):
     form = EditarProveedorForm(obj=proveedor)
     if form.validate_on_submit():
         proveedor_repository.update(proveedor_id, form.nombre.data, effective_user_id)
+        bump_user_data_version(effective_user_id) # Invalidar caché
         flash('Proveedor actualizado con éxito.', 'success')
         return redirect(url_for('gastos.gestion_proveedores'))
 
@@ -202,6 +207,7 @@ def eliminar_proveedor(proveedor_id):
             return redirect(url_for('gastos.gestion_proveedores'))
 
         proveedor_repository.delete(proveedor_id, effective_user_id)
+        bump_user_data_version(effective_user_id) # Invalidar caché
         flash('Proveedor eliminado con éxito.', 'success')
     else:
         flash('Error de validación al intentar eliminar el proveedor.', 'danger')

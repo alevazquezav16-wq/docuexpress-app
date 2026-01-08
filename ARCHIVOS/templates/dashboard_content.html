@@ -7,29 +7,30 @@
                 <label class="btn btn-outline-primary btn-sm" for="range7d">
                     <i class="bi bi-calendar-week me-1 d-none d-md-inline"></i><span class="d-md-none">7d</span><span class="d-none d-md-inline">7 días</span>
                 </label>
-                
                 <input type="radio" class="btn-check" name="dateRange" id="range30d" value="30" autocomplete="off">
                 <label class="btn btn-outline-primary btn-sm" for="range30d">
                     <i class="bi bi-calendar-month me-1 d-none d-md-inline"></i><span class="d-md-none">30d</span><span class="d-none d-md-inline">30 días</span>
                 </label>
-                
                 <input type="radio" class="btn-check" name="dateRange" id="range90d" value="90" autocomplete="off">
                 <label class="btn btn-outline-primary btn-sm" for="range90d">
                     <i class="bi bi-calendar3 me-1 d-none d-md-inline"></i><span class="d-md-none">90d</span><span class="d-none d-md-inline">90 días</span>
                 </label>
-                
                 <input type="radio" class="btn-check" name="dateRange" id="rangeYear" value="365" autocomplete="off">
                 <label class="btn btn-outline-primary btn-sm" for="rangeYear">
                     <i class="bi bi-calendar-range me-1 d-none d-md-inline"></i><span class="d-md-none">1a</span><span class="d-none d-md-inline">Año</span>
                 </label>
-                
                 <input type="radio" class="btn-check" name="dateRange" id="rangeCustom" value="custom" autocomplete="off">
                 <label class="btn btn-outline-primary btn-sm" for="rangeCustom">
                     <i class="bi bi-sliders me-1"></i><span class="d-none d-sm-inline">Personalizado</span><span class="d-sm-none">+</span>
                 </label>
             </div>
         </div>
-        
+        <!-- Resumen visual del rango seleccionado -->
+        <div class="text-center mt-2">
+            <span class="badge bg-info text-dark" id="dashboard-date-range-summary" style="font-size:1rem;">
+                Mostrando datos del <span id="dashboard-date-range-start">-</span> al <span id="dashboard-date-range-end">-</span>
+            </span>
+        </div>
         <!-- Panel de Rango Personalizado (oculto por defecto) -->
         <div id="customRangePanel" class="mt-3" style="display: none;">
             <div class="card border-primary">
@@ -54,6 +55,65 @@
         </div>
     </div>
 </div>
+</script>
+<script>
+// Actualiza el resumen visual del rango de fechas seleccionado en el dashboard
+function updateDashboardDateRangeSummary() {
+    let start = '-';
+    let end = '-';
+    if (typeof getStartDate === 'function' && typeof getEndDate === 'function') {
+        start = getStartDate();
+        end = getEndDate();
+    }
+    document.getElementById('dashboard-date-range-start').textContent = start;
+    document.getElementById('dashboard-date-range-end').textContent = end;
+}
+
+// Actualiza las tarjetas de resumen del dashboard según el filtro de fechas
+async function updateDashboardTotals() {
+    let fecha_inicio = typeof getStartDate === 'function' ? getStartDate() : null;
+    let fecha_fin = typeof getEndDate === 'function' ? getEndDate() : null;
+    try {
+        const params = new URLSearchParams();
+        if (fecha_inicio) params.append('fecha_inicio', fecha_inicio);
+        if (fecha_fin) params.append('fecha_fin', fecha_fin);
+        const res = await fetch('/api/dashboard-totals?' + params.toString(), {cache: 'no-store'});
+        if (!res.ok) throw new Error('Error al obtener totales');
+        const data = await res.json();
+        // Actualizar tarjetas
+        document.querySelector('#dashboard-cards .value[data-target]:nth-child(2)').textContent = `$${parseFloat(data.ganancia).toFixed(2)}`;
+        document.querySelector('#dashboard-cards .value[data-target]:nth-child(4)').textContent = data.tramites_de_hoy;
+        document.querySelector('#dashboard-cards .value[data-target]:nth-child(6)').textContent = data.num_papelerias;
+        document.querySelector('#dashboard-cards .value[data-target]:nth-child(8)').textContent = `$${parseFloat(data.total_gastos_operativos).toFixed(2)}`;
+    } catch (e) {
+        console.error('No se pudieron actualizar los totales del dashboard:', e);
+    }
+}
+
+function triggerDashboardTotalsUpdate() {
+    updateDashboardDateRangeSummary();
+    updateDashboardTotals();
+    if (typeof chartManager !== 'undefined' && chartManager.initialize) {
+        chartDataCache && chartDataCache.clear && chartDataCache.clear();
+        chartManager.initialize();
+    } else if (typeof initializeDashboardScripts === 'function') {
+        initializeDashboardScripts();
+    }
+}
+
+document.addEventListener('DOMContentLoaded', triggerDashboardTotalsUpdate);
+document.body.addEventListener('change', function(event) {
+    if (event.target.name === 'dateRange') {
+        setTimeout(triggerDashboardTotalsUpdate, 150);
+    }
+});
+document.body.addEventListener('click', function(event) {
+    if (event.target.id === 'applyCustomRange' || (event.target.closest && event.target.closest('#applyCustomRange'))) {
+        setTimeout(triggerDashboardTotalsUpdate, 250);
+    }
+});
+</script>
+</script>
 
 <!-- Fila de Tarjetas de Resumen Rediseñadas con Tendencias -->
 {% if current_user.role == 'admin' %}

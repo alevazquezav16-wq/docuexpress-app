@@ -8,7 +8,7 @@ import csv
 import logging
 
 from ..forms import PapeleriaForm, TramiteForm, EditarTramiteForm, EditarPapeleriaForm, DeleteForm
-from ..utils import get_effective_user_id, check_papeleria_owner, admin_required
+from ..utils import get_effective_user_id, check_papeleria_owner, admin_required, bump_user_data_version
 from ..database import papeleria_repository, tramite_repository, gasto_repository
 from ..constants import TRAMITES_PREDEFINIDOS
 from ..pdf_generator import generar_pdf_papeleria
@@ -65,6 +65,7 @@ def gestionar_precios_papeleria(papeleria_id):
         form_data = {k: v for k, v in request.form.items() if k != 'csrf_token'}
         _, errors = papeleria_repository.set_precios_bulk(papeleria_id, form_data, effective_user_id)
 
+        bump_user_data_version(effective_user_id) # Invalidar caché
         if errors:
             for error in errors:
                 flash(error, 'danger')
@@ -104,6 +105,7 @@ def agregar_papeleria():
             # papeleria_repository.add se encargará de crear una nueva o reactivar una inactiva.
             # Si ya existe una activa con el mismo nombre, lanzará un ValueError.
             new_papeleria = papeleria_repository.add(nombre, user_id)
+            bump_user_data_version(user_id) # Invalidar caché
             flash('Papelería agregada o reactivada con éxito.', 'success')
             
             # Crear un nuevo formulario limpio
@@ -140,14 +142,13 @@ def agregar_papeleria():
 @login_required
 def registrar_tramite():
     form = TramiteForm(data=request.form)
-    # Corrección: Usar el método correcto para obtener las papelerías y poblar las opciones.
     effective_user_id = get_effective_user_id()
     papelerias_data = papeleria_repository.get_papelerias_and_totals_for_user(effective_user_id)
     form.papeleria_id.choices = [(p.id, p.nombre) for p in papelerias_data['papelerias']]
-    
+
+
     if form.validate_on_submit():
         papeleria_id = form.papeleria_id.data
-        
         if form.tramite.data == 'OTRO':
             tramite_nombre = form.tramite_manual.data.strip().upper()
         else:
@@ -155,51 +156,61 @@ def registrar_tramite():
 
         precio_input = form.precio.data
         precio = None
-
         if isinstance(precio_input, (int, float)):
             precio = precio_input
-
         if precio is None:
             precio_especifico = papeleria_repository.get_default_precio(papeleria_id, tramite_nombre, effective_user_id)
             if precio_especifico is not None:
                 precio = precio_especifico
             else:
                 form.precio.errors.append(f"No hay precio predefinido para '{tramite_nombre}'. Debes ingresarlo manualmente o configurarlo.")
+                if request.headers.get('HX-Request'):
+                    return render_template('partials/form_registrar_tramite_content.html', form_tramite=form), 200
                 return render_template('partials/form_registrar_tramite_content.html', form_tramite=form), 422
-        
-        # Mejora: Obtener costo por defecto si no se proporciona uno.
+
         costo = form.costo.data
-        if costo == 0: # Asumimos que 0 significa que no se ingresó.
+        if costo == 0:
             costo_default = tramite_repository.get_costo_for_tramite(tramite_nombre, effective_user_id)
             if costo_default is not None:
                 costo = costo_default
 
         cantidad = form.cantidad.data
         fecha = form.fecha.data.strftime('%Y-%m-%d')
-    
+
         try:
             tramite_repository.add_bulk(papeleria_id, tramite_nombre, effective_user_id, fecha, precio, costo, cantidad)
+            bump_user_data_version(effective_user_id) # Invalidar caché
             flash(f"{cantidad} trámite(s) de '{tramite_nombre}' registrados correctamente.", 'success')
+
+            # Si la petición es HTMX, devolver el mensaje flash OOB y el formulario limpio
+            if request.headers.get('HX-Request'):
+                flash_html = render_template('flash_messages.html')
+                # Renderizar un formulario limpio pero manteniendo la papelería seleccionada
+                new_form = TramiteForm()
+                papelerias_data = papeleria_repository.get_papelerias_and_totals_for_user(effective_user_id)
+                new_form.papeleria_id.choices = [(p.id, p.nombre) for p in papelerias_data['papelerias']]
+                new_form.papeleria_id.data = papeleria_id # Mantener selección para agilizar captura
+                
+                form_html = render_template('partials/form_registrar_tramite_content.html', form_tramite=new_form)
+                # OOB swap para actualizar el contenedor de mensajes flash y el formulario
+                response = make_response(f'<div id="flash-container" hx-swap-oob="innerHTML">{flash_html}</div>{form_html}')
+                response.headers['HX-Trigger'] = json.dumps({'reload-dashboard': '', 'refresh-papeleria-list': ''})
+                return response
+            # Si no es HTMX, redirect tradicional
+            return redirect(url_for('papeleria.ver_papeleria', papeleria_id=papeleria_id))
+
         except Exception as e:
             logging.error(f"Error al registrar tramite: {e}")
             flash(f"Error al registrar tramite: {e}", "danger")
+            # Si es HTMX y hubo excepción, devolver form con error y mensaje flash con status 200
+            if request.headers.get('HX-Request'):
+                flash_html = render_template('flash_messages.html')
+                form_html = render_template('partials/form_registrar_tramite_content.html', form_tramite=form)
+                return make_response(f'<div id="flash-container" hx-swap-oob="innerHTML">{flash_html}</div>{form_html}'), 200
 
-        # 1. Limpiamos el formulario y recargamos las opciones de papelería
-        new_form = TramiteForm()
-        # IMPORTANTE: Recargar las opciones para asegurar que el select tenga datos
-        new_form.papeleria_id.choices = [(p.id, p.nombre) for p in papelerias_data['papelerias']]
-        
-        # 2. Renderizamos el formulario limpio y los mensajes flash (OOB swap)
-        form_html = render_template('form_registrar_tramite.html', form_tramite=new_form)
-        flash_html = render_template('flash_messages.html')
-        
-        response = make_response(form_html + f'<div id="flash-container" hx-swap-oob="innerHTML">{flash_html}</div>')
-        # 3. Disparamos eventos para actualizar gráficos y lista sin recargar la página
-        response.headers['HX-Trigger'] = json.dumps({'reload-dashboard': '', 'refresh-papeleria-list': ''})
-        return response
-    
-    # Si la validación falla, devolvemos el formulario con los errores.
-    # Usamos un parcial para que HTMX pueda reemplazar solo el contenido del formulario.
+    # Si la validación falla, renderizar el formulario con errores
+    if request.headers.get('HX-Request'):
+        return render_template('partials/form_registrar_tramite_content.html', form_tramite=form), 200
     return render_template('partials/form_registrar_tramite_content.html', form_tramite=form), 422
 
 @papeleria_bp.route('/_tramite_form_papelerias')
@@ -243,6 +254,7 @@ def editar_tramite(tramite_id):
         costo = form.costo.data
 
         tramite_repository.update(tramite_id, effective_user_id, fecha, tipo_tramite, precio, costo)
+        bump_user_data_version(effective_user_id) # Invalidar caché
         flash('Trámite actualizado con éxito.', 'success')
 
         # Si es una petición HTMX, disparar evento para recargar
@@ -259,7 +271,7 @@ def editar_tramite(tramite_id):
     
     # Si la validación falla y es HTMX, devolvemos solo el parcial con 422
     if request.method == 'POST' and request.headers.get('HX-Request'):
-        return render_template('partials/editar_tramite_content.html', form=form, tramite=tramite), 422
+        return render_template('partials/editar_tramite_content.html', form=form, tramite=tramite), 200
 
     return render_template('editar_tramite.html', form=form, tramite=tramite)
 
@@ -271,6 +283,7 @@ def eliminar_tramite(tramite_id):
         effective_user_id = get_effective_user_id()
         papeleria_id = tramite_repository.delete(tramite_id, effective_user_id)
         if papeleria_id is not None:
+            bump_user_data_version(effective_user_id) # Invalidar caché
             flash('Trámite eliminado correctamente.', 'success')
         else:
             flash('No se pudo eliminar el trámite (no encontrado o sin permisos).', 'error')
@@ -316,6 +329,7 @@ def editar_papeleria(papeleria_id):
             return render_template('editar_papeleria.html', form=form, papeleria_id=papeleria_id, nombre_actual=papeleria_actual, delete_form=delete_form)
 
         papeleria_repository.update_name(papeleria_id, nuevo_nombre, effective_user_id)
+        bump_user_data_version(effective_user_id) # Invalidar caché
         flash(f'Nombre de papelería actualizado a "{nuevo_nombre}" con éxito.', 'success')
 
         # Si es una petición HTMX, disparar evento para recargar dashboard
@@ -330,7 +344,7 @@ def editar_papeleria(papeleria_id):
         return redirect(url_for('main.index'))
     
     if request.method == 'POST' and request.headers.get('HX-Request'):
-        return render_template('partials/editar_papeleria_content.html', form=form, papeleria_id=papeleria_id, nombre_actual=papeleria_actual, delete_form=delete_form), 422
+        return render_template('partials/editar_papeleria_content.html', form=form, papeleria_id=papeleria_id, nombre_actual=papeleria_actual, delete_form=delete_form), 200
 
     return render_template('editar_papeleria.html', form=form, papeleria_id=papeleria_id, nombre_actual=papeleria_actual, delete_form=delete_form)
 
@@ -344,6 +358,7 @@ def eliminar_papeleria(papeleria_id):
     if form.validate_on_submit():
         nombre_papeleria = papeleria_repository.get_name(papeleria_id, effective_user_id)
         papeleria_repository.delete(papeleria_id, effective_user_id)
+        bump_user_data_version(effective_user_id) # Invalidar caché
         flash(f'La papelería "{nombre_papeleria}" y todos sus datos han sido eliminados con éxito.', 'success')
     else:
         flash('Error de validación al intentar eliminar la papeleria.', 'danger')

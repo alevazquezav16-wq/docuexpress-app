@@ -6,8 +6,8 @@ Script de verificación para comprobar que todas las correcciones funcionan corr
 import sys
 import os
 
-# Añadir el directorio actual al path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Añadir el directorio padre al path para permitir imports absolutos (ARCHIVOS.x)
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 print("=" * 60)
 print("VERIFICACIÓN DE CORRECCIONES - DocuExpress")
@@ -16,7 +16,7 @@ print("=" * 60)
 # 1. Verificar importaciones
 print("\n1. Verificando importaciones...")
 try:
-    from database import (
+    from ARCHIVOS.database import (
         tramite_repository, 
         papeleria_repository, 
         gasto_repository, 
@@ -62,7 +62,7 @@ except AssertionError as e:
 # 4. Verificar rutas API
 print("\n4. Verificando rutas API...")
 try:
-    from routes.api_routes import api_bp
+    from ARCHIVOS.routes.api_routes import api_bp
     
     # Verificar que el blueprint tenga las funciones de vista
     endpoints = [
@@ -73,7 +73,7 @@ try:
     
     for endpoint in endpoints:
         # Verificar que la función exista en el módulo
-        import routes.api_routes as api_module
+        import ARCHIVOS.routes.api_routes as api_module
         if hasattr(api_module, endpoint):
             print(f"   ✓ Endpoint función '{endpoint}' disponible")
         else:
@@ -97,10 +97,11 @@ except Exception as e:
 # 5. Verificar templates críticos
 print("\n5. Verificando templates...")
 try:
+    base_dir = os.path.dirname(os.path.abspath(__file__))
     templates_to_check = [
-        'templates/base.html',
-        'templates/index.html',
-        'templates/dashboard_content.html'
+        os.path.join(base_dir, 'templates/base.html'),
+        os.path.join(base_dir, 'templates/index.html'),
+        os.path.join(base_dir, 'templates/dashboard_content.html')
     ]
     
     for template in templates_to_check:
@@ -119,7 +120,8 @@ except Exception as e:
 # 6. Verificar estructura de base.html
 print("\n6. Verificando JavaScript en base.html...")
 try:
-    with open('templates/base.html', 'r', encoding='utf-8') as f:
+    base_html_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates/base.html')
+    with open(base_html_path, 'r', encoding='utf-8') as f:
         content = f.read()
         
     checks = [

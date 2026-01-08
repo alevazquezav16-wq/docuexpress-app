@@ -5,6 +5,11 @@ from .models import Papeleria, db
 import os
 from PIL import Image
 from werkzeug.utils import secure_filename
+from datetime import datetime
+import threading
+import smtplib
+from email.message import EmailMessage
+import logging
 
 
 # --- Helpers de Usuario ---
@@ -81,3 +86,63 @@ def save_logo_image(file, user_id):
     except Exception as e:
         # Relanzar la excepción con un mensaje más claro.
         raise Exception(f'El archivo subido no es una imagen válida. Error: {e}')
+
+def get_user_data_version(user_id):
+    """Obtiene la versión actual de los datos del usuario para invalidación de caché."""
+    cache = getattr(current_app, 'cache', None)
+    if not cache:
+        return None
+    key = f"data_ver:{user_id}"
+    version = cache.get(key)
+    if not version:
+        version = str(int(datetime.now().timestamp()))
+        cache.set(key, version, timeout=0)
+    return version
+
+def bump_user_data_version(user_id):
+    """Actualiza la versión de los datos del usuario, invalidando cachés dependientes."""
+    cache = getattr(current_app, 'cache', None)
+    if cache:
+        key = f"data_ver:{user_id}"
+        new_version = str(int(datetime.now().timestamp()))
+        cache.set(key, new_version, timeout=0)
+
+def send_error_email_async(subject, body):
+    """
+    Envía un email de alerta en un hilo separado para no bloquear la aplicación.
+    """
+    def _send():
+        EMAIL_ENABLED = os.environ.get('ERROR_EMAIL_ENABLED', 'False').lower() == 'true'
+        if not EMAIL_ENABLED:
+            return
+            
+        EMAIL_TO = os.environ.get('ERROR_EMAIL_TO')
+        EMAIL_FROM = os.environ.get('ERROR_EMAIL_FROM')
+        EMAIL_HOST = os.environ.get('ERROR_EMAIL_HOST')
+        EMAIL_PORT = int(os.environ.get('ERROR_EMAIL_PORT', 587))
+        EMAIL_USER = os.environ.get('ERROR_EMAIL_USER')
+        EMAIL_PASS = os.environ.get('ERROR_EMAIL_PASS')
+        
+        if not all([EMAIL_TO, EMAIL_FROM, EMAIL_HOST, EMAIL_USER, EMAIL_PASS]):
+            logging.error("Faltan variables de entorno para email de error.")
+            return
+            
+        try:
+            msg = EmailMessage()
+            msg.set_content(body)
+            msg['Subject'] = subject
+            msg['From'] = EMAIL_FROM
+            msg['To'] = EMAIL_TO
+            
+            with smtplib.SMTP(EMAIL_HOST, EMAIL_PORT) as server:
+                server.starttls()
+                server.login(EMAIL_USER, EMAIL_PASS)
+                server.send_message(msg)
+            logging.info(f"Alerta de error enviada a {EMAIL_TO}")
+        except Exception as e:
+            logging.error(f"Error enviando email de alerta: {e}")
+
+    # Ejecutar en un hilo demonio para que no bloquee el cierre de la app
+    thread = threading.Thread(target=_send)
+    thread.daemon = True
+    thread.start()

@@ -4,7 +4,10 @@ Script para verificar que el sistema de notificaciones funciona correctamente.
 """
 
 def test_notifications():
-    from app import create_app
+    import sys
+    import os
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from ARCHIVOS.app import create_app
     
     print("🔍 Verificando sistema de notificaciones...\n")
     

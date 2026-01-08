@@ -29,9 +29,53 @@
 </div>
  <div class="row">
     <div class="col-md-6 mb-3">
-        {{ form_tramite.cantidad.label(class="form-label") }}
-        {{ form_tramite.cantidad(class="form-control" + (" is-invalid" if form_tramite.cantidad.errors else ""), type="number", min="1", step="1") }}
-        {% for error in form_tramite.cantidad.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+        <label for="cantidad" class="form-label d-flex align-items-center gap-1">
+            {{ form_tramite.cantidad.label.text }}
+            <i class="bi bi-info-circle text-primary" tabindex="0" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-content="Indica cuántos trámites iguales deseas registrar de una sola vez."></i>
+        </label>
+        <div class="input-group justify-content-center" style="max-width: 220px; margin: 0 auto;">
+            <button type="button" class="btn btn-outline-secondary btn-lg px-3" style="font-size:1.5rem;" onclick="stepCantidad(-1)"><i class="bi bi-dash"></i></button>
+            <input type="number" id="cantidad" name="cantidad" min="1" step="1" class="form-control text-center form-control-lg mx-2" style="font-size:2rem; max-width: 100px; border-radius: 1.5rem;" value="{{ form_tramite.cantidad.data or 1 }}" oninput="validateCantidadInput()" onwheel="wheelCantidad(event)" ontouchstart="touchCantidadStart(event)" ontouchmove="touchCantidadMove(event)">
+            <button type="button" class="btn btn-outline-secondary btn-lg px-3" style="font-size:1.5rem;" onclick="stepCantidad(1)"><i class="bi bi-plus"></i></button>
+        </div>
+        <div class="text-center mt-1">
+            <small class="text-muted">Desliza, toca o usa +/- para elegir</small>
+        </div>
+        {% for error in form_tramite.cantidad.errors %}<div class="invalid-feedback fw-bold">{{ error }}</div>{% endfor %}
+        <script>
+        function stepCantidad(delta) {
+            var input = document.getElementById('cantidad');
+            var val = parseInt(input.value) || 1;
+            val += delta;
+            if (val < 1) val = 1;
+            input.value = val;
+            input.dispatchEvent(new Event('input'));
+        }
+        function validateCantidadInput() {
+            var input = document.getElementById('cantidad');
+            if (parseInt(input.value) < 1 || isNaN(parseInt(input.value))) input.value = 1;
+        }
+        function wheelCantidad(e) {
+            e.preventDefault();
+            stepCantidad(e.deltaY < 0 ? 1 : -1);
+        }
+        // Soporte touch para deslizar arriba/abajo
+        let touchStartY = null;
+        function touchCantidadStart(e) {
+            if (e.touches && e.touches.length === 1) {
+                touchStartY = e.touches[0].clientY;
+            }
+        }
+        function touchCantidadMove(e) {
+            if (touchStartY !== null && e.touches && e.touches.length === 1) {
+                let deltaY = e.touches[0].clientY - touchStartY;
+                if (Math.abs(deltaY) > 20) {
+                    stepCantidad(deltaY < 0 ? 1 : -1);
+                    touchStartY = e.touches[0].clientY;
+                }
+            }
+        }
+        </script>
     </div>
     <div class="col-md-6 mb-3">
         {{ form_tramite.fecha.label(class="form-label") }}
