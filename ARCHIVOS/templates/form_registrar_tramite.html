@@ -1,4 +1,7 @@
-<div id="registrar-tramite-container">
+<div id="registrar-tramite-container" 
+     hx-trigger="refresh-papeleria-list from:body" 
+     hx-get="{{ url_for('papeleria.get_tramite_form') }}" 
+     hx-swap="innerHTML">
 <form id="form-registrar-tramite"
 		hx-post="{{ url_for('papeleria.registrar_tramite') }}"
 		hx-target="#registrar-tramite-container"

@@ -72,81 +72,85 @@
                             </div>
                         </td>
                     </tr>
-                    
-                    <!-- Modal Restablecer Contraseña -->
-                    <div class="modal fade" id="resetModal{{ user.id }}" tabindex="-1" aria-hidden="true">
-                        <div class="modal-dialog">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title">
-                                        <i class="bi bi-key-fill text-warning me-2"></i>
-                                        Restablecer Contraseña
-                                    </h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <form method="post" action="{{ url_for('auth.reset_password_admin', user_id=user.id) }}">
-                                    {{ reset_form.hidden_tag() }}
-                                    <div class="modal-body">
-                                        <p>Establecer nueva contraseña para <strong>{{ user.username }}</strong>:</p>
-                                        <div class="mb-3">
-                                            {{ reset_form.nuevo_password.label(class="form-label") }}
-                                            {{ reset_form.nuevo_password(class="form-control", placeholder="Mínimo 8 caracteres") }}
-                                        </div>
-                                        <div class="mb-3">
-                                            {{ reset_form.confirmar_password.label(class="form-label") }}
-                                            {{ reset_form.confirmar_password(class="form-control", placeholder="Confirmar contraseña") }}
-                                        </div>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                        {{ reset_form.submit(class="btn btn-warning") }}
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Modal Eliminar Usuario -->
-                    <div class="modal fade" id="deleteModal{{ user.id }}" tabindex="-1" aria-hidden="true">
-                        <div class="modal-dialog">
-                            <div class="modal-content">
-                                <div class="modal-header bg-danger text-white">
-                                    <h5 class="modal-title">
-                                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                                        Confirmar Eliminación
-                                    </h5>
-                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <p>¿Estás seguro de que deseas eliminar al usuario <strong>{{ user.username }}</strong>?</p>
-                                    <div class="alert alert-warning mb-0">
-                                        <i class="bi bi-exclamation-circle me-1"></i>
-                                        <strong>¡Atención!</strong> Esta acción eliminará permanentemente:
-                                        <ul class="mb-0 mt-2">
-                                            <li>Todas las papelerías del usuario</li>
-                                            <li>Todos los trámites registrados</li>
-                                            <li>Todos los gastos y proveedores</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                    <form method="post" action="{{ url_for('auth.eliminar_usuario', user_id=user.id) }}" class="d-inline">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                        <button type="submit" class="btn btn-danger">
-                                            <i class="bi bi-trash me-1"></i> Eliminar Usuario
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
 </div>
+
+<!-- Modales fuera de la tabla para evitar problemas de overflow -->
+{% for user in usuarios %}
+<!-- Modal Restablecer Contraseña -->
+<div class="modal fade" id="resetModal{{ user.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-key-fill text-warning me-2"></i>
+                    Restablecer Contraseña
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{{ url_for('auth.reset_password_admin', user_id=user.id) }}">
+                {{ reset_form.hidden_tag() }}
+                <div class="modal-body">
+                    <p>Establecer nueva contraseña para <strong>{{ user.username }}</strong>:</p>
+                    <div class="mb-3">
+                        {{ reset_form.nuevo_password.label(class="form-label") }}
+                        {{ reset_form.nuevo_password(class="form-control", placeholder="Mínimo 8 caracteres") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ reset_form.confirmar_password.label(class="form-label") }}
+                        {{ reset_form.confirmar_password(class="form-control", placeholder="Confirmar contraseña") }}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    {{ reset_form.submit(class="btn btn-warning") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Eliminar Usuario -->
+<div class="modal fade" id="deleteModal{{ user.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas eliminar al usuario <strong>{{ user.username }}</strong>?</p>
+                <div class="alert alert-warning mb-0">
+                    <i class="bi bi-exclamation-circle me-1"></i>
+                    <strong>¡Atención!</strong> Esta acción eliminará permanentemente:
+                    <ul class="mb-0 mt-2">
+                        <li>Todas las papelerías del usuario</li>
+                        <li>Todos los trámites registrados</li>
+                        <li>Todos los gastos y proveedores</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="post" action="{{ url_for('auth.eliminar_usuario', user_id=user.id) }}" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-1"></i> Eliminar Usuario
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
 {% else %}
 <div class="alert alert-info">
     <i class="bi bi-info-circle me-2"></i>

@@ -142,6 +142,16 @@ def agregar_papeleria():
     form_html = render_template('form_agregar_papeleria.html', form_papeleria=form_papeleria)
     return form_html, 422
 
+@papeleria_bp.route('/get-tramite-form', methods=['GET'])
+@login_required
+def get_tramite_form():
+    """Devuelve el formulario de trámites actualizado (para HTMX cuando se agrega una papelería)."""
+    effective_user_id = get_effective_user_id()
+    papelerias = papeleria_repository.get_all(effective_user_id)
+    form_tramite = TramiteForm()
+    form_tramite.papeleria_id.choices = [(p.id, p.nombre) for p in papelerias]
+    return render_template('form_registrar_tramite.html', form_tramite=form_tramite)
+
 @papeleria_bp.route('/registrar-tramite', methods=['POST'])
 @login_required
 def registrar_tramite():
@@ -407,7 +417,15 @@ def eliminar_papeleria(papeleria_id):
 @login_required
 @check_papeleria_owner
 def descargar_pdf(papeleria_id):
+    from ..pdf_generator import REPORTLAB_AVAILABLE
+    
     logging.info(f"Downloading PDF for papeleria with id: {papeleria_id} by user: {current_user.id}")
+    
+    # Verificar si reportlab está disponible
+    if not REPORTLAB_AVAILABLE:
+        flash('La generación de PDFs no está disponible en este servidor. Por favor, usa la opción de exportar a CSV.', 'warning')
+        return redirect(url_for('papeleria.ver_papeleria', papeleria_id=papeleria_id))
+    
     fecha_inicio = request.args.get('fecha_inicio')
     fecha_fin = request.args.get('fecha_fin')
     effective_user_id = get_effective_user_id()
