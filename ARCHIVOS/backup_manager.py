@@ -9,8 +9,16 @@ import shutil
 import logging
 from pathlib import Path
 from datetime import datetime, timedelta
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.cron import CronTrigger
+
+# APScheduler es opcional (ahorra espacio en PythonAnywhere gratis)
+APSCHEDULER_AVAILABLE = False
+try:
+    from apscheduler.schedulers.background import BackgroundScheduler
+    from apscheduler.triggers.cron import CronTrigger
+    APSCHEDULER_AVAILABLE = True
+except ImportError:
+    BackgroundScheduler = None
+    CronTrigger = None
 
 logger = logging.getLogger(__name__)
 

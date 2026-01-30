@@ -7,7 +7,13 @@ from ..utils import get_effective_user_id, admin_required, save_logo_image
 from ..forms import ConfigForm
 from ..database import tramite_repository
 from ..constants import TRAMITES_PREDEFINIDOS
-from ..backup_manager import backup_manager
+
+# backup_manager es opcional (no funciona sin APScheduler)
+try:
+    from ..backup_manager import backup_manager, APSCHEDULER_AVAILABLE
+except ImportError:
+    backup_manager = None
+    APSCHEDULER_AVAILABLE = False
 
 config_bp = Blueprint('config', __name__, url_prefix='/configuracion')
 
@@ -122,6 +128,14 @@ def actualizar_costos_viejos():
 @admin_required
 def list_backups():
     """Lista todos los backups disponibles."""
+    if not backup_manager or not APSCHEDULER_AVAILABLE:
+        return jsonify({
+            'success': False,
+            'message': 'Sistema de backups no disponible (APScheduler no instalado)',
+            'backups': [],
+            'count': 0,
+            'enabled': False
+        })
     backups = backup_manager.list_backups()
     return jsonify({
         'success': True,
@@ -135,6 +149,11 @@ def list_backups():
 @admin_required
 def create_backup():
     """Crea un backup manual de la base de datos."""
+    if not backup_manager or not APSCHEDULER_AVAILABLE:
+        return jsonify({
+            'success': False,
+            'message': 'Sistema de backups no disponible'
+        }), 503
     backup_path = backup_manager.create_backup(manual=True)
     
     if backup_path:
@@ -155,6 +174,9 @@ def create_backup():
 @admin_required
 def download_backup(filename):
     """Descarga un backup específico."""
+    if not backup_manager or not APSCHEDULER_AVAILABLE:
+        flash('Sistema de backups no disponible', 'warning')
+        return redirect(url_for('config.configuracion'))
     backup_path = backup_manager.backup_dir / filename
     
     if not backup_path.exists() or not backup_path.is_file():
@@ -173,6 +195,11 @@ def download_backup(filename):
 @admin_required
 def restore_backup(filename):
     """Restaura la base de datos desde un backup."""
+    if not backup_manager or not APSCHEDULER_AVAILABLE:
+        return jsonify({
+            'success': False,
+            'message': 'Sistema de backups no disponible'
+        }), 503
     success = backup_manager.restore_backup(filename)
     
     if success:

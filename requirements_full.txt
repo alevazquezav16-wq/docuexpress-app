@@ -1,0 +1,43 @@
+# DocuExpress - Dependencias Completas para PythonAnywhere
+# Instalar con: pip install --no-cache-dir -r requirements_full.txt
+
+# Core Flask
+Flask==3.1.2
+Werkzeug==3.1.3
+Jinja2==3.1.6
+itsdangerous==2.2.0
+click==8.3.0
+MarkupSafe==3.0.3
+blinker==1.9.0
+
+# Flask Extensions
+Flask-Login==0.6.3
+Flask-SQLAlchemy==3.1.1
+Flask-WTF==1.2.2
+Flask-Caching==2.3.1
+Flask-Limiter==3.5.0
+
+# Database
+SQLAlchemy==2.0.44
+
+# Forms & Validation
+WTForms==3.2.1
+email-validator==2.3.0
+
+# PDF Generation (requerido)
+reportlab==4.4.4
+
+# Image Processing (requerido)
+pillow==12.0.0
+
+# Scheduled Tasks (requerido)
+APScheduler==3.10.4
+
+# Environment
+python-dotenv==1.0.0
+
+# Rate Limiting
+limits==5.6.0
+
+# Caching
+cachelib==0.13.0

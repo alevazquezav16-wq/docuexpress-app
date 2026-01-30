@@ -1,0 +1,2034 @@
+<!DOCTYPE html>
+<html lang="es">
+<script>
+    // Este script se ejecuta antes de que se renderice el body para evitar el "flash" de tema incorrecto.
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-bs-theme', savedTheme);
+</script>
+
+<head>
+    <meta charset="UTF-8">
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página No Encontrada - DocuExpress</title>
+    <!-- Google Fonts - Inter: Fuente profesional y moderna -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        /* ==========================================================================
+           Custom Metric Cards and Theme Fixes
+           ========================================================================== */
+
+        /* ==========================================================================
+           TIPOGRAFÍA PROFESIONAL Y VARIABLES DE TEMA
+           ========================================================================== */
+        
+        /* Tipografía base con Inter - Una de las mejores fuentes para UI moderna */
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+        }
+        
+        body {
+            font-size: 15px;
+            line-height: 1.6;
+            letter-spacing: -0.011em; /* Espaciado negativo sutil para mejor lectura */
+        }
+        
+        /* Jerarquía tipográfica mejorada */
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            line-height: 1.3;
+        }
+        
+        h1 { font-size: 2.5rem; }
+        h2 { font-size: 2rem; }
+        h3 { font-size: 1.75rem; }
+        h4 { font-size: 1.5rem; }
+        h5 { font-size: 1.25rem; font-weight: 600; }
+        h6 { font-size: 1rem; font-weight: 600; }
+        
+        /* Texto con mejor contraste y legibilidad */
+        p, li, td, th, label, .form-control, .form-select {
+            font-weight: 400;
+            letter-spacing: -0.006em;
+        }
+        
+        /* Elementos de énfasis */
+        strong, .fw-bold {
+            font-weight: 600;
+        }
+        
+        .fw-semibold {
+            font-weight: 500;
+        }
+        
+        /* Números y métricas con fuente tabular para mejor alineación */
+        .metric-value, .table td:has(> .badge), .currency {
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: 'tnum' 1;
+        }
+
+        /* 1. Definición de variables de color para modo claro y oscuro */
+        [data-bs-theme="light"] {
+            --bs-body-bg: #f8f9fa; /* Fondo gris muy claro */
+            --bs-body-color: #1e293b; /* Texto oscuro con buen contraste */
+            --metric-bg: #ffffff;
+            --metric-text: #1e293b;
+            --metric-label-color: #64748b; /* Gris medio para labels */
+            --metric-value-color: #0f172a; /* Casi negro para valores */
+            --metric-icon-color: rgba(0, 0, 0, 0.15);
+            --metric-positive-color: #16a34a;
+            --metric-negative-color: #dc2626;
+            --metric-border-color: rgba(0,0,0,0.08);
+            --card-header-bg: #f8fafc;
+            --text-muted: #64748b;
+        }
+
+        [data-bs-theme="dark"] {
+            --bs-body-bg: #0f172a; /* Slate 900 - Azul oscuro profesional */
+            --bs-body-color: #e2e8f0; /* Slate 200 - Texto claro legible */
+            --metric-bg: #1e293b;  /* Slate 800 - Tarjetas */
+            --metric-text: #f1f5f9; /* Slate 100 - Texto principal */
+            --metric-label-color: #94a3b8; /* Slate 400 - Labels */
+            --metric-value-color: #f8fafc; /* Slate 50 - Valores destacados */
+            --metric-icon-color: rgba(148, 163, 184, 0.3);
+            --metric-positive-color: #22c55e;
+            --metric-negative-color: #ef4444;
+            --metric-border-color: rgba(148, 163, 184, 0.12);
+            --card-header-bg: #1e293b;
+            --text-muted: #94a3b8;
+        }
+
+        /* ==========================================================================
+           CARDS Y FORMULARIOS - Tema adaptativo
+           ========================================================================== */
+        .card {
+            background-color: var(--metric-bg);
+            border-color: var(--metric-border-color);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
+        }
+        
+        [data-bs-theme="dark"] .card {
+            background-color: var(--metric-bg);
+            border-color: rgba(148, 163, 184, 0.1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+        
+        .card-header {
+            background-color: var(--card-header-bg);
+            border-bottom-color: var(--metric-border-color);
+            font-weight: 600;
+            font-size: 0.95rem;
+            letter-spacing: -0.01em;
+        }
+        
+        .card-body {
+            color: var(--bs-body-color);
+        }
+        
+        /* Formularios con mejor contraste */
+        .form-control, .form-select {
+            font-size: 0.9375rem;
+            font-weight: 400;
+            border-color: var(--metric-border-color);
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        
+        [data-bs-theme="dark"] .form-control,
+        [data-bs-theme="dark"] .form-select {
+            background-color: #1e293b;
+            border-color: rgba(148, 163, 184, 0.15);
+            color: #f1f5f9;
+        }
+        
+        [data-bs-theme="dark"] .form-control:focus,
+        [data-bs-theme="dark"] .form-select:focus {
+            background-color: #1e293b;
+            border-color: #3b82f6;
+            color: #f1f5f9;
+            box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.15);
+        }
+        
+        /* Labels más legibles */
+        .form-label {
+            font-weight: 500;
+            font-size: 0.875rem;
+            color: var(--bs-body-color);
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Text muted adaptativo */
+        .text-muted {
+            color: var(--text-muted) !important;
+        }
+
+        /* Hacemos que los fondos sutiles sean translúcidos en lugar de opacos */
+        [data-bs-theme="dark"] .bg-success-subtle {
+            background-color: rgba(25, 135, 84, 0.15) !important;
+            border-color: rgba(25, 135, 84, 0.3) !important;
+        }
+        [data-bs-theme="dark"] .bg-danger-subtle {
+            background-color: rgba(220, 53, 69, 0.15) !important;
+            border-color: rgba(220, 53, 69, 0.3) !important;
+        }
+        [data-bs-theme="dark"] .bg-primary-subtle {
+            background-color: rgba(13, 110, 253, 0.15) !important;
+            border-color: rgba(13, 110, 253, 0.3) !important;
+        }
+        [data-bs-theme="dark"] .bg-warning-subtle {
+            background-color: rgba(255, 193, 7, 0.15) !important;
+            border-color: rgba(255, 193, 7, 0.3) !important;
+        }
+
+        /* 2. Estilo base para las nuevas tarjetas de métricas */
+        .metric-card {
+            background-color: var(--metric-bg);
+            color: var(--metric-text);
+            border: 1px solid var(--metric-border-color);
+            border-radius: 0.75rem; /* Bordes más redondeados */
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04);
+        }
+
+        .metric-card .icon {
+            font-size: 2.25rem;
+            color: var(--metric-icon-color);
+            margin-right: 1rem;
+        }
+
+        .metric-card .content {
+            flex-grow: 1;
+        }
+
+        .metric-card .label {
+            font-size: 0.875rem;
+            color: var(--metric-label-color);
+            margin-bottom: 0.25rem;
+        }
+
+        .metric-card .value {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--metric-value-color);
+            white-space: nowrap;
+        }
+        
+        /* Indicadores de tendencia */
+        .metric-card .trend {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .trend i {
+            font-size: 0.9rem;
+        }
+        
+        .trend-label {
+            opacity: 0.7;
+            font-weight: 400;
+            font-size: 0.75rem;
+            margin-left: 0.25rem;
+        }
+        
+        .trend-up {
+            color: #16a34a;
+        }
+        
+        .trend-down {
+            color: #dc2626;
+        }
+        
+        .trend-neutral {
+            color: #64748b;
+        }
+        
+        .trend-info {
+            color: #3b82f6;
+        }
+        
+        [data-bs-theme="dark"] .trend-up {
+            color: #22c55e;
+        }
+        
+        [data-bs-theme="dark"] .trend-down {
+            color: #ef4444;
+        }
+        
+        [data-bs-theme="dark"] .trend-neutral {
+            color: #94a3b8;
+        }
+        
+        [data-bs-theme="dark"] .trend-info {
+            color: #60a5fa;
+        }
+        
+        /* 3. Modificadores para valores positivos y negativos */
+        .metric-card.positive .value {
+            color: var(--metric-positive-color);
+        }
+
+        .metric-card.negative .value {
+            color: var(--metric-negative-color);
+        }
+        
+        /* Skeleton loaders para carga de gráficos */
+        .skeleton {
+            animation: skeleton-loading 1.5s infinite ease-in-out;
+            background: linear-gradient(
+                90deg,
+                rgba(209, 213, 219, 0.1) 0%,
+                rgba(209, 213, 219, 0.3) 50%,
+                rgba(209, 213, 219, 0.1) 100%
+            );
+            background-size: 200% 100%;
+            border-radius: 0.5rem;
+        }
+        
+        [data-bs-theme="dark"] .skeleton {
+            background: linear-gradient(
+                90deg,
+                rgba(148, 163, 184, 0.05) 0%,
+                rgba(148, 163, 184, 0.15) 50%,
+                rgba(148, 163, 184, 0.05) 100%
+            );
+            background-size: 200% 100%;
+        }
+        
+        @keyframes skeleton-loading {
+            0% {
+                background-position: 200% 0;
+            }
+            100% {
+                background-position: -200% 0;
+            }
+        }
+        
+        .skeleton-chart {
+            width: 100%;
+            height: 300px;
+        }
+        
+        .skeleton-text {
+            height: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .skeleton-text.w-75 {
+            width: 75% !important;
+        }
+        
+        .skeleton-text.w-50 {
+            width: 50% !important;
+        }
+
+        /* ==========================================================================
+           BÚSQUEDA GLOBAL (CTRL+K) - Command Palette Style
+           ========================================================================== */
+        .search-modal {
+            backdrop-filter: blur(8px);
+        }
+        
+        .search-modal .modal-dialog {
+            margin-top: 10vh;
+            max-width: 600px;
+        }
+        
+        .search-modal .modal-content {
+            border-radius: 16px;
+            border: 1px solid var(--metric-border-color);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        [data-bs-theme="dark"] .search-modal .modal-content {
+            background-color: #1e293b;
+            border-color: rgba(148, 163, 184, 0.2);
+        }
+        
+        .search-input-container {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--metric-border-color);
+            background-color: var(--metric-bg);
+        }
+        
+        .search-input {
+            border: none;
+            background: transparent;
+            font-size: 1.125rem;
+            color: var(--bs-body-color);
+            width: 100%;
+            outline: none;
+        }
+        
+        .search-input::placeholder {
+            color: var(--text-muted);
+        }
+        
+        .search-results {
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 0.5rem 0;
+        }
+        
+        .search-result-item {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+            border-left: 3px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .search-result-item:hover,
+        .search-result-item.active {
+            background-color: var(--card-header-bg);
+            border-left-color: #3b82f6;
+        }
+        
+        .search-result-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--metric-border-color);
+            color: var(--bs-body-color);
+            flex-shrink: 0;
+        }
+        
+        .search-result-content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .search-result-title {
+            font-weight: 600;
+            font-size: 0.9375rem;
+            color: var(--bs-body-color);
+            margin-bottom: 0.125rem;
+        }
+        
+        .search-result-subtitle {
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .search-result-badge {
+            padding: 0.125rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            background-color: var(--metric-border-color);
+            color: var(--bs-body-color);
+        }
+        
+        .search-shortcut {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            background-color: var(--metric-border-color);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+        }
+        
+        .search-empty {
+            padding: 3rem 1.5rem;
+            text-align: center;
+            color: var(--text-muted);
+        }
+        
+        .search-footer {
+            padding: 0.75rem 1.5rem;
+            border-top: 1px solid var(--metric-border-color);
+            background-color: var(--card-header-bg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+        }
+
+        /* ==========================================================================
+           CENTRO DE NOTIFICACIONES - Navbar Dropdown
+           ========================================================================== */
+        
+        /* Asegurar que el dropdown de notificaciones esté por encima de todo */
+        #notificationsMenu {
+            position: relative;
+            z-index: 1050;
+        }
+        
+        .dropdown-menu[aria-labelledby="notificationsMenu"] {
+            z-index: 1060 !important;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+        
+        [data-bs-theme="dark"] .dropdown-menu[aria-labelledby="notificationsMenu"] {
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+        }
+        
+        .notification-item {
+            padding: 0.875rem 1rem;
+            border-bottom: 1px solid var(--metric-border-color);
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+            display: flex;
+            gap: 0.75rem;
+        }
+        
+        .notification-item:hover {
+            background-color: var(--card-header-bg);
+        }
+        
+        .notification-item.unread {
+            background-color: rgba(59, 130, 246, 0.05);
+            border-left: 3px solid #3b82f6;
+        }
+        
+        [data-bs-theme="dark"] .notification-item.unread {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        
+        .notification-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 1.125rem;
+        }
+        
+        .notification-icon.success {
+            background-color: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+        
+        .notification-icon.warning {
+            background-color: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+        }
+        
+        .notification-icon.info {
+            background-color: rgba(59, 130, 246, 0.15);
+            color: #3b82f6;
+        }
+        
+        .notification-icon.danger {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+        
+        .notification-content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .notification-title {
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--bs-body-color);
+            margin-bottom: 0.25rem;
+        }
+        
+        .notification-message {
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+            line-height: 1.4;
+        }
+        
+        .notification-time {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            opacity: 0.8;
+        }
+
+        /* ==========================================================================
+           ATAJOS DE TECLADO - KBD Elements
+           ========================================================================== */
+        kbd {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            line-height: 1;
+            color: var(--bs-body-color);
+            background-color: var(--metric-border-color);
+            border-radius: 4px;
+            border: 1px solid var(--metric-border-color);
+            box-shadow: 0 2px 0 var(--metric-border-color);
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Courier New', monospace;
+        }
+        
+        [data-bs-theme="dark"] kbd {
+            background-color: rgba(148, 163, 184, 0.15);
+            border-color: rgba(148, 163, 184, 0.25);
+            box-shadow: 0 2px 0 rgba(148, 163, 184, 0.25);
+        }
+
+        /* ==========================================================================
+           ANIMACIONES DE ENTRADA - Fade In & Slide Up
+           ========================================================================== */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        .animate-fade-in-up {
+            animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+        }
+        
+        .animate-fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+            opacity: 0;
+        }
+        
+        /* Delays escalonados para efecto cascada */
+        .animate-delay-1 { animation-delay: 0.1s; }
+        .animate-delay-2 { animation-delay: 0.2s; }
+        .animate-delay-3 { animation-delay: 0.3s; }
+        .animate-delay-4 { animation-delay: 0.4s; }
+        .animate-delay-5 { animation-delay: 0.5s; }
+        .animate-delay-6 { animation-delay: 0.6s; }
+        
+        /* Hover effects mejorados */
+        .card {
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        .card:hover {
+            transform: translateY(-4px);
+        }
+        
+        .metric-card {
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-2px) scale(1.02);
+        }
+        
+        /* Pulse animation para badges */
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+        
+        .badge.pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        /* 4. Corrección para el fondo de .bg-light en modo oscuro */
+        [data-bs-theme="dark"] .bg-light {
+            background-color: var(--bs-gray-800) !important;
+        }
+
+        /* ==========================================================================
+           Modern UI Enhancements - Professional SaaS Design
+           ========================================================================== */
+
+        /* Global improvements */
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bs-body-bg);
+            color: var(--bs-body-color);
+        }
+
+        /* Enhanced cards */
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            border-radius: 12px 12px 0 0 !important;
+            border: none;
+            font-weight: 600;
+        }
+
+        /* Professional buttons */
+        .btn {
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border: none;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #feca57 0%, #ff9ff3 100%);
+            color: #2d3436;
+        }
+
+        /* Enhanced form controls */
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 2px solid var(--bs-gray-300);
+            transition: all 0.2s ease;
+            padding: 0.75rem 1rem;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+        /* Professional tables */
+        .table {
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Tablas profesionales */
+        .table {
+            font-size: 0.9rem;
+        }
+        
+        .table thead th {
+            background-color: var(--card-header-bg);
+            border-bottom: 2px solid var(--metric-border-color);
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--metric-label-color);
+            padding: 0.875rem 1rem;
+        }
+        
+        [data-bs-theme="dark"] .table thead th {
+            color: #94a3b8;
+            background-color: #1e293b;
+        }
+
+        .table tbody tr {
+            transition: all 0.15s ease;
+        }
+        
+        .table tbody td {
+            color: var(--bs-body-color);
+            padding: 0.875rem 1rem;
+            vertical-align: middle;
+        }
+
+        .table tbody tr:hover {
+            background-color: rgba(59, 130, 246, 0.04);
+        }
+        
+        [data-bs-theme="dark"] .table tbody tr:hover {
+            background-color: rgba(59, 130, 246, 0.08);
+        }
+
+        /* Action buttons in tables */
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+            border-radius: 6px;
+        }
+
+        /* Loading states */
+        .htmx-indicator {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .htmx-request .htmx-indicator {
+            opacity: 1;
+        }
+
+        .htmx-request .htmx-non-indicator {
+            opacity: 0.5;
+        }
+
+        /* Alert improvements */
+        .alert {
+            border-radius: 8px;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Botones mejorados */
+        .btn {
+            font-weight: 500;
+            font-size: 0.9rem;
+            letter-spacing: -0.008em;
+            transition: all 0.15s ease;
+        }
+        
+        /* Professional navigation */
+        .navbar {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+            backdrop-filter: blur(10px);
+            position: relative;
+            z-index: 1040;
+        }
+        
+        [data-bs-theme="dark"] .navbar {
+            background-color: #1e293b !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.25rem;
+            letter-spacing: -0.02em;
+        }
+        
+        .nav-link {
+            font-weight: 500;
+            font-size: 0.9375rem;
+        }
+
+        /* Enhanced badges */
+        .badge {
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.75rem;
+            letter-spacing: 0.02em;
+            padding: 0.35em 0.75em;
+        }
+
+        /* Responsive improvements */
+        @media (max-width: 768px) {
+            .card {
+                margin-bottom: 1rem;
+            }
+
+            /* Touch targets más grandes (mínimo 44px para iOS) */
+            .btn:not(.btn-sm):not(.btn-close) {
+                min-height: 44px;
+                padding: 0.75rem 1rem;
+            }
+            
+            /* Botones en formularios stack verticalmente */
+            .d-grid .btn,
+            .modal-footer .btn {
+                width: 100%;
+                margin-bottom: 0.5rem;
+            }
+
+            .metric-card .value {
+                font-size: 1.5rem;
+            }
+            
+            /* Ocultar tendencias en móvil para ahorrar espacio */
+            .metric-card .trend-label {
+                display: none;
+            }
+
+            /* Mejorar gráficos en móvil */
+            .chart-container {
+                min-height: 250px !important;
+                height: 300px !important;
+            }
+            
+            /* Tabs móviles para gráficos */
+            .mobile-chart-tabs {
+                display: block !important;
+            }
+            
+            .desktop-chart-grid {
+                display: none !important;
+            }
+            
+            /* Reducir padding en alerts */
+            .alert {
+                padding: 0.75rem;
+                font-size: 0.875rem;
+            }
+            
+            /* Stack botones de exportación */
+            .card-header .d-flex.gap-2 {
+                flex-direction: column;
+                gap: 0.5rem !important;
+            }
+
+            /* Ocultar subtítulos largos en móvil */
+            .card-header small {
+                font-size: 0.7rem;
+            }
+
+            /* Hacer que las tarjetas de métricas sean más compactas */
+            .metric-card {
+                padding: 1rem;
+            }
+
+            .metric-card .icon {
+                font-size: 2rem;
+            }
+
+            /* Mejorar formularios en móvil */
+            .form-control, .form-select, .form-control:focus, .form-select:focus {
+                font-size: 16px !important; /* Prevenir zoom en iOS */
+                min-height: 44px;
+            }
+            
+            label {
+                font-size: 14px;
+                font-weight: 500;
+            }
+
+            /* Ajustar tabla de papelerías */
+            .table {
+                font-size: 0.875rem;
+            }
+            
+            .table td, .table th {
+                padding: 0.5rem;
+            }
+
+            /* Mejorar espaciado de columnas */
+            .row.g-4 {
+                gap: 1rem !important;
+            }
+            
+            /* Navbar móvil mejorado */
+            .navbar-nav {
+                padding: 0.5rem 0;
+            }
+            
+            .nav-item {
+                padding: 0.25rem 0;
+            }
+            
+            .nav-link {
+                padding: 0.75rem 1rem !important;
+                min-height: 44px;
+                display: flex;
+                align-items: center;
+            }
+            
+            /* Modales de pantalla completa en móvil */
+            .modal-dialog {
+                margin: 0;
+                max-width: 100%;
+                min-height: 100vh;
+            }
+            
+            .modal-content {
+                border-radius: 0;
+                min-height: 100vh;
+            }
+            
+            /* Filtros en móvil - stack verticalmente */
+            .btn-group {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .btn-group .btn {
+                border-radius: 0.375rem !important;
+                margin-bottom: 0.25rem;
+            }
+            
+            .btn-group .btn:first-child {
+                border-top-left-radius: 0.375rem !important;
+                border-top-right-radius: 0.375rem !important;
+            }
+            
+            .btn-group .btn:last-child {
+                border-bottom-left-radius: 0.375rem !important;
+                border-bottom-right-radius: 0.375rem !important;
+            }
+        }
+
+        /* Mejoras adicionales para pantallas muy pequeñas */
+        @media (max-width: 576px) {
+            .metric-card .value {
+                font-size: 1.25rem;
+            }
+
+            .card-header h5 {
+                font-size: 1rem;
+            }
+            
+            h4 {
+                font-size: 1.25rem;
+            }
+
+            /* Hacer scroll horizontal en tablas */
+            .table-responsive {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            /* Padding del container reducido */
+            .container, .container-fluid {
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+            }
+            
+            /* Cards con menos padding */
+            .card-body {
+                padding: 1rem;
+            }
+            
+            /* Gráficos más pequeños */
+            .chart-container {
+                min-height: 200px !important;
+                height: 250px !important;
+            }
+        }
+
+        /* Animation utilities */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bs-gray-100);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--bs-gray-400);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--bs-gray-500);
+        }
+
+        /* ==========================================================================
+           Chart Card Gradients and Professional Styling
+           ========================================================================== */
+
+        /* Gradient backgrounds for chart headers */
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .bg-gradient-info {
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+        }
+
+        .bg-gradient-warning {
+            background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%);
+        }
+
+        .bg-gradient-danger {
+            background: linear-gradient(135deg, #e17055 0%, #d63031 100%);
+        }
+
+        /* ===========================================
+           ESTILOS MEJORADOS PARA HEADERS DE GRÁFICOS
+           =========================================== */
+        
+        /* Header de Trámites - Modo Día */
+        .chart-header-tramites {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            padding: 1rem 1.25rem;
+        }
+        
+        [data-bs-theme="light"] .chart-header-tramites .chart-title {
+            color: #78350f !important; /* Marrón oscuro para excelente contraste */
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
+        }
+        
+        [data-bs-theme="light"] .chart-header-tramites .chart-subtitle {
+            color: #92400e !important; /* Marrón muy oscuro */
+            opacity: 0.95;
+            font-weight: 500;
+        }
+        
+        [data-bs-theme="light"] .chart-badge-tramites {
+            background-color: #78350f !important;
+            color: #fef3c7 !important;
+            font-size: 1rem;
+        }
+        
+        /* Header de Trámites - Modo Noche */
+        [data-bs-theme="dark"] .chart-header-tramites {
+            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+        }
+        
+        [data-bs-theme="dark"] .chart-header-tramites .chart-title {
+            color: #fef3c7 !important; /* Amarillo claro */
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+        }
+        
+        [data-bs-theme="dark"] .chart-header-tramites .chart-subtitle {
+            color: #fde68a !important; /* Amarillo suave */
+            opacity: 0.9;
+            font-weight: 500;
+        }
+        
+        [data-bs-theme="dark"] .chart-badge-tramites {
+            background-color: #fef3c7 !important;
+            color: #78350f !important;
+            font-size: 1rem;
+        }
+        
+        /* Header de Gastos - Modo Día */
+        .chart-header-gastos {
+            background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+            padding: 1rem 1.25rem;
+        }
+        
+        [data-bs-theme="light"] .chart-header-gastos .chart-title {
+            color: #fef2f2 !important; /* Blanco rosado */
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+        
+        [data-bs-theme="light"] .chart-header-gastos .chart-subtitle {
+            color: #fee2e2 !important; /* Rosa muy claro */
+            opacity: 0.95;
+            font-weight: 500;
+        }
+        
+        [data-bs-theme="light"] .chart-badge-gastos {
+            background-color: #fef2f2 !important;
+            color: #991b1b !important;
+            font-size: 1rem;
+        }
+        
+        /* Header de Gastos - Modo Noche */
+        [data-bs-theme="dark"] .chart-header-gastos {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+        }
+        
+        [data-bs-theme="dark"] .chart-header-gastos .chart-title {
+            color: #fef2f2 !important; /* Blanco rosado */
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+        }
+        
+        [data-bs-theme="dark"] .chart-header-gastos .chart-subtitle {
+            color: #fee2e2 !important; /* Rosa muy claro */
+            opacity: 0.95;
+            font-weight: 500;
+        }
+        
+        [data-bs-theme="dark"] .chart-badge-gastos {
+            background-color: #fef2f2 !important;
+            color: #7f1d1d !important;
+            font-size: 1rem;
+        }
+        
+        /* Estilos generales para títulos de gráficos */
+        .chart-title {
+            font-size: 1.15rem;
+            letter-spacing: -0.015em;
+            line-height: 1.3;
+        }
+        
+        .chart-subtitle {
+            font-size: 0.813rem;
+            line-height: 1.4;
+            display: block;
+            margin-top: 0.25rem;
+        }
+
+        /* Enhanced chart cards */
+        .chart-container {
+            position: relative;
+            margin: auto;
+            height: 100%;
+            width: 100%;
+        }
+
+        /* Glassmorphism effect for chart cards */
+        .card[style*="backdrop-filter"] {
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Chart tooltips enhancement */
+        .chartjs-tooltip {
+            background: rgba(0, 0, 0, 0.8) !important;
+            border-radius: 8px !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+        }
+
+        /* Responsive chart adjustments */
+        @media (max-width: 768px) {
+            .chart-container canvas {
+                max-height: 250px !important;
+            }
+        }
+    </style>
+    
+</head>
+
+<body>
+        <script>
+        document.body.addEventListener('htmx:afterSwap', function(evt) {
+            // Reactiva el botón de submit si existe en el formulario de papelería
+            var btnPapeleria = document.querySelector('#add-papeleria-form button[type="submit"]');
+            if (btnPapeleria) {
+                btnPapeleria.disabled = false;
+                btnPapeleria.innerHTML = '<i class="bi bi-plus-circle"></i> Agregar Papelería';
+            }
+            // Reactiva el botón de submit si existe en el formulario de registrar trámite
+            var btnTramite = document.querySelector('#form-registrar-tramite button[type="submit"]');
+            if (btnTramite) {
+                btnTramite.disabled = false;
+                btnTramite.innerHTML = 'Registrar';
+            }
+        });
+        </script>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                
+                DocuExpress
+                
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/gastos"><i
+                                class="bi bi-receipt-cutoff me-1"></i>Gestión de Gastos</a>
+                    </li>
+                    <!-- CORRECCIÓN: Movido fuera del menú de admin para que todos los usuarios puedan gestionar sus proveedores. -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="/proveedores"><i
+                                class="bi bi-truck me-1"></i>Gestionar Proveedores</a>
+                    </li>
+
+                    
+
+
+
+                    <!-- Centro de Notificaciones -->
+                    
+
+                    <!-- Separador visual -->
+                    <li class="nav-item d-none d-lg-block mx-3">
+                        <span class="nav-link px-0" style="cursor: default; font-size: 1.2rem; opacity: 0.3;">|</span>
+                    </li>
+
+                    <!-- Interruptor de Modo Oscuro -->
+                    <li class="nav-item ms-lg-2">
+                        <div class="form-check form-switch nav-link">
+                            <input class="form-check-input" type="checkbox" role="switch" id="themeSwitcher" title="Cambiar tema" style="cursor: pointer;">
+                            <label class="form-check-label" for="themeSwitcher" style="cursor: pointer;"><i id="themeIcon"
+                                    class="bi bi-sun-fill fs-5"></i></label>
+                        </div>
+                    </li>
+                    
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4">
+        <!-- Banner para el modo "Ver como" -->
+        
+        <!-- Contenedor dedicado para los mensajes flash que se recargará con HTMX -->
+        <div id="flash-container" hx-swap-oob="innerHTML:#flash-container">
+            
+  
+
+        </div>
+        <!-- CORRECCIÓN: Envolvemos el contenido principal en un div que escucha el evento 'reload-dashboard'. -->
+        <!-- Cuando se registra un trámite, este div se recargará automáticamente. -->
+        <div id="main-dashboard-content">
+            
+<div class="container text-center" style="margin-top: 100px;">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <i class="bi bi-exclamation-triangle-fill text-warning" style="font-size: 5rem;"></i>
+            <h1 class="display-4 mt-3">404</h1>
+            <h2>Página No Encontrada</h2>
+            <p class="lead text-muted">
+                Lo sentimos, la página que buscas no existe o ha sido movida.
+            </p>
+            <div class="mt-4">
+                <a href="/" class="btn btn-primary">
+                    <i class="bi bi-house-fill me-2"></i>Volver al Inicio
+                </a>
+                <a href="javascript:history.back()" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>Volver Atrás
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+        </div>
+    </main>
+
+    <!-- Modal de Búsqueda Global (Ctrl+K) -->
+    <div class="modal fade search-modal" id="globalSearchModal" tabindex="-1" aria-labelledby="globalSearchLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="search-input-container">
+                    <input type="text" class="search-input" id="globalSearchInput" placeholder="Buscar trámites, papelerías, gastos..." autocomplete="off">
+                </div>
+                <div class="search-results" id="searchResults">
+                    <div class="search-empty">
+                        <i class="bi bi-search display-4 mb-3 d-block" style="opacity: 0.3;"></i>
+                        <p class="mb-0">Escribe para buscar...</p>
+                        <small>Trámites, papelerías, gastos, proveedores</small>
+                    </div>
+                </div>
+                <div class="search-footer">
+                    <div class="d-flex gap-3">
+                        <span><span class="search-shortcut">↑↓</span> Navegar</span>
+                        <span><span class="search-shortcut">Enter</span> Seleccionar</span>
+                        <span><span class="search-shortcut">Esc</span> Cerrar</span>
+                    </div>
+                    <span class="search-shortcut">Ctrl+K</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    
+    <script>
+        // Script global para deshabilitar botones de submit y mostrar spinner
+        document.addEventListener('DOMContentLoaded', function () {
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                form.addEventListener('submit', function () {
+                    const submitButton = this.querySelector('button[type="submit"]');
+                    if (submitButton) {
+                        submitButton.disabled = true;
+                        submitButton.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Procesando...`;
+                    }
+                });
+            });
+        });
+
+        // --- Lógica Centralizada para el Modo Oscuro y Sincronización de Scripts ---
+        document.addEventListener('DOMContentLoaded', function () {
+            const themeSwitcher = document.getElementById('themeSwitcher');
+            const htmlElement = document.documentElement;
+            const themeIcon = document.getElementById('themeIcon');
+
+            // Función única para aplicar el tema y notificar a otros scripts.
+            const applyTheme = (theme) => {
+                htmlElement.setAttribute('data-bs-theme', theme);
+                
+                if (theme === 'dark') {
+                    themeSwitcher.checked = true;
+                    themeIcon.className = 'bi bi-moon-stars-fill';
+                } else {
+                    themeSwitcher.checked = false;
+                    themeIcon.className = 'bi bi-sun-fill';
+                }
+
+                // Disparamos un evento personalizado para que los scripts de los gráficos esperen.
+                // Esto soluciona el problema de "race condition".
+                const event = new CustomEvent('theme:applied', { detail: { theme: theme } });
+                document.dispatchEvent(event);
+            };
+
+            // --- Re-inicialización de scripts tras swaps HTMX ---
+            // Cuando HTMX reemplaza el contenido de #main-dashboard-content, los <script> embebidos no se ejecutan.
+            // Detectamos si se han insertado los canvas de papelería y re-inicializamos de forma segura.
+            document.addEventListener('htmx:afterSwap', function (evt) {
+                try {
+                    const target = evt.target;
+                    if (!target) return;
+                    const isMainSwap = target.id === 'main-dashboard-content';
+                    if (!isMainSwap) return;
+                    const hasPapeleriaCanvases = target.querySelector('#clientTramitesChart, #clientMonthlyChart');
+                    if (hasPapeleriaCanvases && window.initializePapeleriaScripts) {
+                        // Pequeño delay para asegurar layout antes de renderizar charts
+                        setTimeout(() => { try { window.initializePapeleriaScripts(); } catch(e) { console.error(e); } }, 60);
+                    }
+                } catch (e) { console.error('HTMX afterSwap init error:', e); }
+            });
+
+            // Cargar el tema guardado al iniciar
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            applyTheme(savedTheme);
+
+            // Evento para cambiar el tema
+            themeSwitcher.addEventListener('change', function () {
+                const newTheme = this.checked ? 'dark' : 'light';
+                localStorage.setItem('theme', newTheme);
+                applyTheme(newTheme);
+            });
+        });
+
+        // --- Lógica para el Modal de Agregar Papelería con HTMX ---
+        document.addEventListener('DOMContentLoaded', function () {
+            // Escucha el evento personalizado para cerrar el modal
+            document.body.addEventListener('close-add-papeleria-modal', function (evt) {
+                var modalElement = document.getElementById('addPapeleriaModal');
+                var modal = bootstrap.Modal.getInstance(modalElement);
+                if (modal) {
+                    modal.hide();
+                }
+                // Opcionalmente, reinicia el formulario dentro del modal después de cerrarlo
+                var form = document.getElementById('add-papeleria-form');
+                if (form) {
+                    form.reset();
+                    // También limpia cualquier mensaje de validación si persisten
+                    form.querySelectorAll('.text-danger').forEach(el => el.remove());
+                }
+            });
+
+            // Cuando el modal se muestra, asegúrate de que el formulario se reinicie para un nuevo inicio
+            var addPapeleriaModal = document.getElementById('addPapeleriaModal');
+            if (addPapeleriaModal) {
+                addPapeleriaModal.addEventListener('show.bs.modal', function () {
+                    var form = document.getElementById('add-papeleria-form');
+                    if (form) {
+                        form.reset();
+                        form.querySelectorAll('.text-danger').forEach(el => el.remove());
+                    }
+                });
+            }
+        });
+        
+        // --- BÚSQUEDA GLOBAL CON CTRL+K ---
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchModal = new bootstrap.Modal(document.getElementById('globalSearchModal'));
+            const searchInput = document.getElementById('globalSearchInput');
+            const searchResults = document.getElementById('searchResults');
+            let currentIndex = -1;
+            let searchData = [];
+            
+            // Abrir con Ctrl+K o Cmd+K
+            document.addEventListener('keydown', function(e) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                    e.preventDefault();
+                    searchModal.show();
+                    setTimeout(() => searchInput.focus(), 100);
+                }
+                
+                // Cerrar con Escape
+                if (e.key === 'Escape' && searchInput === document.activeElement) {
+                    searchModal.hide();
+                }
+            });
+            
+            // Búsqueda en tiempo real
+            let searchTimeout;
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                const query = this.value.trim().toLowerCase();
+                
+                if (query.length === 0) {
+                    showEmptyState();
+                    return;
+                }
+                
+                searchTimeout = setTimeout(() => performSearch(query), 300);
+            });
+            
+            async function performSearch(query) {
+                try {
+                    // Mostrar loading
+                    searchResults.innerHTML = `
+                        <div class="search-empty">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Buscando...</span>
+                            </div>
+                            <p class="mt-3 mb-0">Buscando...</p>
+                        </div>
+                    `;
+                    
+                    // Hacer búsqueda en el backend
+                    const response = await fetch('/api/buscar?q=' + encodeURIComponent(query));
+                    const data = await response.json();
+                    
+                    searchData = data;
+                    displayResults(data);
+                } catch (error) {
+                    console.error('Error en búsqueda:', error);
+                    searchResults.innerHTML = `
+                        <div class="search-empty">
+                            <i class="bi bi-exclamation-circle display-4 mb-3 d-block text-danger" style="opacity: 0.3;"></i>
+                            <p class="mb-0">Error al buscar</p>
+                        </div>
+                    `;
+                }
+            }
+            
+            function displayResults(results) {
+                if (results.length === 0) {
+                    searchResults.innerHTML = `
+                        <div class="search-empty">
+                            <i class="bi bi-inbox display-4 mb-3 d-block" style="opacity: 0.3;"></i>
+                            <p class="mb-0">No se encontraron resultados</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                currentIndex = -1;
+                const html = results.map((item, index) => {
+                    const iconMap = {
+                        tramite: 'file-earmark-text',
+                        papeleria: 'shop',
+                        gasto: 'receipt',
+                        proveedor: 'building'
+                    };
+                    
+                    const colorMap = {
+                        tramite: '#3b82f6',
+                        papeleria: '#10b981',
+                        gasto: '#ef4444',
+                        proveedor: '#f59e0b'
+                    };
+                    
+                    return '<div class="search-result-item" data-index="' + index + '" data-url="' + item.url + '">' +
+                        '<div class="search-result-icon" style="background-color: ' + colorMap[item.type] + '20; color: ' + colorMap[item.type] + ';">' +
+                        '<i class="bi bi-' + iconMap[item.type] + '"></i></div>' +
+                        '<div class="search-result-content">' +
+                        '<div class="search-result-title">' + item.title + '</div>' +
+                        '<div class="search-result-subtitle">' + item.subtitle + '</div></div>' +
+                        '<span class="search-result-badge">' + item.type_label + '</span></div>';
+                }).join('');
+                
+                searchResults.innerHTML = html;
+                
+                // Añadir event listeners
+                document.querySelectorAll('.search-result-item').forEach(item => {
+                    item.addEventListener('click', function() {
+                        navigateToResult(this.dataset.url);
+                    });
+                    
+                    item.addEventListener('mouseenter', function() {
+                        document.querySelectorAll('.search-result-item').forEach(el => el.classList.remove('active'));
+                        this.classList.add('active');
+                        currentIndex = parseInt(this.dataset.index);
+                    });
+                });
+            }
+            
+            function showEmptyState() {
+                searchResults.innerHTML = `
+                    <div class="search-empty">
+                        <i class="bi bi-search display-4 mb-3 d-block" style="opacity: 0.3;"></i>
+                        <p class="mb-0">Escribe para buscar...</p>
+                        <small>Trámites, papelerías, gastos, proveedores</small>
+                    </div>
+                `;
+            }
+            
+            // Navegación con teclado
+            searchInput.addEventListener('keydown', function(e) {
+                const items = document.querySelectorAll('.search-result-item');
+                
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    currentIndex = (currentIndex + 1) % items.length;
+                    updateActiveItem(items);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    currentIndex = currentIndex <= 0 ? items.length - 1 : currentIndex - 1;
+                    updateActiveItem(items);
+                } else if (e.key === 'Enter' && currentIndex >= 0) {
+                    e.preventDefault();
+                    const activeItem = items[currentIndex];
+                    if (activeItem) {
+                        navigateToResult(activeItem.dataset.url);
+                    }
+                }
+            });
+            
+            function updateActiveItem(items) {
+                items.forEach((item, index) => {
+                    if (index === currentIndex) {
+                        item.classList.add('active');
+                        item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                    } else {
+                        item.classList.remove('active');
+                    }
+                });
+            }
+            
+            function navigateToResult(url) {
+                window.location.href = url;
+            }
+            
+            // Limpiar al cerrar
+            document.getElementById('globalSearchModal').addEventListener('hidden.bs.modal', function() {
+                searchInput.value = '';
+                showEmptyState();
+                currentIndex = -1;
+            });
+        });
+        
+        // --- CENTRO DE NOTIFICACIONES ---
+        document.addEventListener('DOMContentLoaded', function() {
+            const notificationsList = document.getElementById('notificationsList');
+            const notificationBadge = document.getElementById('notificationBadge');
+            let notifications = [];
+            let usingSampleData = false;
+            
+            // Cargar notificaciones al iniciar
+            loadNotifications();
+            
+            // Actualizar cada 3 minutos (180000 ms) para evitar rate limiting
+            setInterval(loadNotifications, 3600000);
+            
+            async function loadNotifications() {
+                try {
+                    const response = await fetch('/api/notificaciones');
+                    if (!response.ok) {
+                        // Si es 429 o cualquier error, no intentes parsear JSON
+                        console.warn('No se pudieron cargar notificaciones. Status:', response.status);
+                        return;
+                    }
+                    let data = [];
+                    try {
+                        data = await response.json();
+                    } catch (jsonErr) {
+                        console.warn('Respuesta de notificaciones no es JSON válido.');
+                        return;
+                    }
+                    // Solo sobrescribir si hay datos reales o si no estamos usando datos de muestra
+                    if (data.length > 0 || !usingSampleData) {
+                        notifications = data;
+                        renderNotifications();
+                        updateBadge();
+                        // Si recibimos notificaciones reales, ya no somos datos de muestra
+                        if (data.length > 0) {
+                            usingSampleData = false;
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error cargando notificaciones:', error);
+                }
+            }
+            
+            function renderNotifications() {
+                if (notifications.length === 0) {
+                    notificationsList.innerHTML = `
+                        <div class="text-center p-4 text-muted">
+                            <i class="bi bi-inbox display-4 d-block mb-2" style="opacity: 0.3;"></i>
+                            <p class="mb-0 small">No hay notificaciones</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const html = notifications.map(notif => {
+                    const iconMap = {
+                        success: 'check-circle-fill',
+                        warning: 'exclamation-triangle-fill',
+                        info: 'info-circle-fill',
+                        danger: 'x-circle-fill'
+                    };
+                    
+                    return '<div class="notification-item ' + (notif.read ? '' : 'unread') + '" data-id="' + notif.id + '">' +
+                        '<div class="notification-icon ' + notif.type + '">' +
+                        '<i class="bi bi-' + iconMap[notif.type] + '"></i></div>' +
+                        '<div class="notification-content">' +
+                        '<div class="notification-title">' + notif.title + '</div>' +
+                        '<div class="notification-message">' + notif.message + '</div>' +
+                        '<div class="notification-time">' + notif.time + '</div></div></div>';
+                }).join('');
+                
+                notificationsList.innerHTML = html;
+                
+                // Añadir event listeners
+                document.querySelectorAll('.notification-item').forEach(item => {
+                    item.addEventListener('click', function() {
+                        markAsRead(this.dataset.id);
+                    });
+                });
+            }
+            
+            function updateBadge() {
+                const unreadCount = notifications.filter(n => !n.read).length;
+                
+                if (unreadCount > 0) {
+                    notificationBadge.textContent = unreadCount > 9 ? '9+' : unreadCount;
+                    notificationBadge.style.display = 'inline-block';
+                } else {
+                    notificationBadge.style.display = 'none';
+                }
+            }
+            
+            async function markAsRead(id) {
+                try {
+                    await fetch('/api/notificaciones/' + id + '/marcar-leida', {
+                        method: 'POST'
+                    });
+                    
+                    const notif = notifications.find(n => n.id == id);
+                    if (notif) {
+                        notif.read = true;
+                        renderNotifications();
+                        updateBadge();
+                    }
+                } catch (error) {
+                    console.error('Error marcando notificación:', error);
+                }
+            }
+            
+            // Marcar todas como leídas
+            document.getElementById('markAllRead').addEventListener('click', async function() {
+                try {
+                    await fetch('/api/notificaciones/marcar-todas-leidas', {
+                        method: 'POST'
+                    });
+                    
+                    notifications.forEach(n => n.read = true);
+                    renderNotifications();
+                    updateBadge();
+                } catch (error) {
+                    console.error('Error marcando todas:', error);
+                }
+            });
+            
+            // Generar notificaciones de demostración (simulación)
+            // En producción, estas vendrían del backend basadas en eventos reales
+            function generateSampleNotifications() {
+                const samples = [
+                    {
+                        id: Date.now() + 1,
+                        type: 'success',
+                        title: '¡Meta alcanzada!',
+                        message: 'Has superado tu meta mensual de $10,000',
+                        time: 'Hace 5 minutos',
+                        read: false
+                    },
+                    {
+                        id: Date.now() + 2,
+                        type: 'warning',
+                        title: 'Gastos elevados',
+                        message: 'Los gastos operativos aumentaron 25% este mes',
+                        time: 'Hace 1 hora',
+                        read: false
+                    },
+                    {
+                        id: Date.now() + 3,
+                        type: 'info',
+                        title: 'Nuevo mejor día',
+                        message: 'Hoy registraste 15 trámites, tu récord personal',
+                        time: 'Hace 3 horas',
+                        read: true
+                    },
+                    {
+                        id: Date.now() + 4,
+                        type: 'success',
+                        title: 'Papelería destacada',
+                        message: 'Papelería Centro generó $2,500 esta semana',
+                        time: 'Ayer',
+                        read: true
+                    }
+                ];
+                
+                // Solo para demostración inicial si no hay notificaciones del backend
+                if (notifications.length === 0) {
+                    notifications = samples;
+                    usingSampleData = true;
+                    renderNotifications();
+                    updateBadge();
+                }
+            }
+            
+            // Generar notificaciones de muestra después de 2 segundos
+            setTimeout(generateSampleNotifications, 2000);
+        });
+        
+        // --- ATAJOS DE TECLADO GLOBALES ---
+        document.addEventListener('DOMContentLoaded', function() {
+            const shortcuts = {
+                'n': () => {
+                    // Nuevo trámite - enfocar formulario
+                    const tramiteInput = document.querySelector('#tramite');
+                    if (tramiteInput) {
+                        tramiteInput.focus();
+                        tramiteInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                },
+                'p': () => {
+                    // Abrir modal de nueva papelería
+                    const addPapeleriaBtn = document.querySelector('[data-bs-target="#addPapeleriaModal"]');
+                    if (addPapeleriaBtn) {
+                        addPapeleriaBtn.click();
+                    }
+                },
+                'g': () => {
+                    // Ir a gastos
+                    window.location.href = '/gastos';
+                },
+                'h': () => {
+                    // Ir a home/dashboard
+                    window.location.href = '/';
+                },
+                't': () => {
+                    // Toggle tema (dark/light)
+                    const themeSwitcher = document.getElementById('themeSwitcher');
+                    if (themeSwitcher) {
+                        themeSwitcher.click();
+                    }
+                },
+                'r': () => {
+                    // Recargar dashboard
+                    const event = new Event('reload-dashboard');
+                    document.body.dispatchEvent(event);
+                },
+                '?': () => {
+                    // Mostrar ayuda de atajos
+                    showKeyboardShortcutsHelp();
+                }
+            };
+            
+            // Listener global para atajos
+            document.addEventListener('keydown', function(e) {
+                // Ignorar si está en un input, textarea o select
+                const tagName = e.target.tagName.toLowerCase();
+                if (tagName === 'input' || tagName === 'textarea' || tagName === 'select') {
+                    return;
+                }
+                
+                // Ignorar si hay modificadores (excepto para Ctrl+K que ya está manejado)
+                if (e.ctrlKey || e.metaKey || e.altKey) {
+                    return;
+                }
+                
+                const key = e.key.toLowerCase();
+                if (shortcuts[key]) {
+                    e.preventDefault();
+                    shortcuts[key]();
+                }
+            });
+            
+            function showKeyboardShortcutsHelp() {
+                const helpContent = `
+                    <div class="modal fade" id="shortcutsHelpModal" tabindex="-1">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header border-bottom">
+                                    <h5 class="modal-title fw-bold">
+                                        <i class="bi bi-keyboard me-2"></i>Atajos de Teclado
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="row g-3">
+                                        <div class="col-12">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <span><kbd>Ctrl</kbd> + <kbd>K</kbd></span>
+                                                <span class="text-muted">Búsqueda global</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <span><kbd>N</kbd></span>
+                                                <span class="text-muted">Nuevo trámite</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <span><kbd>P</kbd></span>
+                                                <span class="text-muted">Nueva papelería</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <span><kbd>G</kbd></span>
+                                                <span class="text-muted">Ir a gastos</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <span><kbd>H</kbd></span>
+                                                <span class="text-muted">Ir a inicio</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <span><kbd>T</kbd></span>
+                                                <span class="text-muted">Cambiar tema</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <span><kbd>R</kbd></span>
+                                                <span class="text-muted">Recargar dashboard</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span><kbd>?</kbd></span>
+                                                <span class="text-muted">Mostrar esta ayuda</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="alert alert-info mt-3 mb-0">
+                                        <small><i class="bi bi-info-circle me-1"></i> Los atajos no funcionan cuando estás escribiendo en un campo de texto</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Remover modal anterior si existe
+                const existingModal = document.getElementById('shortcutsHelpModal');
+                if (existingModal) {
+                    existingModal.remove();
+                }
+                
+                // Insertar nuevo modal
+                document.body.insertAdjacentHTML('beforeend', helpContent);
+                
+                // Mostrar modal
+                const modal = new bootstrap.Modal(document.getElementById('shortcutsHelpModal'));
+                modal.show();
+                
+                // Limpiar cuando se cierre
+                document.getElementById('shortcutsHelpModal').addEventListener('hidden.bs.modal', function() {
+                    this.remove();
+                });
+            }
+            
+            // Añadir indicador de atajos en el footer (opcional)
+            const shortcutHint = document.createElement('div');
+            shortcutHint.className = 'position-fixed bottom-0 end-0 m-3';
+            shortcutHint.style.zIndex = '1040';
+            shortcutHint.innerHTML = `
+                <button class="btn btn-sm btn-outline-secondary" onclick="document.dispatchEvent(new KeyboardEvent('keydown', {key: '?'}))">
+                    <i class="bi bi-keyboard me-1"></i>
+                    <span class="d-none d-md-inline">Atajos</span>
+                </button>
+            `;
+            document.body.appendChild(shortcutHint);
+        });
+        
+        // --- ANIMACIONES DE ENTRADA ---
+        document.addEventListener('DOMContentLoaded', function() {
+            animateOnScroll();
+            
+            // Re-animar cuando se recarga el dashboard
+            document.body.addEventListener('htmx:afterSettle', function(event) {
+                if (event.detail.target.id === 'dashboard-container' || 
+                    event.detail.target.id === 'main-dashboard-content') {
+                    setTimeout(animateOnScroll, 100);
+                }
+            });
+        });
+        
+        function animateOnScroll() {
+            // Animar tarjetas de métricas
+            const metricCards = document.querySelectorAll('#dashboard-cards > div');
+            metricCards.forEach((card, index) => {
+                card.classList.add('animate-fade-in-up', `animate-delay-${(index % 6) + 1}`);
+            });
+            
+            // Animar gráficos
+            const charts = document.querySelectorAll('.card');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && !entry.target.classList.contains('animated')) {
+                        entry.target.classList.add('animate-fade-in-up', 'animated');
+                    }
+                });
+            }, {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            });
+            
+            charts.forEach(chart => {
+                if (!chart.closest('#dashboard-cards')) {
+                    observer.observe(chart);
+                }
+            });
+        }
+    </script>
+    <script>
+        // --- Monitoreo de eventos HTMX y triggers personalizados ---
+        document.addEventListener('htmx:trigger', function(evt) {
+            console.log('HTMX trigger:', evt);
+        });
+        document.addEventListener('htmx:afterRequest', function(evt) {
+            console.log('HTMX afterRequest:', evt);
+        });
+        document.addEventListener('htmx:beforeSwap', function(evt) {
+            console.log('HTMX beforeSwap:', evt);
+        });
+        document.addEventListener('htmx:afterSwap', function(evt) {
+            console.log('HTMX afterSwap:', evt);
+        });
+        document.addEventListener('htmx:responseError', function(evt) {
+            console.error('HTMX responseError:', evt);
+        });
+        document.body.addEventListener('reload-dashboard', function(evt) {
+            console.log('Evento personalizado: reload-dashboard', evt);
+        });
+        document.body.addEventListener('refresh-papeleria-list', function(evt) {
+            console.log('Evento personalizado: refresh-papeleria-list', evt);
+        });
+        document.body.addEventListener('closeModal', function(evt) {
+            console.log('Evento personalizado: closeModal', evt);
+        });
+    </script>
+    
+</body>
+
+</html>
