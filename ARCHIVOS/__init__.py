@@ -1,1 +1,1 @@
-# Permite que ARCHIVOS sea tratado como un paquete Python
+# Este archivo convierte el directorio en un paquete Python

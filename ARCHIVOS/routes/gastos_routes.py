@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, make_response, send_from_directory, current_app
+from pathlib import Path
 from flask_login import login_required, current_user
 from datetime import datetime
 import os
@@ -8,6 +9,7 @@ from werkzeug.utils import secure_filename
 from ..forms import GastoForm, EditarGastoForm, ProveedorForm, EditarProveedorForm, CATEGORIAS_GASTOS, DeleteForm
 from ..utils import get_effective_user_id, bump_user_data_version
 from ..database import gasto_repository, proveedor_repository
+from ..logging_config import log_action, log_db_operation
 
 gastos_bp = Blueprint('gastos', __name__)
 
@@ -24,7 +26,7 @@ def _save_receipt(file):
     if not receipts_folder.exists():
         os.makedirs(receipts_folder)
 
-    file.save(os.path.join(receipts_folder, unique_filename))
+    file.save(receipts_folder / unique_filename)
     return unique_filename
 
 @gastos_bp.route('/gastos', methods=['GET', 'POST'])
@@ -52,14 +54,31 @@ def gestion_gastos():
             receipt_filename=receipt_filename
         )
         bump_user_data_version(effective_user_id) # Invalidar caché
+        
+        # Log de registro de gasto
+        log_db_operation('CREATE', 'gasto', None, {
+            'descripcion': form.descripcion.data,
+            'monto': form.monto.data,
+            'categoria': form.categoria.data
+        })
+        log_action('gasto_registered', {
+            'monto': form.monto.data,
+            'categoria': form.categoria.data,
+            'has_receipt': receipt_filename is not None
+        })
+        
         flash('Gasto registrado con éxito.', 'success')
 
         if request.headers.get('HX-Request'):
             new_form = GastoForm()
             new_form.proveedor_id.choices = [(p.id, p.nombre) for p in proveedor_repository.get_all(effective_user_id)]
-            response_html = render_template('form_gasto.html', form=new_form)
-            response = make_response(response_html)
-            response.headers['HX-Trigger'] = 'reload-gastos-table, reload-charts, new-flash-message'
+            form_html = render_template('form_gasto.html', form=new_form)
+            flash_html = render_template('flash_messages.html')
+            response = make_response(
+                form_html + 
+                f'<div id="flash-container" hx-swap-oob="innerHTML">{flash_html}</div>'
+            )
+            response.headers['HX-Trigger'] = 'reload-gastos-table, reload-charts'
             return response
         
         return redirect(url_for('gastos.gestion_gastos'))
@@ -155,7 +174,7 @@ def ver_recibo(filename):
 
     receipts_folder = current_app.config.get('RECEIPTS_FOLDER')
     if not receipts_folder:
-         receipts_folder = os.path.join(current_app.root_path, 'static/receipts')
+         receipts_folder = Path(current_app.root_path) / 'static' / 'receipts'
          
     return send_from_directory(receipts_folder, filename)
 

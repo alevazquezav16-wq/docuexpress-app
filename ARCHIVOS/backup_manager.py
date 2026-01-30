@@ -4,6 +4,7 @@ Gestiona backups programados de la base de datos SQLite
 """
 
 import os
+import sqlite3
 import shutil
 import logging
 from pathlib import Path
@@ -111,8 +112,13 @@ class BackupManager:
             backup_filename = f"control_papelerias_backup_{timestamp}.db"
             backup_path = self.backup_dir / backup_filename
             
-            # Copiar base de datos
-            shutil.copy2(self.db_path, backup_path)
+            # Realizar backup seguro usando SQLite API (evita corrupción si la DB está en uso)
+            src = sqlite3.connect(self.db_path)
+            dst = sqlite3.connect(backup_path)
+            with dst:
+                src.backup(dst)
+            dst.close()
+            src.close()
             
             # Verificar integridad del backup
             if backup_path.exists() and backup_path.stat().st_size > 0:

@@ -400,7 +400,7 @@
             console.log('🗑️ All charts destroyed');
         }
 
-        // Mostrar mensaje mejorado cuando no hay datos con ilustración SVG
+        // Mostrar mensaje mejorado cuando no hay datos - Estilo Apple
         showNoDataMessage(canvasId, message = 'No hay datos disponibles') {
             const canvas = document.getElementById(canvasId);
             if (!canvas) return;
@@ -408,26 +408,27 @@
             const container = canvas.parentElement;
             const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
             
-            // Reemplazar canvas con mensaje visual
+            // Iconos según el tipo de gráfico
+            const icons = {
+                'topPapeleriasChart': 'bi-shop',
+                'monthlySummaryChart': 'bi-graph-up',
+                'tramitesDistributionChart': 'bi-file-earmark-text',
+                'gastosDistributionChart': 'bi-wallet2'
+            };
+            const icon = icons[canvasId] || 'bi-bar-chart';
+            
+            // Reemplazar canvas con mensaje visual estilo Apple
             container.innerHTML = `
-                <div class="text-center py-5" style="opacity: 0; transition: opacity 0.3s ease;">
-                    <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="60" cy="60" r="55" fill="none" stroke="${isDark ? '#475569' : '#e2e8f0'}" stroke-width="2" stroke-dasharray="5,5"/>
-                        <path d="M40 70 L60 50 L80 70" fill="none" stroke="${isDark ? '#64748b' : '#cbd5e1'}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                        <circle cx="45" cy="75" r="3" fill="${isDark ? '#64748b' : '#cbd5e1'}"/>
-                        <circle cx="75" cy="75" r="3" fill="${isDark ? '#64748b' : '#cbd5e1'}"/>
-                        <text x="60" y="100" text-anchor="middle" font-size="12" fill="${isDark ? '#94a3b8' : '#64748b'}">Sin datos</text>
-                    </svg>
-                    <p class="text-muted mt-3 mb-0">${message}</p>
-                    <small class="text-muted">Los datos aparecerán cuando registres información</small>
+                <div class="apple-empty-state">
+                    <div class="apple-empty-icon">
+                        <i class="bi ${icon}" style="color: ${isDark ? '#6b7280' : '#9ca3af'};"></i>
+                    </div>
+                    <p class="apple-empty-text mb-1">${message}</p>
+                    <small class="text-muted" style="opacity: 0.7; font-size: 0.8rem;">
+                        Los datos aparecerán cuando registres información
+                    </small>
                 </div>
             `;
-            
-            // Animar entrada
-            setTimeout(() => {
-                const emptyState = container.querySelector('div');
-                if (emptyState) emptyState.style.opacity = '1';
-            }, 50);
         }
 
         // Animar entrada de gráfico
@@ -556,6 +557,9 @@
 
         // Crear todos los gráficos
         async createAllCharts(data) {
+            console.log('📊 createAllCharts called with data:', data);
+            console.log('📊 topPapelerias data:', data.topPapelerias);
+            
             // Destruir gráficos existentes
             this.destroyAll();
 
@@ -608,15 +612,28 @@
             return mapping[chartName];
         }
 
-        // Crear gráfico de Top Papelerías
+        // Crear gráfico de Top Papelerías - Estilo Apple
         async createTopPapeleriasChart(chartData) {
+            console.log('🏆 createTopPapeleriasChart called with:', chartData);
+            
             if (!chartData || !chartData.data || chartData.data.length === 0) {
+                console.log('❌ topPapelerias: No data condition triggered');
                 this.showNoDataMessage('topPapeleriasChart', 'Sin datos de papelerías registradas');
                 return;
             }
+            
+            console.log('✅ topPapelerias: Data valid, creating chart...');
 
             const ctx = document.getElementById('topPapeleriasChart').getContext('2d');
             const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+            
+            // Gradiente estilo Apple para barras
+            const createAppleGradient = (ctx, color1, color2) => {
+                const gradient = ctx.createLinearGradient(0, 0, 400, 0);
+                gradient.addColorStop(0, color1);
+                gradient.addColorStop(1, color2);
+                return gradient;
+            };
 
             this.charts.topPapelerias = new Chart(ctx, {
                 type: 'bar',
@@ -625,35 +642,31 @@
                     datasets: [{
                         label: 'Ganancia Total',
                         data: chartData.data,
-                        backgroundColor: chartData.data.map(value =>
-                            value >= 0 ? UX_COLORS.ganancias : UX_COLORS.gastos
+                        backgroundColor: chartData.data.map(value => 
+                            value >= 0 
+                                ? createAppleGradient(ctx, '#34c759', '#30d158')
+                                : createAppleGradient(ctx, '#ff3b30', '#ff453a')
                         ),
-                        borderColor: chartData.data.map(value =>
-                            value >= 0 ? 'rgba(16, 185, 129, 1)' : 'rgba(239, 68, 68, 1)'
-                        ),
-                        borderWidth: 2,
-                        borderRadius: 8,
+                        borderColor: 'transparent',
+                        borderWidth: 0,
+                        borderRadius: 12,
                         borderSkipped: false,
-                        barThickness: 36,
-                        // Sombra sutil para profundidad
-                        shadowOffsetX: 2,
-                        shadowOffsetY: 2,
-                        shadowBlur: 4,
-                        shadowColor: isDark ? 'rgba(0, 0, 0, 0.4)' : 'rgba(0, 0, 0, 0.15)'
+                        barThickness: 28,
+                        maxBarThickness: 32
                     }]
                 },
                 options: {
                     ...commonOptions,
                     indexAxis: 'y',
                     layout: {
-                        padding: { left: 10, right: 20, top: 10, bottom: 10 }
+                        padding: { left: 12, right: 20, top: 10, bottom: 12 }
                     },
                     plugins: {
                         title: {
                             display: true,
                             text: '🏆 Top 10 Papelerías por Ganancia',
-                            font: { size: 18, weight: '700', family: "'Inter', sans-serif" },
-                            padding: { top: 14, bottom: 24 },
+                            font: { size: 16, weight: '700', family: "'Inter', sans-serif" },
+                            padding: { top: 10, bottom: 18 },
                             color: isDark ? '#f8fafc' : '#0f172a'
                         },
                         legend: { display: false },
@@ -695,9 +708,10 @@
                             },
                             ticks: { 
                                 callback: (value) => formatCurrency(value),
-                                font: { size: 12, weight: '600' },
+                                font: { size: 11, weight: '600' },
                                 color: isDark ? '#94a3b8' : '#64748b',
-                                padding: 8
+                                padding: 6,
+                                maxTicksLimit: 6
                             }
                         },
                         y: {
@@ -710,12 +724,14 @@
                                 width: 2
                             },
                             ticks: {
-                                font: { size: 13, weight: '600' },
+                                font: { size: 11, weight: '600' },
                                 color: isDark ? '#e2e8f0' : '#1e293b',
-                                padding: 12,
+                                padding: 10,
+                                mirror: false,
                                 callback: function(value, index) {
                                     const label = this.getLabelForValue(value);
-                                    return label.length > 20 ? label.substring(0, 17) + '...' : label;
+                                    // Truncar nombres largos pero mostrar más caracteres
+                                    return label.length > 25 ? label.substring(0, 22) + '...' : label;
                                 }
                             }
                         }
@@ -728,7 +744,8 @@
 
         // Crear gráfico de Evolución Mensual MEJORADO V2
         async createMonthlySummaryChart(chartData) {
-            if (!chartData || !chartData.data || chartData.data.length === 0) {
+            // monthlySummary tiene: labels, ingresos, costos, ganancias, totals (NO tiene 'data')
+            if (!chartData || !chartData.labels || chartData.labels.length === 0) {
                 this.showNoDataMessage('monthlySummaryChart', 'Sin historial de movimientos');
                 return;
             }
@@ -852,17 +869,14 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: [
-                                '📊 Evolución Mensual de Este Cliente (Últimos 12 meses)',
-                                `${tendencia} ${cambio > 0 ? '+' : ''}${cambio}% | 💰 Ganancia Neta: ${formatCurrency(totalGanancias)}`
-                            ],
+                            text: `${tendencia} ${cambio > 0 ? '+' : ''}${cambio}%  •  Ganancia Neta: ${formatCurrency(totalGanancias)}`,
                             font: { 
-                                size: [17, 13],
-                                weight: ['700', '600'],
+                                size: 12,
+                                weight: '600',
                                 family: "'Inter', sans-serif"
                             },
-                            padding: { top: 14, bottom: 24 },
-                            color: isDark ? '#f8fafc' : '#0f172a'  // Color principal para ambas líneas
+                            padding: { top: 8, bottom: 16 },
+                            color: isDark ? '#cbd5e1' : '#475569'
                         },
                         legend: {
                             display: true,
@@ -945,6 +959,14 @@
                             }
                         }
                     },
+                    layout: {
+                        padding: {
+                            left: 10,
+                            right: 20,
+                            top: 10,
+                            bottom: 15
+                        }
+                    },
                     scales: {
                         x: {
                             grid: {
@@ -959,9 +981,13 @@
                                 width: 2
                             },
                             ticks: {
-                                font: { size: 12, weight: '600', family: "'Inter', sans-serif" },
+                                font: { size: 11, weight: '600', family: "'Inter', sans-serif" },
                                 color: isDark ? '#cbd5e1' : '#475569',
-                                padding: 10
+                                padding: 8,
+                                maxRotation: 45,
+                                minRotation: 0,
+                                autoSkip: true,
+                                autoSkipPadding: 10
                             }
                         },
                         y: {
@@ -1581,8 +1607,10 @@
         // Limpiar caché para recargar con nuevo rango
         chartDataCache.clear();
         
-        // Mostrar skeleton mientras se recargan datos
-        showSkeletons();
+        // Mostrar skeleton mientras se recargan datos usando ChartManager
+        if (typeof chartManager !== 'undefined' && chartManager.showSkeletons) {
+            chartManager.showSkeletons();
+        }
         
         // Reinicializar gráficos con el nuevo rango
         setTimeout(() => {

@@ -3,7 +3,12 @@ from functools import wraps
 from flask_login import current_user
 from .models import Papeleria, db
 import os
-from PIL import Image
+# Pillow es opcional (ahorra ~7MB en PythonAnywhere gratis)
+try:
+    from PIL import Image
+    PILLOW_AVAILABLE = True
+except ImportError:
+    PILLOW_AVAILABLE = False
 from werkzeug.utils import secure_filename
 from datetime import datetime
 import threading
@@ -75,14 +80,17 @@ def save_logo_image(file, user_id):
     filename = secure_filename(f"logo_{user_id}.png")
 
     try:
-        # Redimensionar y optimizar la imagen antes de guardarla
-        img = Image.open(file.stream)
-        img.thumbnail((300, 300))  # Redimensiona manteniendo el aspect ratio
-
         # Construir la ruta de guardado
         filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-
-        img.save(filepath, "PNG", optimize=True)
+        
+        if PILLOW_AVAILABLE:
+            # Redimensionar y optimizar la imagen antes de guardarla
+            img = Image.open(file.stream)
+            img.thumbnail((300, 300))  # Redimensiona manteniendo el aspect ratio
+            img.save(filepath, "PNG", optimize=True)
+        else:
+            # Sin Pillow, guardar directamente (sin redimensionar)
+            file.save(filepath)
     except Exception as e:
         # Relanzar la excepción con un mensaje más claro.
         raise Exception(f'El archivo subido no es una imagen válida. Error: {e}')

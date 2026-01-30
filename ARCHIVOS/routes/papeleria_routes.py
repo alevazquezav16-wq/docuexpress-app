@@ -12,6 +12,7 @@ from ..utils import get_effective_user_id, check_papeleria_owner, admin_required
 from ..database import papeleria_repository, tramite_repository, gasto_repository
 from ..constants import TRAMITES_PREDEFINIDOS
 from ..pdf_generator import generar_pdf_papeleria
+from ..logging_config import log_action, log_db_operation, log_error
 
 papeleria_bp = Blueprint('papeleria', __name__)
 
@@ -95,7 +96,10 @@ def gestionar_precios_papeleria(papeleria_id):
 @papeleria_bp.route('/agregar-papeleria', methods=['POST'])
 @login_required
 def agregar_papeleria():
-    form_papeleria = PapeleriaForm()
+    import logging
+    logging.info(f"[DEBUG] request.form: {dict(request.form)}")
+    from wtforms import Form
+    form_papeleria = PapeleriaForm(formdata=request.form)
     if form_papeleria.validate_on_submit():
         nombre = form_papeleria.nombre.data
         user_id = get_effective_user_id()
@@ -141,45 +145,65 @@ def agregar_papeleria():
 @papeleria_bp.route('/registrar-tramite', methods=['POST'])
 @login_required
 def registrar_tramite():
-    form = TramiteForm(data=request.form)
-    effective_user_id = get_effective_user_id()
-    papelerias_data = papeleria_repository.get_papelerias_and_totals_for_user(effective_user_id)
-    form.papeleria_id.choices = [(p.id, p.nombre) for p in papelerias_data['papelerias']]
+    try:
+        form = TramiteForm(data=request.form)
+        effective_user_id = get_effective_user_id()
+        papelerias_data = papeleria_repository.get_papelerias_and_totals_for_user(effective_user_id)
+        form.papeleria_id.choices = [(p.id, p.nombre) for p in papelerias_data['papelerias']]
 
+        # Forzar error controlado para pruebas si el nombre del trámite es 'FORZAR_ERROR'
+        if (form.tramite.data == 'OTRO' and form.tramite_manual.data and form.tramite_manual.data.strip().upper() == 'FORZAR_ERROR'):
+            raise Exception('Error controlado de prueba: canal de mensajes funciona correctamente.')
 
-    if form.validate_on_submit():
-        papeleria_id = form.papeleria_id.data
-        if form.tramite.data == 'OTRO':
-            tramite_nombre = form.tramite_manual.data.strip().upper()
-        else:
-            tramite_nombre = form.tramite.data
-
-        precio_input = form.precio.data
-        precio = None
-        if isinstance(precio_input, (int, float)):
-            precio = precio_input
-        if precio is None:
-            precio_especifico = papeleria_repository.get_default_precio(papeleria_id, tramite_nombre, effective_user_id)
-            if precio_especifico is not None:
-                precio = precio_especifico
+        if form.validate_on_submit():
+            papeleria_id = form.papeleria_id.data
+            if form.tramite.data == 'OTRO':
+                tramite_nombre = form.tramite_manual.data.strip().upper()
             else:
-                form.precio.errors.append(f"No hay precio predefinido para '{tramite_nombre}'. Debes ingresarlo manualmente o configurarlo.")
-                if request.headers.get('HX-Request'):
-                    return render_template('partials/form_registrar_tramite_content.html', form_tramite=form), 200
-                return render_template('partials/form_registrar_tramite_content.html', form_tramite=form), 422
+                tramite_nombre = form.tramite.data
 
-        costo = form.costo.data
-        if costo == 0:
-            costo_default = tramite_repository.get_costo_for_tramite(tramite_nombre, effective_user_id)
-            if costo_default is not None:
-                costo = costo_default
+            precio_input = form.precio.data
+            precio = None
+            if isinstance(precio_input, (int, float)):
+                precio = precio_input
+            if precio is None:
+                precio_especifico = papeleria_repository.get_default_precio(papeleria_id, tramite_nombre, effective_user_id)
+                if precio_especifico is not None:
+                    precio = precio_especifico
+                else:
+                    form.precio.errors.append(f"No hay precio predefinido para '{tramite_nombre}'. Debes ingresarlo manualmente o configurarlo.")
+                    if request.headers.get('HX-Request'):
+                        return render_template('partials/form_registrar_tramite_content.html', form_tramite=form)
+                    return render_template('partials/form_registrar_tramite_content.html', form_tramite=form)
 
-        cantidad = form.cantidad.data
-        fecha = form.fecha.data.strftime('%Y-%m-%d')
+            costo = form.costo.data
+            if costo == 0:
+                costo_default = tramite_repository.get_costo_for_tramite(tramite_nombre, effective_user_id)
+                if costo_default is not None:
+                    costo = costo_default
 
-        try:
+            cantidad = form.cantidad.data
+            fecha = form.fecha.data.strftime('%Y-%m-%d')
+
             tramite_repository.add_bulk(papeleria_id, tramite_nombre, effective_user_id, fecha, precio, costo, cantidad)
             bump_user_data_version(effective_user_id) # Invalidar caché
+            
+            # Log de la operación de registro de trámite
+            log_db_operation('CREATE', 'tramite', None, {
+                'papeleria_id': papeleria_id,
+                'tramite': tramite_nombre,
+                'cantidad': cantidad,
+                'precio': precio,
+                'costo': costo,
+                'fecha': fecha
+            })
+            log_action('tramite_registered', {
+                'papeleria_id': papeleria_id,
+                'tramite': tramite_nombre,
+                'cantidad': cantidad,
+                'ganancia_total': (precio - costo) * cantidad
+            })
+            
             flash(f"{cantidad} trámite(s) de '{tramite_nombre}' registrados correctamente.", 'success')
 
             # Si la petición es HTMX, devolver el mensaje flash OOB y el formulario limpio
@@ -190,7 +214,6 @@ def registrar_tramite():
                 papelerias_data = papeleria_repository.get_papelerias_and_totals_for_user(effective_user_id)
                 new_form.papeleria_id.choices = [(p.id, p.nombre) for p in papelerias_data['papelerias']]
                 new_form.papeleria_id.data = papeleria_id # Mantener selección para agilizar captura
-                
                 form_html = render_template('partials/form_registrar_tramite_content.html', form_tramite=new_form)
                 # OOB swap para actualizar el contenedor de mensajes flash y el formulario
                 response = make_response(f'<div id="flash-container" hx-swap-oob="innerHTML">{flash_html}</div>{form_html}')
@@ -199,19 +222,20 @@ def registrar_tramite():
             # Si no es HTMX, redirect tradicional
             return redirect(url_for('papeleria.ver_papeleria', papeleria_id=papeleria_id))
 
-        except Exception as e:
-            logging.error(f"Error al registrar tramite: {e}")
-            flash(f"Error al registrar tramite: {e}", "danger")
-            # Si es HTMX y hubo excepción, devolver form con error y mensaje flash con status 200
-            if request.headers.get('HX-Request'):
-                flash_html = render_template('flash_messages.html')
-                form_html = render_template('partials/form_registrar_tramite_content.html', form_tramite=form)
-                return make_response(f'<div id="flash-container" hx-swap-oob="innerHTML">{flash_html}</div>{form_html}'), 200
-
-    # Si la validación falla, renderizar el formulario con errores
-    if request.headers.get('HX-Request'):
-        return render_template('partials/form_registrar_tramite_content.html', form_tramite=form), 200
-    return render_template('partials/form_registrar_tramite_content.html', form_tramite=form), 422
+        # Si la validación falla, renderizar el formulario con errores
+        if request.headers.get('HX-Request'):
+            return render_template('partials/form_registrar_tramite_content.html', form_tramite=form)
+        return render_template('partials/form_registrar_tramite_content.html', form_tramite=form)
+    except Exception as e:
+        logging.error(f"Error inesperado en registrar_tramite: {e}", exc_info=True)
+        flash(f"Error interno: {str(e)}", "danger")
+        # Si es HTMX, devolver el formulario con el error y mensaje flash
+        if request.headers.get('HX-Request'):
+            flash_html = render_template('flash_messages.html')
+            form_html = render_template('partials/form_registrar_tramite_content.html', form_tramite=form if 'form' in locals() else None)
+            return make_response(f'<div id="flash-container" hx-swap-oob="innerHTML">{flash_html}</div>{form_html}')
+        # Si no es HTMX, renderizar el formulario con el error
+        return render_template('partials/form_registrar_tramite_content.html', form_tramite=form if 'form' in locals() else None)
 
 @papeleria_bp.route('/_tramite_form_papelerias')
 @login_required
@@ -271,7 +295,7 @@ def editar_tramite(tramite_id):
     
     # Si la validación falla y es HTMX, devolvemos solo el parcial con 422
     if request.method == 'POST' and request.headers.get('HX-Request'):
-        return render_template('partials/editar_tramite_content.html', form=form, tramite=tramite), 200
+        return render_template('partials/editar_tramite_content.html', form=form, tramite=tramite), 422
 
     return render_template('editar_tramite.html', form=form, tramite=tramite)
 

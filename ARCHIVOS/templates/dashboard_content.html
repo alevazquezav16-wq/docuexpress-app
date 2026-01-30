@@ -3,11 +3,11 @@
     <div class="col-12">
         <div class="d-flex justify-content-center justify-content-md-end align-items-center flex-wrap gap-2">
             <div class="btn-group w-100 w-md-auto" role="group" aria-label="Filtro de rango">
-                <input type="radio" class="btn-check" name="dateRange" id="range7d" value="7" autocomplete="off" checked>
+                <input type="radio" class="btn-check" name="dateRange" id="range7d" value="7" autocomplete="off">
                 <label class="btn btn-outline-primary btn-sm" for="range7d">
                     <i class="bi bi-calendar-week me-1 d-none d-md-inline"></i><span class="d-md-none">7d</span><span class="d-none d-md-inline">7 días</span>
                 </label>
-                <input type="radio" class="btn-check" name="dateRange" id="range30d" value="30" autocomplete="off">
+                <input type="radio" class="btn-check" name="dateRange" id="range30d" value="30" autocomplete="off" checked>
                 <label class="btn btn-outline-primary btn-sm" for="range30d">
                     <i class="bi bi-calendar-month me-1 d-none d-md-inline"></i><span class="d-md-none">30d</span><span class="d-none d-md-inline">30 días</span>
                 </label>
@@ -55,7 +55,6 @@
         </div>
     </div>
 </div>
-</script>
 <script>
 // Actualiza el resumen visual del rango de fechas seleccionado en el dashboard
 function updateDashboardDateRangeSummary() {
@@ -80,11 +79,18 @@ async function updateDashboardTotals() {
         const res = await fetch('/api/dashboard-totals?' + params.toString(), {cache: 'no-store'});
         if (!res.ok) throw new Error('Error al obtener totales');
         const data = await res.json();
-        // Actualizar tarjetas
-        document.querySelector('#dashboard-cards .value[data-target]:nth-child(2)').textContent = `$${parseFloat(data.ganancia).toFixed(2)}`;
-        document.querySelector('#dashboard-cards .value[data-target]:nth-child(4)').textContent = data.tramites_de_hoy;
-        document.querySelector('#dashboard-cards .value[data-target]:nth-child(6)').textContent = data.num_papelerias;
-        document.querySelector('#dashboard-cards .value[data-target]:nth-child(8)').textContent = `$${parseFloat(data.total_gastos_operativos).toFixed(2)}`;
+        // Actualizar tarjetas con IDs específicos para mayor confiabilidad
+        const gananciaEl = document.getElementById('metric-ganancia');
+        if (gananciaEl) gananciaEl.textContent = `$${parseFloat(data.ganancia).toFixed(2)}`;
+        const tramitesHoyEl = document.getElementById('metric-tramites-hoy');
+        if (tramitesHoyEl) tramitesHoyEl.textContent = data.tramites_de_hoy;
+        const papeleriasEl = document.getElementById('metric-papelerias');
+        if (papeleriasEl) papeleriasEl.textContent = data.num_papelerias;
+        const gastosEl = document.getElementById('metric-gastos');
+        if (gastosEl) gastosEl.textContent = `$${parseFloat(data.total_gastos_operativos).toFixed(2)}`;
+        // Actualizar ganancia promedio
+        const gananciaPromedioEl = document.getElementById('metric-ganancia-promedio');
+        if (gananciaPromedioEl) gananciaPromedioEl.textContent = `${parseFloat(data.ganancia_promedio).toFixed(2)}$`;
     } catch (e) {
         console.error('No se pudieron actualizar los totales del dashboard:', e);
     }
@@ -113,7 +119,6 @@ document.body.addEventListener('click', function(event) {
     }
 });
 </script>
-</script>
 
 <!-- Fila de Tarjetas de Resumen Rediseñadas con Tendencias -->
 {% if current_user.role == 'admin' %}
@@ -124,7 +129,7 @@ document.body.addEventListener('click', function(event) {
             <div class="icon"><i class="bi bi-cash-coin"></i></div>
             <div class="content">
                 <div class="label">Ganancia del Mes</div>
-                <div class="value" data-target="{{ "%.2f"|format(totales.ganancia) }}">${{ "%.2f"|format(totales.ganancia) }}</div>
+                <div class="value" id="metric-ganancia" data-target="{{ "%.2f"|format(totales.ganancia) }}">${{ "%.2f"|format(totales.ganancia) }}</div>
                 {% if totales_comparativa %}
                 <div class="trend {{ 'trend-up' if totales_comparativa.cambio_ganancia > 0 else 'trend-down' if totales_comparativa.cambio_ganancia < 0 else 'trend-neutral' }}">
                     <i class="bi {{ 'bi-arrow-up' if totales_comparativa.cambio_ganancia > 0 else 'bi-arrow-down' if totales_comparativa.cambio_ganancia < 0 else 'bi-dash' }}"></i>
@@ -142,7 +147,7 @@ document.body.addEventListener('click', function(event) {
             <div class="icon"><i class="bi bi-file-earmark-text"></i></div>
             <div class="content">
                 <div class="label">Trámites de Hoy</div>
-                <div class="value" data-target="{{ tramites_de_hoy }}">{{ tramites_de_hoy }}</div>
+                <div class="value" id="metric-tramites-hoy" data-target="{{ tramites_de_hoy }}">{{ tramites_de_hoy }}</div>
                 {% if tramites_comparativa %}
                 <div class="trend {{ 'trend-up' if tramites_comparativa.cambio > 0 else 'trend-down' if tramites_comparativa.cambio < 0 else 'trend-neutral' }}">
                     <i class="bi {{ 'bi-arrow-up' if tramites_comparativa.cambio > 0 else 'bi-arrow-down' if tramites_comparativa.cambio < 0 else 'bi-dash' }}"></i>
@@ -160,10 +165,10 @@ document.body.addEventListener('click', function(event) {
             <div class="icon"><i class="bi bi-shop"></i></div>
             <div class="content">
                 <div class="label">Papelerías Activas</div>
-                <div class="value" data-target="{{ num_papelerias }}">{{ num_papelerias }}</div>
+                <div class="value" id="metric-papelerias" data-target="{{ num_papelerias }}">{{ num_papelerias }}</div>
                 <div class="trend trend-info">
                     <i class="bi bi-info-circle"></i>
-                    <span>{{ (totales.ganancia / num_papelerias)|round(2) if num_papelerias > 0 else 0 }}$</span>
+                    <span id="metric-ganancia-promedio">{{ (totales.ganancia / num_papelerias)|round(2) if num_papelerias > 0 else 0 }}$</span>
                     <small class="trend-label">ganancia promedio</small>
                 </div>
             </div>
@@ -176,7 +181,7 @@ document.body.addEventListener('click', function(event) {
              <div class="icon"><i class="bi bi-receipt"></i></div>
              <div class="content">
                 <div class="label">Gastos del Mes</div>
-                <div class="value" data-target="{{ "%.2f"|format(total_gastos_operativos) }}">${{ "%.2f"|format(total_gastos_operativos) }}</div>
+                <div class="value" id="metric-gastos" data-target="{{ "%.2f"|format(total_gastos_operativos) }}">${{ "%.2f"|format(total_gastos_operativos) }}</div>
                 {% if totales_comparativa %}
                 <div class="trend {{ 'trend-down' if totales_comparativa.costos_porcentaje > 0 else 'trend-up' if totales_comparativa.costos_porcentaje < 0 else 'trend-neutral' }}">
                     <i class="bi {{ 'bi-arrow-up' if totales_comparativa.costos_porcentaje > 0 else 'bi-arrow-down' if totales_comparativa.costos_porcentaje < 0 else 'bi-dash' }}"></i>
@@ -459,33 +464,221 @@ document.body.addEventListener('click', function(event) {
 </div>
 {% endif %}
 
-<!-- Fila de Gráficos -->
+<!-- Estilos Apple/iPhone para gráficos -->
+<style>
+    .apple-card {
+        background: var(--bs-body-bg);
+        border-radius: 20px;
+        border: none;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+        overflow: hidden;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .apple-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+    .apple-header {
+        padding: 20px 24px;
+        border-radius: 20px 20px 0 0;
+        position: relative;
+        overflow: hidden;
+    }
+    .apple-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: inherit;
+        filter: blur(0);
+        z-index: 0;
+    }
+    .apple-header-purple {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    }
+    .apple-header-blue {
+        background: linear-gradient(135deg, #00c6fb 0%, #005bea 50%, #00d4ff 100%);
+    }
+    .apple-header-content {
+        position: relative;
+        z-index: 1;
+    }
+    .apple-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin-bottom: 2px;
+    }
+    .apple-subtitle {
+        font-size: 0.8rem;
+        opacity: 0.85;
+        font-weight: 500;
+    }
+    .apple-icon-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.25);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    .apple-icon-btn:hover {
+        background: rgba(255, 255, 255, 0.4);
+        transform: scale(1.05);
+    }
+    .apple-body {
+        padding: 24px;
+    }
+    .apple-stat-card {
+        background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%);
+        border-radius: 16px;
+        padding: 16px;
+        text-align: center;
+        border: 1px solid rgba(0,0,0,0.04);
+        backdrop-filter: blur(10px);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    [data-bs-theme="dark"] .apple-stat-card {
+        background: linear-gradient(135deg, rgba(30,41,59,0.9) 0%, rgba(51,65,85,0.7) 100%);
+        border-color: rgba(255,255,255,0.08);
+    }
+    .apple-stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    }
+    .apple-stat-card.green { border-left: 4px solid #34c759; }
+    .apple-stat-card.red { border-left: 4px solid #ff3b30; }
+    .apple-stat-card.blue { border-left: 4px solid #007aff; }
+    .apple-stat-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 10px;
+        font-size: 1.2rem;
+    }
+    .apple-stat-icon.green { background: linear-gradient(135deg, #34c759, #30d158); color: white; }
+    .apple-stat-icon.red { background: linear-gradient(135deg, #ff3b30, #ff453a); color: white; }
+    .apple-stat-icon.blue { background: linear-gradient(135deg, #007aff, #0a84ff); color: white; }
+    .apple-stat-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        opacity: 0.7;
+        margin-bottom: 4px;
+    }
+    .apple-stat-value {
+        font-size: 1.5rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        background: linear-gradient(135deg, var(--stat-color-1), var(--stat-color-2));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .apple-stat-card.green .apple-stat-value { --stat-color-1: #34c759; --stat-color-2: #30d158; }
+    .apple-stat-card.red .apple-stat-value { --stat-color-1: #ff3b30; --stat-color-2: #ff453a; }
+    .apple-stat-card.blue .apple-stat-value { --stat-color-1: #007aff; --stat-color-2: #0a84ff; }
+    .apple-chart-container {
+        position: relative;
+        height: 380px;
+        min-height: 340px;
+        padding: 12px;
+        border-radius: 16px;
+        background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.02) 100%);
+    }
+    .apple-chart-container canvas {
+        max-height: 100% !important;
+    }
+    [data-bs-theme="dark"] .apple-chart-container {
+        background: linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.02) 100%);
+    }
+    /* Animación de entrada suave */
+    @keyframes appleSlideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    .apple-card {
+        animation: appleSlideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .row.g-4 .col-lg-6:nth-child(2) .apple-card {
+        animation-delay: 0.1s;
+    }
+    /* Estado vacío estilo Apple */
+    .apple-empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: var(--bs-secondary-color);
+        padding: 40px 20px;
+    }
+    .apple-empty-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 24px;
+        background: linear-gradient(135deg, rgba(0,0,0,0.05), rgba(0,0,0,0.02));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        margin-bottom: 16px;
+    }
+    [data-bs-theme="dark"] .apple-empty-icon {
+        background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+    }
+    .apple-empty-text {
+        font-size: 0.95rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+    }
+</style>
+
+<!-- Fila de Gráficos - Estilo Apple -->
 <div class="row g-4 mb-4">
     <!-- Gráfico 1: Top Papelerías por Ganancia -->
     <div class="col-lg-6">
-        <div class="card h-100 shadow-sm border-0">
-            <div class="card-header bg-gradient-primary text-white border-0">
-                <div class="d-flex align-items-center">
+        <div class="apple-card h-100">
+            <div class="apple-header apple-header-purple text-white">
+                <div class="apple-header-content d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <h5 class="mb-1">
+                        <h5 class="apple-title mb-0">
                             <i class="bi bi-trophy-fill me-2"></i>
                             Papelerías Más Rentables
                         </h5>
-                        <small class="opacity-75">Las 10 papelerías que generan mayor ganancia</small>
+                        <small class="apple-subtitle">Top 10 por ganancia generada</small>
                     </div>
                     <div class="d-flex gap-2">
-                        <button class="btn btn-sm btn-light" onclick="exportChartData('topPapelerias')" title="Exportar datos">
-                            <i class="bi bi-download"></i>
-                        </button>
-                        <div class="badge bg-white text-primary">
-                            <i class="bi bi-bar-chart-line"></i>
+                        <div class="apple-icon-btn" onclick="exportChartData('topPapelerias')" title="Exportar">
+                            <i class="bi bi-arrow-down-circle"></i>
+                        </div>
+                        <div class="apple-icon-btn">
+                            <i class="bi bi-bar-chart-fill"></i>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="card-body">
-                <div class="chart-container">
-                    <canvas id="topPapeleriasChart" style="max-height: 400px;"></canvas>
+            <div class="apple-body">
+                <div class="apple-chart-container">
+                    <canvas id="topPapeleriasChart"></canvas>
                 </div>
             </div>
         </div>
@@ -493,95 +686,109 @@ document.body.addEventListener('click', function(event) {
 
     <!-- Gráfico 2: Evolución Mensual -->
     <div class="col-lg-6">
-        <div class="card h-100 shadow-sm border-0">
-            <div class="card-header bg-gradient-info text-white border-0">
-                <div class="d-flex align-items-center">
+        <div class="apple-card h-100">
+            <div class="apple-header apple-header-blue text-white">
+                <div class="apple-header-content d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <h5 class="mb-1">
-                            <i class="bi bi-graph-up me-2"></i>
-                            Evolución Mensual (Últimos 12 meses)
+                        <h5 class="apple-title mb-0">
+                            <i class="bi bi-graph-up-arrow me-2"></i>
+                            Evolución Mensual
                         </h5>
-                        <small class="opacity-75">Tendencia financiera histórica</small>
+                        <small class="apple-subtitle">Tendencia de los últimos 12 meses</small>
                     </div>
                     <div class="d-flex gap-2">
-                        <button class="btn btn-sm btn-light" onclick="exportChartData('monthlySummary')" title="Exportar datos">
-                            <i class="bi bi-download"></i>
-                        </button>
-                        <div class="badge bg-white text-info">
-                            <i class="bi bi-calendar-event"></i>
+                        <div class="apple-icon-btn" onclick="exportChartData('monthlySummary')" title="Exportar">
+                            <i class="bi bi-arrow-down-circle"></i>
+                        </div>
+                        <div class="apple-icon-btn">
+                            <i class="bi bi-calendar3"></i>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="card-body">
-                <!-- Summary Cards for the chart -->
-                <div class="row g-3 mb-4 text-center">
-                    <div class="col-md-4">
-                        <div class="card bg-success-subtle border-success-subtle shadow-sm h-100">
-                            <div class="card-body py-3">
-                                <div class="d-flex align-items-center justify-content-center mb-2">
-                                    <i class="bi bi-cash-coin text-success-emphasis fs-4 me-2"></i>
-                                    <h6 class="card-title text-success-emphasis mb-0 fs-6">Ingreso Total</h6>
-                                </div>
-                                <p class="card-text fs-5 fw-bold text-success-emphasis mb-0" id="total-ingresos-12-meses">$0.00</p>
+            <div class="apple-body">
+                <!-- Tarjetas de resumen estilo Apple -->
+                <div class="row g-3 mb-4">
+                    <div class="col-4">
+                        <div class="apple-stat-card green">
+                            <div class="apple-stat-icon green">
+                                <i class="bi bi-arrow-up-right"></i>
                             </div>
+                            <div class="apple-stat-label">Ingresos</div>
+                            <div class="apple-stat-value" id="total-ingresos-12-meses">$0</div>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="card bg-danger-subtle border-danger-subtle shadow-sm h-100">
-                            <div class="card-body py-3">
-                                <div class="d-flex align-items-center justify-content-center mb-2">
-                                    <i class="bi bi-receipt-cutoff text-danger-emphasis fs-4 me-2"></i>
-                                    <h6 class="card-title text-danger-emphasis mb-0 fs-6">Gasto Total</h6>
-                                </div>
-                                <p class="card-text fs-5 fw-bold text-danger-emphasis mb-0" id="total-gastos-12-meses">$0.00</p>
+                    <div class="col-4">
+                        <div class="apple-stat-card red">
+                            <div class="apple-stat-icon red">
+                                <i class="bi bi-arrow-down-right"></i>
                             </div>
+                            <div class="apple-stat-label">Gastos</div>
+                            <div class="apple-stat-value" id="total-gastos-12-meses">$0</div>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="card bg-primary-subtle border-primary-subtle shadow-sm h-100">
-                            <div class="card-body py-3">
-                                <div class="d-flex align-items-center justify-content-center mb-2">
-                                    <i class="bi bi-pie-chart-fill text-primary-emphasis fs-4 me-2"></i>
-                                    <h6 class="card-title text-primary-emphasis mb-0 fs-6">Ganancia Neta</h6>
-                                </div>
-                                <p class="card-text fs-5 fw-bold text-primary-emphasis mb-0" id="ganancia-neta-12-meses">
-                                    $0.00 <span id="ganancia-trend" class="ms-1"></span>
-                                </p>
+                    <div class="col-4">
+                        <div class="apple-stat-card blue">
+                            <div class="apple-stat-icon blue">
+                                <i class="bi bi-wallet2"></i>
                             </div>
+                            <div class="apple-stat-label">Ganancia</div>
+                            <div class="apple-stat-value" id="ganancia-neta-12-meses">$0</div>
                         </div>
                     </div>
                 </div>
-                <div class="chart-container">
-                    <canvas id="monthlySummaryChart" style="max-height: 300px;"></canvas>
+                <div class="apple-chart-container">
+                    <canvas id="monthlySummaryChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Fila de Gráficos de Dona -->
+<!-- Estilos adicionales Apple para gráficos de dona -->
+<style>
+    .apple-header-orange {
+        background: linear-gradient(135deg, #ff9500 0%, #ff6b00 50%, #ffcc00 100%);
+    }
+    .apple-header-pink {
+        background: linear-gradient(135deg, #ff2d55 0%, #ff375f 50%, #ff6b8a 100%);
+    }
+    .apple-donut-container {
+        position: relative;
+        height: 300px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+
+<!-- Fila de Gráficos de Dona - Estilo Apple -->
 <div class="row g-4 mb-4">
     <!-- Gráfico 3: Distribución de Trámites -->
     <div class="col-lg-6">
-        <div class="card h-100 shadow-sm border-0">
-            <div class="card-header chart-header-tramites border-0">
-                <div class="d-flex align-items-center">
+        <div class="apple-card h-100">
+            <div class="apple-header apple-header-orange text-white">
+                <div class="apple-header-content d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <h5 class="mb-1 fw-bold chart-title">
-                            <i class="bi bi-file-earmark-text-fill me-2"></i>
+                        <h5 class="apple-title mb-0">
+                            <i class="bi bi-file-earmark-check-fill me-2"></i>
                             Trámites Más Realizados
                         </h5>
-                        <small class="chart-subtitle">Cantidad de cada tipo de trámite procesado</small>
+                        <small class="apple-subtitle">Distribución por tipo de documento</small>
                     </div>
-                    <div class="badge chart-badge-tramites ms-2 px-2 py-1">
-                        <i class="bi bi-pie-chart"></i>
+                    <div class="d-flex gap-2">
+                        <div class="apple-icon-btn" onclick="exportChartData('tramitesDistribution')" title="Exportar">
+                            <i class="bi bi-arrow-down-circle"></i>
+                        </div>
+                        <div class="apple-icon-btn">
+                            <i class="bi bi-pie-chart-fill"></i>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="card-body d-flex align-items-center">
-                <div class="chart-container flex-grow-1">
-                    <canvas id="tramitesDistributionChart" style="max-width: 100%; max-height: 350px;"></canvas>
+            <div class="apple-body">
+                <div class="apple-donut-container">
+                    <canvas id="tramitesDistributionChart"></canvas>
                 </div>
             </div>
         </div>
@@ -589,24 +796,29 @@ document.body.addEventListener('click', function(event) {
 
     <!-- Gráfico 4: Distribución de Gastos -->
     <div class="col-lg-6">
-        <div class="card h-100 shadow-sm border-0">
-            <div class="card-header chart-header-gastos border-0">
-                <div class="d-flex align-items-center">
+        <div class="apple-card h-100">
+            <div class="apple-header apple-header-pink text-white">
+                <div class="apple-header-content d-flex align-items-center">
                     <div class="flex-grow-1">
-                        <h5 class="mb-1 fw-bold chart-title">
-                            <i class="bi bi-wallet-fill me-2"></i>
-                            ¿En Qué Se Gasta Más Dinero?
+                        <h5 class="apple-title mb-0">
+                            <i class="bi bi-credit-card-2-front-fill me-2"></i>
+                            Distribución de Gastos
                         </h5>
-                        <small class="chart-subtitle">Gastos separados por categoría (papelería, renta, servicios, etc.)</small>
+                        <small class="apple-subtitle">¿En qué se gasta más dinero?</small>
                     </div>
-                    <div class="badge chart-badge-gastos ms-2 px-2 py-1">
-                        <i class="bi bi-pie-chart-fill"></i>
+                    <div class="d-flex gap-2">
+                        <div class="apple-icon-btn" onclick="exportChartData('gastosDistribution')" title="Exportar">
+                            <i class="bi bi-arrow-down-circle"></i>
+                        </div>
+                        <div class="apple-icon-btn">
+                            <i class="bi bi-pie-chart-fill"></i>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="card-body d-flex align-items-center">
-                <div class="chart-container flex-grow-1">
-                    <canvas id="gastosDistributionChart" style="max-width: 100%; max-height: 350px;"></canvas>
+            <div class="apple-body">
+                <div class="apple-donut-container">
+                    <canvas id="gastosDistributionChart"></canvas>
                 </div>
             </div>
         </div>

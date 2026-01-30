@@ -4,14 +4,20 @@ from datetime import datetime, timedelta
 import logging
 import os
 
+# reportlab es opcional (ahorra ~5MB en PythonAnywhere gratis)
+REPORTLAB_AVAILABLE = False
 try:
     from reportlab.lib.pagesizes import A4
     from reportlab.lib import colors
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
     from reportlab.lib.units import mm
+    REPORTLAB_AVAILABLE = True
 except ImportError:
-    raise SystemExit("Error: La librería 'reportlab' no está instalada. Por favor, instálala con: pip install reportlab")
+    # Placeholders para evitar errores
+    A4 = (595.27, 841.89)
+    mm = 2.83465
+    colors = None
 
 # Obtenemos la ruta del directorio donde se encuentra este script (ARCHIVOS/).
 BASE_DIR = Path(__file__).resolve().parent
@@ -55,6 +61,11 @@ def _header_footer(canvas, doc, logo_path=None):
     canvas.restoreState()
 
 def generar_pdf_papeleria(papeleria_repository, tramite_repository, papeleria_id, user_id, fecha_inicio=None, fecha_fin=None, carpeta=REPORTS_DIR, logo_path=None, is_admin_view=False):
+    """Genera un PDF con el reporte de trámites. Retorna None si reportlab no está instalado."""
+    if not REPORTLAB_AVAILABLE:
+        logging.warning("reportlab no instalado - PDFs no disponibles")
+        return None
+    
     pap_nombre = papeleria_repository.get_name(papeleria_id, user_id)
     if not pap_nombre:
         return None

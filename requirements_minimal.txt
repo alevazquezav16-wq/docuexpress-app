@@ -1,0 +1,25 @@
+# DocuExpress - Dependencias MÍNIMAS para PythonAnywhere Gratis
+# Ahorra ~15MB sin Pillow, reportlab y APScheduler
+# La app funciona completamente, excepto:
+# - Generación de PDFs (necesita reportlab)
+# - Redimensionado automático de logos (necesita Pillow)
+# - Backups automáticos (necesita APScheduler)
+
+Flask==3.1.2
+Werkzeug==3.1.3
+Jinja2==3.1.6
+itsdangerous==2.2.0
+click==8.3.0
+MarkupSafe==3.0.3
+blinker==1.9.0
+Flask-Login==0.6.3
+Flask-SQLAlchemy==3.1.1
+Flask-WTF==1.2.2
+Flask-Caching==2.3.1
+Flask-Limiter==3.5.0
+SQLAlchemy==2.0.44
+WTForms==3.2.1
+email-validator==2.3.0
+python-dotenv==1.0.0
+limits==5.6.0
+cachelib==0.13.0

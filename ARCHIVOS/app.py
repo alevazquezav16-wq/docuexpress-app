@@ -33,9 +33,20 @@ load_dotenv()
 # Importamos la clase DB y User
 # Se actualiza la importación para usar el nuevo módulo de base de datos.
 
-from ARCHIVOS.models import db, User
-from ARCHIVOS.backup_manager import backup_manager
-from ARCHIVOS.utils import send_error_email_async
+try:
+    from ARCHIVOS.models import db, User
+except ModuleNotFoundError:
+    from .models import db, User
+
+# APScheduler/backup_manager es opcional (ahorra espacio en PythonAnywhere gratis)
+try:
+    from ARCHIVOS.backup_manager import backup_manager
+    BACKUP_MANAGER_AVAILABLE = True
+except ImportError:
+    BACKUP_MANAGER_AVAILABLE = False
+    backup_manager = None
+
+from ARCHIVOS.utils import send_error_email_async, get_effective_user_id
 
 # Importa tus Blueprints
 # MEJORA DE ESTRUCTURA: Se actualizan las rutas de importación tras mover los archivos a la carpeta 'routes'.
@@ -86,9 +97,9 @@ class Config:
     
     # Configuración de Rate Limiting
     RATELIMIT_ENABLED = os.environ.get('RATELIMIT_ENABLED', 'True').lower() == 'true'
-    RATELIMIT_STORAGE_URL = os.environ.get('RATELIMIT_STORAGE_URL', 'redis://localhost:6379')
-    RATELIMIT_DEFAULT = os.environ.get('RATELIMIT_DEFAULT', '1000 per day;200 per hour')
-    RATELIMIT_API = os.environ.get('RATELIMIT_API', '500 per day;100 per hour')
+    RATELIMIT_STORAGE_URL = os.environ.get('RATELIMIT_STORAGE_URL', 'memory://')
+    RATELIMIT_DEFAULT = os.environ.get('RATELIMIT_DEFAULT', '3000 per day;300 per hour')
+    RATELIMIT_API = os.environ.get('RATELIMIT_API', '3000 per day;300 per hour')
 
     # Configuración de caché multicapa (OPTIMIZADO para PythonAnywhere gratis)
     CACHE_REDIS_URL = os.environ.get('CACHE_REDIS_URL', 'redis://localhost:6379/0')
@@ -168,6 +179,16 @@ def create_app(config_class=Config):
     if not app.config.get('TESTING', False):
         CSRFProtect(app)
     db.init_app(app)
+    
+    # ✅ Habilitar PRAGMA foreign_keys para SQLite (integridad referencial)
+    from sqlalchemy import event
+    from sqlalchemy.engine import Engine
+    
+    @event.listens_for(Engine, "connect")
+    def set_sqlite_pragma(dbapi_connection, connection_record):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
     # ✅ 3. Inicializar caché multicapa
     # Intentamos usar el backend indicado en configuración (por defecto Redis).
     # Si falla (p. ej. Redis no está disponible en desarrollo) caemos a SimpleCache.
@@ -194,7 +215,7 @@ def create_app(config_class=Config):
     # ✅ 4. Inicializar Rate Limiter con Redis
     limiter = None
     if app.config.get('RATELIMIT_ENABLED', True):
-        storage_uri = app.config.get('RATELIMIT_STORAGE_URL', 'redis://localhost:6379')
+        storage_uri = app.config.get('RATELIMIT_STORAGE_URL', 'memory://')
         try:
             limiter = Limiter(
                 app=app,
@@ -225,8 +246,11 @@ def create_app(config_class=Config):
         logging.info("⚠️ Rate Limiting deshabilitado")
         app.limiter = None
 
-    # ✅ 5. Inicializar Backup Manager
-    backup_manager.init_app(app)
+    # ✅ 5. Inicializar Backup Manager (si está disponible)
+    if BACKUP_MANAGER_AVAILABLE and backup_manager:
+        backup_manager.init_app(app)
+    else:
+        logging.info("⚠️ Backup automático deshabilitado (APScheduler no instalado)")
 
     # ✅ 5. Ejecutar migración de BD ANTES de registrar blueprints y contextos
     run_db_migration(app) # Se ejecuta para asegurar que las tablas existan al inicio.
@@ -309,13 +333,12 @@ def register_context_processors(app):
     @app.context_processor
     def inject_logo():
         """Inyecta la ruta del logo del usuario actual."""
-        # MEJORA: Usar la sesión para evitar comprobaciones de archivo en cada request.
-        # Se asume que 'session["has_logo"]' y 'session["user_id"]' se establecen
-        # durante el login o al subir/eliminar el logo.
         logo_path = None
-        if session.get('has_logo') and session.get('user_id'):
-            logo_filename = f"logo_{session['user_id']}.png"
-            logo_path = url_for('static', filename=f'uploads/{logo_filename}')
+        user_id = get_effective_user_id()
+        if user_id:
+            logo_filename = f"logo_{user_id}.png"
+            if (Config.UPLOAD_FOLDER / logo_filename).exists():
+                logo_path = url_for('static', filename=f'uploads/{logo_filename}')
         return {'logo_path': logo_path}
     
     @app.context_processor
@@ -396,12 +419,13 @@ def register_blueprints(app):
 # Para desarrollo local, permite ejecutar el servidor solo si el archivo es ejecutado como script principal.
 if __name__ == "__main__":
     import sys
-    if sys.argv[0].endswith("app.py"):
-        print("\n[INFO] Para evitar errores de importación, ejecuta la app desde la raíz del proyecto con:\n")
-        print("    python3 -m ARCHIVOS.app\n")
-        print("Esto asegura que los imports funcionen correctamente.\n")
-        # Opción de ejecución directa para desarrollo rápido:
-        app = create_app()
-        app.run(debug=True, host="127.0.0.1", port=5000)
-    else:
-        print("[ERROR] Ejecuta el archivo como módulo: python3 -m ARCHIVOS.app\n")
+    import os
+    # Si el módulo ARCHIVOS no se encuentra, añade el directorio raíz al sys.path
+    try:
+        import ARCHIVOS
+    except ModuleNotFoundError:
+        sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+    app = create_app()
+    # Ejecutar sin modo debug/reload para pruebas E2E
+    app.run(debug=False, host="127.0.0.1", port=5001)
+

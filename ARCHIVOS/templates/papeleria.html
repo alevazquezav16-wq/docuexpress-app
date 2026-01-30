@@ -164,14 +164,19 @@
     <div class="col-lg-7">
         <div class="card h-100 shadow-sm">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span>Evolución Mensual de Este Cliente (Últimos 12 meses)
-                    <button type="button" class="btn btn-outline-info btn-sm ms-2" data-bs-toggle="popover" data-bs-placement="bottom" data-bs-html="true" title="Cómo leer este gráfico" data-bs-content="<div style='max-width:260px'>
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-graph-up-arrow text-primary fs-5"></i>
+                    <div class="lh-sm">
+                        <span class="fw-semibold d-block">Evolución Mensual</span>
+                        <small class="text-muted" style="font-size: 0.72rem;">Tendencia de los últimos 12 meses</small>
+                    </div>
+                    <button type="button" class="btn btn-outline-info btn-sm py-0 px-1" data-bs-toggle="popover" data-bs-placement="bottom" data-bs-html="true" title="Cómo leer este gráfico" data-bs-content="<div style='max-width:260px'>
                         <div><span class='badge bg-primary me-1'>Ingresos</span>: lo que entró este mes.</div>
                         <div><span class='badge bg-danger me-1'>Costos</span>: lo que gastaste.</div>
                         <div><span class='badge bg-success me-1'>Ganancia</span> = Ingresos - Costos.</div>
                         <div class='mt-1 text-muted small'>Usa <strong>líneas/barras</strong> y <strong>media móvil</strong> para entender mejor la tendencia.</div>
                     </div>"><i class="bi bi-info-circle"></i></button>
-                </span>
+                </div>
                 <div class="d-flex gap-2 align-items-center">
                     <div class="btn-group btn-group-sm" role="group" aria-label="Vista mensual" id="monthly-mode-toggle">
                         <button type="button" class="btn btn-outline-secondary active" data-mode="lines" id="btnMonthlyLines" title="Ver como líneas">
@@ -665,16 +670,10 @@
                         plugins: { 
                             title: {
                                 display: true,
-                                text: [
-                                    '📈 EVOLUCIÓN MENSUAL',
-                                    `Promedio: ${fmt(promedio)}/mes | Meses rentables: ${mesesPositivos}/${gains.length} (${porcentajeExito}%)`
-                                ],
-                                font: [
-                                    { size: 15, weight: '700' },
-                                    { size: 12, weight: '600' }
-                                ],
-                                padding: { top: 12, bottom: 22 },
-                                color: titleColor
+                                text: `Promedio: ${fmt(promedio)}/mes  •  Meses rentables: ${mesesPositivos}/${gains.length} (${porcentajeExito}%)`,
+                                font: { size: 12, weight: '600' },
+                                padding: { top: 8, bottom: 16 },
+                                color: subtitleColor
                             },
                             legend: { 
                                 position: 'top',

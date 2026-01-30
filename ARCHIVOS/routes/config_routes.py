@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app, jsonify, send_file
 from flask_login import login_required, current_user
 import os
+from datetime import datetime
 
 from ..utils import get_effective_user_id, admin_required, save_logo_image
 from ..forms import ConfigForm
@@ -185,3 +186,59 @@ def restore_backup(filename):
             'success': False,
             'message': 'Error al restaurar el backup'
         }), 500
+
+
+# ==================== GESTIÓN DE LOGS ====================
+
+@config_bp.route('/logs')
+@login_required
+@admin_required
+def view_logs():
+    """Muestra los últimos registros del log del sistema."""
+    level = request.args.get('level')
+    log_file = current_app.config.get('LOG_FILE', 'docuexpress.log')
+    
+    # Intentar resolver la ruta absoluta si no lo es
+    if not os.path.isabs(log_file):
+        log_file = os.path.abspath(log_file)
+        
+    logs = []
+    if os.path.exists(log_file):
+        try:
+            with open(log_file, 'r', encoding='utf-8', errors='replace') as f:
+                # Leer todo el archivo y tomar las últimas 1000 líneas
+                lines = f.readlines()
+                
+                # Filtrar si se solicita un nivel específico
+                if level and level != 'ALL':
+                    lines = [line for line in lines if level.upper() in line.upper()]
+                
+                logs = lines[-1000:]
+                logs.reverse() # Lo más reciente arriba
+        except Exception as e:
+            logs = [f"Error leyendo el archivo de logs: {str(e)}"]
+    else:
+        logs = [f"Archivo de log no encontrado en: {log_file}"]
+        
+    return render_template('logs.html', logs=logs, log_path=log_file, current_level=level)
+
+@config_bp.route('/logs/download')
+@login_required
+@admin_required
+def download_logs():
+    """Descarga el archivo de logs."""
+    log_file = current_app.config.get('LOG_FILE', 'docuexpress.log')
+    if not os.path.isabs(log_file):
+        log_file = os.path.abspath(log_file)
+        
+    if os.path.exists(log_file):
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        return send_file(
+            log_file,
+            as_attachment=True,
+            download_name=f"docuexpress_logs_{timestamp}.log",
+            mimetype='text/plain'
+        )
+    else:
+        flash('El archivo de logs no existe.', 'danger')
+        return redirect(url_for('config.view_logs'))

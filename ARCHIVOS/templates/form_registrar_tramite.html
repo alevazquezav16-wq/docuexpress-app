@@ -1,10 +1,17 @@
-
-
+<div id="registrar-tramite-container">
 <form id="form-registrar-tramite"
-			hx-post="{{ url_for('papeleria.registrar_tramite') }}"
-			hx-target="#registrar-tramite-container"
-			hx-swap="innerHTML">
-		{% include 'form_tramite_fields.html' %}
-		{{ form_tramite.hidden_tag() }}
-		<button type="submit" class="btn btn-primary w-100">Registrar</button>
+		hx-post="{{ url_for('papeleria.registrar_tramite') }}"
+		hx-target="#registrar-tramite-container"
+		hx-swap="innerHTML"
+		hx-indicator="#tramite-loading">
+	{% include 'form_tramite_fields.html' %}
+	{{ form_tramite.hidden_tag() }}
+	<button type="submit" class="btn btn-primary w-100">
+		<span class="htmx-indicator" id="tramite-loading">
+			<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+			Procesando...
+		</span>
+		<span class="htmx-hide-on-request">Registrar</span>
+	</button>
 </form>
+</div>

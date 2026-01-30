@@ -7,10 +7,9 @@ asegurando un código limpio, mantenible y desacoplado de la capa de rutas.
 
 from .models import db, User, Papeleria, Tramite, Gasto, Proveedor, TramiteCosto, PapeleriaPrecio
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import func, case
+from sqlalchemy import func
 from datetime import datetime
 import logging
-
 from .constants import TRAMITES_PREDEFINIDOS
 
 class UserRepository:
@@ -47,15 +46,31 @@ class UserRepository:
         if user:
             user.set_password(new_password)
             db.session.commit()
+            logging.info(f"[DB:UPDATE] Password updated for user_id={user_id}")
+
     def update(self, user_id, username, role, password=None):
         """Updates a user's details."""
         user = self.get_by_id(user_id)
         if user:
+            # Verificar si el nombre de usuario ya está en uso por otro usuario
+            existing = User.query.filter(User.username == username, User.id != user_id).first()
+            if existing:
+                raise ValueError(f"El nombre de usuario '{username}' ya está en uso.")
+            
+            # Verificar que no se degrade al último admin
+            if user.role == 'admin' and role != 'admin':
+                admin_count = User.query.filter_by(role='admin').count()
+                if admin_count <= 1:
+                    raise ValueError("No puedes degradar al último administrador del sistema.")
+            
+            old_role = user.role
             user.username = username
             user.role = role
             if password:
                 user.set_password(password)
             db.session.commit()
+            
+            logging.info(f"[DB:UPDATE] User updated: id={user_id}, username={username}, role={old_role}->{role}")
             return user
         return None
 
@@ -63,8 +78,16 @@ class UserRepository:
         """Deletes a user."""
         user = self.get_by_id(user_id)
         if user:
+            # Verificar que no se elimine al último admin
+            if user.role == 'admin':
+                admin_count = User.query.filter_by(role='admin').count()
+                if admin_count <= 1:
+                    raise ValueError("No puedes eliminar al último administrador del sistema.")
+            
+            username = user.username
             db.session.delete(user)
             db.session.commit()
+            logging.info(f"[DB:DELETE] User deleted: id={user_id}, username={username}")
             return True
         return False
 
@@ -87,14 +110,14 @@ class PapeleriaRepository:
     def get_totales_usuario(self, user_id, fecha_inicio=None, fecha_fin=None):
         """
         Calcula los totales de ingresos, costos y ganancia para el usuario, opcionalmente filtrando por rango de fechas.
+        NOTA: Incluye datos de papelerías inactivas para mostrar históricos completos.
         """
         query = db.session.query(
             func.sum(Tramite.precio).label('total_ingresos'),
             func.sum(Tramite.costo).label('total_costos')
-        ).join(Papeleria, Tramite.papeleria_id == Papeleria.id)
+        )
         query = query.filter(
-            Tramite.user_id == user_id,
-            Papeleria.is_active == True
+            Tramite.user_id == user_id
         )
         if fecha_inicio and fecha_fin:
             query = query.filter(Tramite.fecha >= fecha_inicio, Tramite.fecha <= fecha_fin)
@@ -107,7 +130,7 @@ class PapeleriaRepository:
             'total_costos': total_costos,
             'ganancia': total_ganancia
         }
-    """Repository for Papeleria and PapeleriaPrecio related operations."""
+
 
     def add(self, nombre, user_id):
         """
@@ -251,13 +274,13 @@ class PapeleriaRepository:
         }
 
     def get_top_by_ganancia(self, user_id, limit=10, fecha_inicio=None, fecha_fin=None):
-        """Gets top papelerias by total profit, optionally filtered by date range."""
+        """Gets top papelerias by total profit, optionally filtered by date range.
+        NOTA: Incluye papelerías inactivas para mostrar datos históricos completos."""
         query = db.session.query(
             Papeleria.nombre,
             (func.sum(func.coalesce(Tramite.precio, 0)) - func.sum(func.coalesce(Tramite.costo, 0))).label('ganancia_total') # type: ignore
         ).outerjoin(Tramite, Papeleria.id == Tramite.papeleria_id)\
-         .filter(Papeleria.user_id == user_id)\
-         .filter(Papeleria.is_active == True)
+         .filter(Papeleria.user_id == user_id)
         
         # Aplicar filtro de fecha si se proporciona
         if fecha_inicio and fecha_fin:
@@ -401,15 +424,20 @@ class PapeleriaRepository:
             'ganancia': ingresos - costos
         }
     
-    def get_all_papelerias(self, user_id):
-        """Gets all active papelerias for search functionality."""
-        papelerias = db.session.query(
+    def get_all_papelerias(self, user_id, search_term=None):
+        """Gets active papelerias for search functionality, optionally filtered."""
+        query = db.session.query(
             Papeleria.id,
             Papeleria.nombre
         ).filter(
             Papeleria.user_id == user_id,
             Papeleria.is_active == True
-        ).order_by(Papeleria.nombre).all()
+        )
+        
+        if search_term:
+            query = query.filter(Papeleria.nombre.ilike(f'%{search_term}%'))
+            
+        papelerias = query.order_by(Papeleria.nombre).all()
         
         result = []
         for p in papelerias:
@@ -511,9 +539,10 @@ class TramiteRepository:
             query = query.filter(Tramite.fecha == hoy_str)
         return query.count()
     
-    def get_all_tramites(self, user_id, limit=100):
-        """Gets recent tramites for search functionality."""
-        tramites = db.session.query(
+    def get_all_tramites(self, user_id, search_term=None, limit=100):
+        """Gets recent tramites for search functionality.
+        NOTA: Incluye datos de papelerías inactivas para búsqueda completa."""
+        query = db.session.query(
             Tramite.id,
             Tramite.tramite,
             Tramite.fecha,
@@ -522,8 +551,16 @@ class TramiteRepository:
             (Tramite.precio - Tramite.costo).label('ganancia'),
             Papeleria.nombre.label('papeleria')
         ).join(Papeleria, Tramite.papeleria_id == Papeleria.id)\
-         .filter(Tramite.user_id == user_id, Papeleria.is_active == True)\
-         .order_by(Tramite.fecha.desc(), Tramite.id.desc())\
+         .filter(Tramite.user_id == user_id)
+        
+        if search_term:
+            term = f"%{search_term}%"
+            query = query.filter(
+                (Tramite.tramite.ilike(term)) | 
+                (Papeleria.nombre.ilike(term))
+            )
+            
+        tramites = query.order_by(Tramite.fecha.desc(), Tramite.id.desc())\
          .limit(limit)\
          .all()
         
@@ -564,7 +601,8 @@ class TramiteRepository:
         }
 
     def export_all_as_csv(self, user_id):
-        """Exports all tramites for a user to be used in a CSV."""
+        """Exports all tramites for a user to be used in a CSV.
+        NOTA: Incluye datos de papelerías inactivas para exportación completa."""
         return db.session.query(
             Papeleria.nombre.label('papeleria'),
             Tramite.tramite,
@@ -572,7 +610,7 @@ class TramiteRepository:
             Tramite.precio,
             Tramite.costo,
             (Tramite.precio - Tramite.costo).label('ganancia')
-        ).join(Papeleria, (Tramite.papeleria_id == Papeleria.id) & (Papeleria.is_active == True))\
+        ).join(Papeleria, Tramite.papeleria_id == Papeleria.id)\
          .filter(Tramite.user_id == user_id)\
          .order_by(Tramite.fecha.desc())\
          .all()
@@ -658,14 +696,13 @@ class TramiteRepository:
             current_date += relativedelta(months=1)
 
         # 2. Get data from Tramites (Ingresos and Costos)
+        # NOTA: No filtramos por is_active para incluir datos históricos de papelerías inactivas
         tramites_query = db.session.query(
             func.strftime('%Y-%m', Tramite.fecha).label('month'),
             func.sum(Tramite.precio).label('total_ingresos'),
             func.sum(Tramite.costo).label('total_costos_tramite')
-        ).join(Papeleria, Tramite.papeleria_id == Papeleria.id)\
-         .filter(
+        ).filter(
             Tramite.user_id == user_id,
-            Papeleria.is_active == True,
             Tramite.fecha >= start_date,
             Tramite.fecha <= end_date
         ).group_by('month').all()
@@ -725,12 +762,11 @@ class TramiteRepository:
 
     def get_tramites_distribution(self, user_id, limit=10, fecha_inicio=None, fecha_fin=None):
         """Gets the distribution of tramites by count, optionally filtered by date range."""
+        # NOTA: No filtramos por is_active para incluir datos históricos de papelerías inactivas
         query = db.session.query(
             Tramite.tramite.label('tramite_label'),
             func.count(Tramite.id).label('total_count')
-        ).join(Papeleria, Tramite.papeleria_id == Papeleria.id)\
-         .filter(Tramite.user_id == user_id)\
-         .filter(Papeleria.is_active == True)
+        ).filter(Tramite.user_id == user_id)
         
         # Aplicar filtro de fecha si se proporciona
         if fecha_inicio and fecha_fin:
@@ -829,10 +865,7 @@ class TramiteRepository:
             }
         }
 
-# Instantiate repositories
-user_repository = UserRepository()
-papeleria_repository = PapeleriaRepository()
-tramite_repository = TramiteRepository()
+
 
 class ProveedorRepository:
     """Repository for Proveedor related operations."""
@@ -897,9 +930,9 @@ class GastoRepository:
         pagination = query.join(Proveedor).order_by(Gasto.fecha.desc(), Gasto.id.desc()).paginate(page=page, per_page=per_page, error_out=False)
         return pagination.items, pagination.total
     
-    def get_all_gastos(self, user_id, limit=100):
+    def get_all_gastos(self, user_id, search_term=None, limit=100):
         """Gets recent gastos for search functionality."""
-        gastos = db.session.query(
+        query = db.session.query(
             Gasto.id,
             Gasto.descripcion.label('concepto'),
             Gasto.monto,
@@ -907,8 +940,17 @@ class GastoRepository:
             Gasto.categoria,
             Proveedor.nombre.label('proveedor')
         ).join(Proveedor, Gasto.proveedor_id == Proveedor.id)\
-         .filter(Gasto.user_id == user_id)\
-         .order_by(Gasto.fecha.desc(), Gasto.id.desc())\
+         .filter(Gasto.user_id == user_id)
+        
+        if search_term:
+            term = f"%{search_term}%"
+            query = query.filter(
+                (Gasto.descripcion.ilike(term)) |
+                (Proveedor.nombre.ilike(term)) |
+                (Gasto.categoria.ilike(term))
+            )
+            
+        gastos = query.order_by(Gasto.fecha.desc(), Gasto.id.desc())\
          .limit(limit)\
          .all()
         
@@ -921,9 +963,14 @@ class GastoRepository:
             'proveedor': g.proveedor
         } for g in gastos]
 
-    def get_total_gastos(self, user_id):
+    def get_total_gastos(self, user_id, fecha_inicio=None, fecha_fin=None):
         """Calculates the total amount of all expenses for a user."""
-        return db.session.query(func.sum(Gasto.monto)).filter_by(user_id=user_id).scalar() or 0
+        query = db.session.query(func.sum(Gasto.monto)).filter_by(user_id=user_id)
+
+        if fecha_inicio and fecha_fin:
+            query = query.filter(Gasto.fecha.between(fecha_inicio, fecha_fin))
+
+        return query.scalar() or 0
 
     def get_by_id(self, gasto_id, user_id):
         return Gasto.query.filter_by(id=gasto_id, user_id=user_id).first()
@@ -1159,7 +1206,11 @@ class AnalyticsRepository:
         } for r in resultado]
 
 
-proveedor_repository = ProveedorRepository()
+
+# Instancias únicas de repositorios
+user_repository = UserRepository()
+papeleria_repository = PapeleriaRepository()
 tramite_repository = TramiteRepository()
+proveedor_repository = ProveedorRepository()
 gasto_repository = GastoRepository()
 analytics_repository = AnalyticsRepository()

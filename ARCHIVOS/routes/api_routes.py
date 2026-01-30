@@ -1,9 +1,11 @@
-from flask import Blueprint, jsonify, request, current_app
+from flask import Blueprint, jsonify, request, current_app, url_for
 from flask_login import login_required
 import logging
+import time
 
 from ..utils import get_effective_user_id, check_papeleria_owner, get_user_data_version
 from ..database import papeleria_repository, tramite_repository, gasto_repository, analytics_repository
+from ..logging_config import log_action, timed_operation
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 
@@ -12,6 +14,7 @@ api_bp = Blueprint('api', __name__, url_prefix='/api')
 @login_required
 def dashboard_totals():
     """Devuelve los totales de las tarjetas del dashboard según el rango de fechas."""
+    start_time = time.time()
     effective_user_id = get_effective_user_id()
     fecha_inicio = request.args.get('fecha_inicio')
     fecha_fin = request.args.get('fecha_fin')
@@ -26,24 +29,39 @@ def dashboard_totals():
         if cached_data:
             return jsonify(cached_data)
 
-    # Ganancia total
+    # Ganancia total en el rango
     totales = papeleria_repository.get_totales_usuario(effective_user_id, fecha_inicio, fecha_fin)
-    # Trámites de hoy (en rango, si aplica)
-    tramites_de_hoy = tramite_repository.get_tramites_hoy(effective_user_id, fecha_inicio, fecha_fin)
-    # Papelerías activas (con movimientos en el rango)
-    num_papelerias = papeleria_repository.get_num_papelerias_activas(effective_user_id, fecha_inicio, fecha_fin)
-    # Gastos operativos
+    ganancia = totales.get('ganancia', 0)
+    
+    # Trámites en el rango (no solo "hoy")
+    tramites_en_rango = tramite_repository.get_tramites_hoy(effective_user_id, fecha_inicio, fecha_fin)
+    
+    # Papelerías activas TOTALES (sin filtro de fecha - es el total de papelerías con is_active=True)
+    num_papelerias = papeleria_repository.get_num_papelerias_activas(effective_user_id)  # Sin filtro de fechas
+    
+    # Gastos operativos en el rango
     total_gastos_operativos = gasto_repository.get_total_gastos(effective_user_id, fecha_inicio, fecha_fin)
+    
+    # Calcular ganancia promedio por papelería (evitar división por cero)
+    ganancia_promedio = round(ganancia / num_papelerias, 2) if num_papelerias > 0 else 0
 
     response_data = {
-        'ganancia': totales.get('ganancia', 0),
-        'tramites_de_hoy': tramites_de_hoy,
+        'ganancia': ganancia,
+        'tramites_de_hoy': tramites_en_rango,
         'num_papelerias': num_papelerias,
-        'total_gastos_operativos': total_gastos_operativos
+        'total_gastos_operativos': total_gastos_operativos,
+        'ganancia_promedio': ganancia_promedio
     }
 
     if cache:
         cache.set(cache_key, response_data, timeout=300)
+
+    # Log de performance para dashboard-totals
+    elapsed_ms = (time.time() - start_time) * 1000
+    if elapsed_ms > 1000:
+        logging.warning(f"[SLOW_API] dashboard-totals took {elapsed_ms:.2f}ms user={effective_user_id}")
+    else:
+        logging.debug(f"[API] dashboard-totals completed in {elapsed_ms:.2f}ms user={effective_user_id}")
 
     return jsonify(response_data)
 
@@ -52,6 +70,7 @@ def dashboard_totals():
 @login_required
 def dashboard_charts_data():
     """Endpoint para obtener datos de gráficos del dashboard."""
+    start_time = time.time()
     effective_user_id = get_effective_user_id()
     
     # Obtener parámetros de fecha si existen
@@ -120,6 +139,13 @@ def dashboard_charts_data():
 
     if cache:
         cache.set(cache_key, response_data, timeout=300) # 5 minutos de caché (o hasta que cambie la versión)
+
+    # Log de performance para dashboard-charts
+    elapsed_ms = (time.time() - start_time) * 1000
+    if elapsed_ms > 2000:
+        logging.warning(f"[SLOW_API] dashboard-charts took {elapsed_ms:.2f}ms user={effective_user_id}")
+    else:
+        logging.debug(f"[API] dashboard-charts completed in {elapsed_ms:.2f}ms user={effective_user_id}")
 
     return jsonify(response_data)
 
@@ -234,9 +260,6 @@ def buscar():
     """Búsqueda global en trámites, papelerías, gastos y proveedores."""
     # Rate limiting desactivado para búsqueda
     
-    from database import tramite_repository, papeleria_repository, gasto_repository
-    from flask import request, url_for
-    
     query = request.args.get('q', '').lower().strip()
     effective_user_id = get_effective_user_id()
     
@@ -245,45 +268,38 @@ def buscar():
     
     results = []
     
-    # Buscar en trámites (últimos 100)
-    tramites = tramite_repository.get_all_tramites(effective_user_id, limit=100)
+    # Buscar en trámites (delegado a DB, límite 20 para rapidez)
+    tramites = tramite_repository.get_all_tramites(effective_user_id, search_term=query, limit=20)
     for tramite in tramites:
-        # Buscar en nombre del trámite, papelería o fecha
-        if (query in tramite['tramite'].lower() or 
-            query in tramite['papeleria'].lower() or
-            query in str(tramite['fecha'])):
-            results.append({
-                'type': 'tramite',
-                'type_label': 'Trámite',
-                'title': tramite['tramite'],
-                'subtitle': f"{tramite['papeleria']} - {tramite['fecha']} - ${tramite['ganancia']:.2f}",
-                'url': url_for('main.index', _anchor='tramites')
-            })
+        results.append({
+            'type': 'tramite',
+            'type_label': 'Trámite',
+            'title': tramite['tramite'],
+            'subtitle': f"{tramite['papeleria']} - {tramite['fecha']} - ${tramite['ganancia']:.2f}",
+            'url': url_for('main.index', _anchor='tramites')
+        })
     
     # Buscar en papelerías
-    papelerias = papeleria_repository.get_all_papelerias(effective_user_id)
+    papelerias = papeleria_repository.get_all_papelerias(effective_user_id, search_term=query)
     for papeleria in papelerias:
-        if query in papeleria['nombre'].lower():
-            results.append({
-                'type': 'papeleria',
-                'type_label': 'Papelería',
-                'title': papeleria['nombre'],
-                'subtitle': f"Precios configurados: {len(papeleria.get('precios', []))}",
-                'url': url_for('papeleria.ver_papeleria', id=papeleria['id'])
-            })
+        results.append({
+            'type': 'papeleria',
+            'type_label': 'Papelería',
+            'title': papeleria['nombre'],
+            'subtitle': f"Precios configurados: {len(papeleria.get('precios', []))}",
+            'url': url_for('papeleria.ver_papeleria', papeleria_id=papeleria['id'])
+        })
     
-    # Buscar en gastos (últimos 100)
-    gastos = gasto_repository.get_all_gastos(effective_user_id, limit=100)
+    # Buscar en gastos (delegado a DB, límite 20)
+    gastos = gasto_repository.get_all_gastos(effective_user_id, search_term=query, limit=20)
     for gasto in gastos:
-        if (query in gasto['concepto'].lower() or 
-            (gasto.get('proveedor') and query in gasto['proveedor'].lower())):
-            results.append({
-                'type': 'gasto',
-                'type_label': 'Gasto',
-                'title': gasto['concepto'],
-                'subtitle': f"${gasto['monto']:.2f} - {gasto['fecha']} - {gasto.get('proveedor', 'Sin proveedor')}",
-                'url': url_for('gastos.index', _anchor='gastos')
-            })
+        results.append({
+            'type': 'gasto',
+            'type_label': 'Gasto',
+            'title': gasto['concepto'],
+            'subtitle': f"${gasto['monto']:.2f} - {gasto['fecha']} - {gasto.get('proveedor', 'Sin proveedor')}",
+            'url': url_for('gastos.gestion_gastos', _anchor='gastos')
+        })
     
     # Limitar resultados a 50
     results = results[:50]
