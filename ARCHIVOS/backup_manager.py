@@ -40,6 +40,13 @@ class BackupManager:
     def init_app(self, app):
         """Inicializa el gestor de backups con la configuración de Flask."""
         self.app = app
+        
+        # Si APScheduler no está disponible, deshabilitar backups automáticos
+        if not APSCHEDULER_AVAILABLE:
+            logger.info("📦 Backups automáticos deshabilitados (APScheduler no instalado)")
+            self.enabled = False
+            return
+        
         self.enabled = os.environ.get('BACKUP_ENABLED', 'True').lower() == 'true'
         
         if not self.enabled:
