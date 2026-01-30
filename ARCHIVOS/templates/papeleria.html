@@ -57,25 +57,6 @@
 <!-- Contenedor para mensajes flash (OOB swap) -->
 <div id="flash-container"></div>
 
-<!-- Formulario Registrar Trámite -->
-<div class="card shadow-sm mb-4">
-    <div class="card-header">
-        <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Registrar Trámite</h5>
-    </div>
-    <div class="card-body">
-        <div id="registrar-tramite-container">
-            <form id="form-registrar-tramite"
-                        hx-post="{{ url_for('papeleria.registrar_tramite') }}"
-                        hx-target="#registrar-tramite-container"
-                        hx-swap="innerHTML">
-                {% include 'form_tramite_fields.html' %}
-                {{ form_tramite.hidden_tag() }}
-                <button type="submit" class="btn btn-primary w-100">Registrar</button>
-            </form>
-        </div>
-    </div>
-</div>
-
 <div class="card shadow-sm mb-4">
     <div class="card-header">
         <div class="d-flex justify-content-between align-items-center">
