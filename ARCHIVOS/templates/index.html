@@ -289,7 +289,8 @@
             }
             
             // Si el canvas no existe, buscar el contenedor por clase y restaurar
-            const containers = document.querySelectorAll('.apple-chart-container');
+            // Buscar en AMBOS tipos de contenedores: chart-container y donut-container
+            const containers = document.querySelectorAll('.apple-chart-container, .apple-donut-container');
             containers.forEach(container => {
                 // Verificar si este contenedor debería tener este canvas
                 // buscando si hay un skeleton o si está vacío
