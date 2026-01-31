@@ -1,17 +1,63 @@
 <div id="registrar-tramite-container">
+	<!-- Toast de confirmación para móvil -->
+	<div id="tramite-success-toast" class="alert alert-success d-none mb-3 animate__animated" role="alert" style="animation-duration: 0.3s;">
+		<div class="d-flex align-items-center">
+			<i class="bi bi-check-circle-fill me-2 fs-4"></i>
+			<div>
+				<strong>¡Trámite registrado!</strong>
+				<div class="small">El formulario está listo para otro registro</div>
+			</div>
+		</div>
+	</div>
 	<form id="form-registrar-tramite"
 		hx-post="{{ url_for('papeleria.registrar_tramite') }}"
 		hx-target="#registrar-tramite-container"
 		hx-swap="innerHTML"
-		hx-indicator="#tramite-loading">
+		hx-indicator="#tramite-loading"
+		hx-on::after-request="handleTramiteResponse(event)">
 		{% include 'form_tramite_fields.html' %}
 		{{ form_tramite.hidden_tag() }}
-		<button type="submit" class="btn btn-primary w-100">
+		<button type="submit" class="btn btn-primary w-100 btn-lg">
 			<span class="htmx-indicator" id="tramite-loading">
 				<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
 				Procesando...
 			</span>
-			<span class="htmx-hide-on-request">Registrar</span>
+			<span class="htmx-hide-on-request"><i class="bi bi-plus-circle me-1"></i>Registrar Trámite</span>
 		</button>
 	</form>
+	<script>
+	function handleTramiteResponse(event) {
+		if (event.detail.successful) {
+			// Mostrar toast de éxito inmediato
+			showTramiteSuccessToast();
+			// Scroll suave al formulario para móvil
+			scrollToFormSmooth();
+		}
+	}
+	
+	function showTramiteSuccessToast() {
+		const toast = document.getElementById('tramite-success-toast');
+		if (toast) {
+			toast.classList.remove('d-none');
+			toast.classList.add('animate__fadeInDown');
+			// Ocultar después de 4 segundos
+			setTimeout(() => {
+				toast.classList.add('animate__fadeOutUp');
+				setTimeout(() => {
+					toast.classList.add('d-none');
+					toast.classList.remove('animate__fadeInDown', 'animate__fadeOutUp');
+				}, 300);
+			}, 4000);
+		}
+	}
+	
+	function scrollToFormSmooth() {
+		const container = document.getElementById('registrar-tramite-container');
+		if (container && window.innerWidth < 992) { // Solo en móvil/tablet
+			setTimeout(() => {
+				container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			}, 100);
+		}
+	}
+	</script>
 </div>

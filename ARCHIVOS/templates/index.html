@@ -612,7 +612,7 @@
             return mapping[chartName];
         }
 
-        // Crear gráfico de Top Papelerías - Estilo Apple
+        // Crear gráfico de Top Papelerías - Estilo Apple Premium
         async createTopPapeleriasChart(chartData) {
             console.log('🏆 createTopPapeleriasChart called with:', chartData);
             
@@ -627,13 +627,23 @@
             const ctx = document.getElementById('topPapeleriasChart').getContext('2d');
             const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
             
-            // Gradiente estilo Apple para barras
-            const createAppleGradient = (ctx, color1, color2) => {
-                const gradient = ctx.createLinearGradient(0, 0, 400, 0);
-                gradient.addColorStop(0, color1);
-                gradient.addColorStop(1, color2);
-                return gradient;
-            };
+            // Paleta de colores vibrante estilo Apple
+            const appleColors = chartData.data.map((value, index) => {
+                if (value >= 0) {
+                    // Gradiente verde para ganancias positivas
+                    const gradient = ctx.createLinearGradient(0, 0, 400, 0);
+                    const hue = 145 - (index * 3); // Variación sutil de verde
+                    gradient.addColorStop(0, `hsla(${hue}, 75%, 45%, 0.95)`);
+                    gradient.addColorStop(1, `hsla(${hue + 10}, 80%, 50%, 0.85)`);
+                    return gradient;
+                } else {
+                    // Gradiente rojo para pérdidas
+                    const gradient = ctx.createLinearGradient(0, 0, 400, 0);
+                    gradient.addColorStop(0, 'hsla(0, 80%, 55%, 0.95)');
+                    gradient.addColorStop(1, 'hsla(10, 85%, 60%, 0.85)');
+                    return gradient;
+                }
+            });
 
             this.charts.topPapelerias = new Chart(ctx, {
                 type: 'bar',
@@ -642,54 +652,43 @@
                     datasets: [{
                         label: 'Ganancia Total',
                         data: chartData.data,
-                        backgroundColor: chartData.data.map(value => 
-                            value >= 0 
-                                ? createAppleGradient(ctx, '#34c759', '#30d158')
-                                : createAppleGradient(ctx, '#ff3b30', '#ff453a')
-                        ),
+                        backgroundColor: appleColors,
                         borderColor: 'transparent',
                         borderWidth: 0,
-                        borderRadius: 12,
+                        borderRadius: { topLeft: 8, topRight: 8, bottomLeft: 8, bottomRight: 8 },
                         borderSkipped: false,
-                        barThickness: 28,
-                        maxBarThickness: 32
+                        barThickness: 24,
+                        maxBarThickness: 28
                     }]
                 },
                 options: {
                     ...commonOptions,
                     indexAxis: 'y',
                     layout: {
-                        padding: { left: 12, right: 20, top: 10, bottom: 12 }
+                        padding: { left: 8, right: 24, top: 8, bottom: 8 }
                     },
                     plugins: {
-                        title: {
-                            display: true,
-                            text: '🏆 Top 10 Papelerías por Ganancia',
-                            font: { size: 16, weight: '700', family: "'Inter', sans-serif" },
-                            padding: { top: 10, bottom: 18 },
-                            color: isDark ? '#f8fafc' : '#0f172a'
-                        },
+                        title: { display: false },
                         legend: { display: false },
                         tooltip: {
-                            backgroundColor: isDark ? 'rgba(15, 23, 42, 0.96)' : 'rgba(255, 255, 255, 0.96)',
-                            titleColor: isDark ? '#f1f5f9' : '#0f172a',
-                            bodyColor: isDark ? '#cbd5e1' : '#334155',
-                            borderColor: isDark ? 'rgba(148, 163, 184, 0.5)' : 'rgba(203, 213, 225, 0.8)',
-                            borderWidth: 2,
-                            padding: 14,
-                            cornerRadius: 10,
-                            titleFont: { size: 15, weight: '700' },
-                            bodyFont: { size: 13, weight: '500' },
+                            backgroundColor: isDark ? 'rgba(0, 0, 0, 0.9)' : 'rgba(255, 255, 255, 0.98)',
+                            titleColor: isDark ? '#fff' : '#1e293b',
+                            bodyColor: isDark ? '#e2e8f0' : '#475569',
+                            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+                            borderWidth: 1,
+                            padding: 16,
+                            cornerRadius: 12,
+                            boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
+                            titleFont: { size: 14, weight: '700', family: "'SF Pro Display', 'Inter', sans-serif" },
+                            bodyFont: { size: 13, weight: '500', family: "'SF Pro Text', 'Inter', sans-serif" },
+                            displayColors: false,
                             callbacks: {
                                 title: (context) => `🏪 ${context[0].label}`,
                                 label: (context) => {
                                     const value = context.raw;
                                     const sign = value >= 0 ? '+' : '';
-                                    const estado = value >= 0 ? '✅ Ganancia' : '⚠️ Pérdida';
-                                    return [
-                                        ` ${estado}`,
-                                        ` Monto: ${sign}${formatCurrency(value)}`
-                                    ];
+                                    const icon = value >= 0 ? '💰' : '📉';
+                                    return ` ${icon} ${sign}${formatCurrency(value)}`;
                                 }
                             }
                         }
@@ -698,40 +697,30 @@
                         x: {
                             beginAtZero: true,
                             grid: {
-                                color: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)',
-                                lineWidth: 1
+                                color: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.04)',
+                                lineWidth: 1,
+                                drawBorder: false
                             },
-                            border: {
-                                display: true,
-                                color: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)',
-                                width: 2
-                            },
+                            border: { display: false },
                             ticks: { 
                                 callback: (value) => formatCurrency(value),
-                                font: { size: 11, weight: '600' },
-                                color: isDark ? '#94a3b8' : '#64748b',
-                                padding: 6,
-                                maxTicksLimit: 6
+                                font: { size: 11, weight: '500', family: "'SF Pro Text', 'Inter', sans-serif" },
+                                color: isDark ? '#64748b' : '#94a3b8',
+                                padding: 8,
+                                maxTicksLimit: 5
                             }
                         },
                         y: {
-                            grid: {
-                                display: false
-                            },
-                            border: {
-                                display: true,
-                                color: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)',
-                                width: 2
-                            },
+                            grid: { display: false },
+                            border: { display: false },
                             ticks: {
-                                font: { size: 11, weight: '600' },
-                                color: isDark ? '#e2e8f0' : '#1e293b',
-                                padding: 10,
+                                font: { size: 12, weight: '600', family: "'SF Pro Text', 'Inter', sans-serif" },
+                                color: isDark ? '#f1f5f9' : '#334155',
+                                padding: 12,
                                 mirror: false,
                                 callback: function(value, index) {
                                     const label = this.getLabelForValue(value);
-                                    // Truncar nombres largos pero mostrar más caracteres
-                                    return label.length > 25 ? label.substring(0, 22) + '...' : label;
+                                    return label.length > 20 ? label.substring(0, 18) + '…' : label;
                                 }
                             }
                         }
@@ -742,7 +731,7 @@
             this.animateEntrance(document.getElementById('topPapeleriasChart'));
         }
 
-        // Crear gráfico de Evolución Mensual MEJORADO V2
+        // Crear gráfico de Evolución Mensual - Estilo Apple Premium
         async createMonthlySummaryChart(chartData) {
             // monthlySummary tiene: labels, ingresos, costos, ganancias, totals (NO tiene 'data')
             if (!chartData || !chartData.labels || chartData.labels.length === 0) {
@@ -755,22 +744,19 @@
             // Obtener tema actual para colores adaptativos
             const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
 
-            // Calcular estadísticas completas
+            // Calcular estadísticas
             const totalIngresos = chartData.ingresos.reduce((a, b) => a + b, 0);
             const totalGastos = chartData.costos.reduce((a, b) => a + b, 0);
             const totalGanancias = chartData.ganancias.reduce((a, b) => a + b, 0);
-            const promedioMensual = totalGanancias / chartData.labels.length;
-            const margen = totalIngresos > 0 ? ((totalGanancias / totalIngresos) * 100).toFixed(1) : 0;
             
-            // Meses con ganancia positiva
-            const mesesPositivos = chartData.ganancias.filter(g => g > 0).length;
-            const porcentajeExito = ((mesesPositivos / chartData.ganancias.length) * 100).toFixed(0);
-
-            // Detectar tendencia (comparar últimos 3 meses vs 3 anteriores)
-            const ultimos3 = chartData.ganancias.slice(-3).reduce((a, b) => a + b, 0) / 3;
-            const anteriores3 = chartData.ganancias.slice(-6, -3).reduce((a, b) => a + b, 0) / 3;
-            const tendencia = ultimos3 > anteriores3 ? '📈 Creciendo' : ultimos3 < anteriores3 ? '📉 Decreciendo' : '➡️ Estable';
-            const cambio = anteriores3 > 0 ? (((ultimos3 - anteriores3) / anteriores3) * 100).toFixed(1) : 0;
+            // Actualizar las tarjetas de resumen
+            const ingresosEl = document.getElementById('total-ingresos-12-meses');
+            const gastosEl = document.getElementById('total-gastos-12-meses');
+            const gananciasEl = document.getElementById('ganancia-neta-12-meses');
+            
+            if (ingresosEl) ingresosEl.textContent = formatCurrency(totalIngresos);
+            if (gastosEl) gastosEl.textContent = formatCurrency(totalGastos);
+            if (gananciasEl) gananciasEl.textContent = formatCurrency(totalGanancias);
             
             // Identificar mejor y peor mes
             const maxGanancia = Math.max(...chartData.ganancias);
@@ -778,83 +764,69 @@
             const maxIndex = chartData.ganancias.indexOf(maxGanancia);
             const minIndex = chartData.ganancias.indexOf(minGanancia);
             
-            // Crear gradientes para las líneas
-            const gradientIngresos = ctx.createLinearGradient(0, 0, 0, 400);
-            gradientIngresos.addColorStop(0, 'rgba(34, 197, 94, 0.3)');
-            gradientIngresos.addColorStop(0.5, 'rgba(34, 197, 94, 0.15)');
-            gradientIngresos.addColorStop(1, 'rgba(34, 197, 94, 0.02)');
-            
-            const gradientGastos = ctx.createLinearGradient(0, 0, 0, 400);
-            gradientGastos.addColorStop(0, 'rgba(239, 68, 68, 0.25)');
-            gradientGastos.addColorStop(0.5, 'rgba(239, 68, 68, 0.12)');
-            gradientGastos.addColorStop(1, 'rgba(239, 68, 68, 0.02)');
-            
-            const gradientGanancias = ctx.createLinearGradient(0, 0, 0, 400);
-            gradientGanancias.addColorStop(0, 'rgba(59, 130, 246, 0.35)');
-            gradientGanancias.addColorStop(0.5, 'rgba(59, 130, 246, 0.18)');
-            gradientGanancias.addColorStop(1, 'rgba(59, 130, 246, 0.03)');
+            // Gradientes suaves estilo Apple
+            const gradientGanancias = ctx.createLinearGradient(0, 0, 0, 350);
+            gradientGanancias.addColorStop(0, isDark ? 'rgba(59, 130, 246, 0.3)' : 'rgba(59, 130, 246, 0.25)');
+            gradientGanancias.addColorStop(0.5, isDark ? 'rgba(59, 130, 246, 0.1)' : 'rgba(59, 130, 246, 0.08)');
+            gradientGanancias.addColorStop(1, 'rgba(59, 130, 246, 0)');
 
             this.charts.monthlySummary = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: chartData.labels,
                     datasets: [{
-                        label: '💵 Ingresos',
+                        label: 'Ingresos',
                         data: chartData.ingresos,
-                        borderColor: 'rgb(34, 197, 94)',
-                        backgroundColor: gradientIngresos,
-                        fill: true,
+                        borderColor: '#22c55e',
+                        backgroundColor: 'transparent',
+                        fill: false,
                         tension: 0.4,
-                        pointRadius: 6,
-                        pointHoverRadius: 10,
-                        pointBackgroundColor: 'rgb(34, 197, 94)',
-                        pointBorderColor: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.95)',
+                        pointRadius: 4,
+                        pointHoverRadius: 8,
+                        pointBackgroundColor: '#22c55e',
+                        pointBorderColor: isDark ? '#1e293b' : '#ffffff',
                         pointBorderWidth: 2,
                         pointHoverBorderWidth: 3,
-                        borderWidth: 3,
+                        borderWidth: 2.5,
                         order: 3
                     }, {
-                        label: '💸 Gastos',
+                        label: 'Gastos',
                         data: chartData.costos,
-                        borderColor: 'rgb(239, 68, 68)',
-                        backgroundColor: gradientGastos,
-                        fill: true,
+                        borderColor: '#ef4444',
+                        backgroundColor: 'transparent',
+                        fill: false,
                         tension: 0.4,
-                        pointRadius: 5,
-                        pointHoverRadius: 9,
-                        pointBackgroundColor: 'rgb(239, 68, 68)',
-                        pointBorderColor: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.95)',
+                        pointRadius: 3,
+                        pointHoverRadius: 7,
+                        pointBackgroundColor: '#ef4444',
+                        pointBorderColor: isDark ? '#1e293b' : '#ffffff',
                         pointBorderWidth: 2,
                         pointHoverBorderWidth: 3,
                         borderWidth: 2,
+                        borderDash: [5, 5],
                         order: 2
                     }, {
-                        label: '💰 Ganancias Netas',
+                        label: 'Ganancias',
                         data: chartData.ganancias,
-                        borderColor: 'rgb(59, 130, 246)',
+                        borderColor: '#3b82f6',
                         backgroundColor: gradientGanancias,
                         fill: true,
                         tension: 0.4,
                         pointRadius: (ctx) => {
                             const idx = ctx.dataIndex;
-                            return (idx === maxIndex || idx === minIndex) ? 10 : 7;
+                            return (idx === maxIndex || idx === minIndex) ? 8 : 5;
                         },
-                        pointHoverRadius: 12,
+                        pointHoverRadius: 10,
                         pointBackgroundColor: (ctx) => {
                             const idx = ctx.dataIndex;
-                            if (idx === maxIndex) return 'rgb(16, 185, 129)'; // Verde brillante
-                            if (idx === minIndex) return 'rgb(220, 38, 38)'; // Rojo brillante
-                            return 'rgb(59, 130, 246)';
+                            if (idx === maxIndex) return '#22c55e';
+                            if (idx === minIndex) return '#ef4444';
+                            return '#3b82f6';
                         },
-                        pointBorderColor: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.95)',
+                        pointBorderColor: isDark ? '#1e293b' : '#ffffff',
                         pointBorderWidth: 3,
                         pointHoverBorderWidth: 4,
-                        pointStyle: (ctx) => {
-                            const idx = ctx.dataIndex;
-                            if (idx === maxIndex || idx === minIndex) return 'star';
-                            return 'circle';
-                        },
-                        borderWidth: 4,
+                        borderWidth: 3,
                         order: 1
                     }]
                 },
@@ -867,17 +839,7 @@
                         intersect: false
                     },
                     plugins: {
-                        title: {
-                            display: true,
-                            text: `${tendencia} ${cambio > 0 ? '+' : ''}${cambio}%  •  Ganancia Neta: ${formatCurrency(totalGanancias)}`,
-                            font: { 
-                                size: 12,
-                                weight: '600',
-                                family: "'Inter', sans-serif"
-                            },
-                            padding: { top: 8, bottom: 16 },
-                            color: isDark ? '#cbd5e1' : '#475569'
-                        },
+                        title: { display: false },
                         legend: {
                             display: true,
                             position: 'bottom',
@@ -886,129 +848,77 @@
                                 usePointStyle: true,
                                 pointStyle: 'circle',
                                 padding: 20,
-                                font: { size: 13, weight: '600', family: "'Inter', sans-serif" },
-                                color: isDark ? '#ffffff' : '#000000',
-                                generateLabels: function(chart) {
-                                    const original = Chart.defaults.plugins.legend.labels.generateLabels;
-                                    const labels = original.call(this, chart);
-                                    
-                                    // Agregar totales a las etiquetas
-                                    labels.forEach((label, i) => {
-                                        if (i === 0) label.text += ` → ${formatCurrency(totalIngresos)}`;
-                                        if (i === 1) label.text += ` → ${formatCurrency(totalGastos)}`;
-                                        if (i === 2) label.text += ` → ${formatCurrency(totalGanancias)}`;
-                                        // Mejorar contraste de color
-                                        label.fontColor = isDark ? '#ffffff' : '#000000';
-                                    });
-                                    
-                                    return labels;
-                                }
+                                font: { size: 12, weight: '600', family: "'SF Pro Text', 'Inter', sans-serif" },
+                                color: isDark ? '#e2e8f0' : '#475569',
+                                boxWidth: 8,
+                                boxHeight: 8
                             }
                         },
                         tooltip: {
                             enabled: true,
                             mode: 'index',
                             intersect: false,
-                            backgroundColor: isDark ? 'rgba(15, 23, 42, 0.97)' : 'rgba(0, 0, 0, 0.90)',
-                            titleColor: '#fff',
-                            bodyColor: '#e2e8f0',
-                            borderColor: isDark ? 'rgba(148, 163, 184, 0.4)' : 'rgba(203, 213, 225, 0.6)',
-                            borderWidth: 2,
+                            backgroundColor: isDark ? 'rgba(0, 0, 0, 0.92)' : 'rgba(255, 255, 255, 0.98)',
+                            titleColor: isDark ? '#fff' : '#1e293b',
+                            bodyColor: isDark ? '#e2e8f0' : '#475569',
+                            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+                            borderWidth: 1,
                             padding: 16,
+                            cornerRadius: 12,
+                            titleFont: { size: 14, weight: '700', family: "'SF Pro Display', sans-serif" },
+                            bodyFont: { size: 12, weight: '500', family: "'SF Pro Text', sans-serif" },
                             displayColors: true,
-                            boxWidth: 12,
-                            boxHeight: 12,
-                            boxPadding: 6,
-                            cornerRadius: 8,
-                            titleFont: { size: 14, weight: 'bold' },
-                            bodyFont: { size: 13 },
-                            footerFont: { size: 12, weight: '600' },
+                            boxWidth: 10,
+                            boxHeight: 10,
+                            boxPadding: 4,
                             callbacks: {
                                 title: (context) => {
-                                    const mes = context[0].label;
                                     const idx = context[0].dataIndex;
-                                    const ganancia = chartData.ganancias[idx];
                                     let prefix = '';
-                                    if (idx === maxIndex) prefix = '🏆 MEJOR MES - ';
-                                    if (idx === minIndex) prefix = '⚠️ PEOR MES - ';
-                                    const simbolo = ganancia >= 0 ? '✅' : '❌';
-                                    return `${prefix}${simbolo} ${mes}`;
+                                    if (idx === maxIndex) prefix = '🏆 ';
+                                    if (idx === minIndex) prefix = '⚠️ ';
+                                    return `${prefix}${context[0].label}`;
                                 },
                                 label: (context) => {
-                                    const valor = formatCurrency(context.raw);
-                                    let emoji = '';
-                                    if (context.datasetIndex === 0) emoji = '💵';
-                                    if (context.datasetIndex === 1) emoji = '💸';
-                                    if (context.datasetIndex === 2) emoji = '💰';
-                                    return ` ${emoji} ${context.dataset.label}: ${valor}`;
-                                },
-                                footer: (context) => {
-                                    const idx = context[0].dataIndex;
-                                    const ganancia = chartData.ganancias[idx];
-                                    const ingreso = chartData.ingresos[idx];
-                                    const margenMes = ingreso > 0 ? ((ganancia / ingreso) * 100).toFixed(1) : 0;
-                                    const estado = ganancia >= 0 ? 'Ganancia ✅' : 'Pérdida ❌';
-                                    const promedio = ganancia / 30; // Aproximado por día
-                                    return [
-                                        `━━━━━━━━━━━━━━━━━━━━━━`,
-                                        `📊 Margen de Ganancia: ${margenMes}%`,
-                                        `📈 Estado: ${estado}`,
-                                        `📅 Promedio diario: ~${formatCurrency(promedio)}`
-                                    ];
+                                    const icons = ['💵', '💸', '💰'];
+                                    return ` ${icons[context.datasetIndex]} ${context.dataset.label}: ${formatCurrency(context.raw)}`;
                                 }
                             }
                         }
                     },
                     layout: {
-                        padding: {
-                            left: 10,
-                            right: 20,
-                            top: 10,
-                            bottom: 15
-                        }
+                        padding: { left: 8, right: 16, top: 8, bottom: 8 }
                     },
                     scales: {
                         x: {
                             grid: {
-                                display: true,
-                                drawBorder: true,
-                                color: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)',
-                                lineWidth: 1
+                                display: false
                             },
-                            border: {
-                                display: true,
-                                color: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
-                                width: 2
-                            },
+                            border: { display: false },
                             ticks: {
-                                font: { size: 11, weight: '600', family: "'Inter', sans-serif" },
-                                color: isDark ? '#cbd5e1' : '#475569',
+                                font: { size: 11, weight: '500', family: "'SF Pro Text', sans-serif" },
+                                color: isDark ? '#64748b' : '#94a3b8',
                                 padding: 8,
-                                maxRotation: 45,
-                                minRotation: 0,
+                                maxRotation: 0,
                                 autoSkip: true,
-                                autoSkipPadding: 10
+                                autoSkipPadding: 20
                             }
                         },
                         y: {
                             beginAtZero: true,
                             grid: {
                                 display: true,
-                                drawBorder: true,
-                                color: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)',
-                                lineWidth: 1
+                                color: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.04)',
+                                lineWidth: 1,
+                                drawBorder: false
                             },
-                            border: {
-                                display: true,
-                                color: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
-                                width: 2,
-                                dash: [5, 5]
-                            },
+                            border: { display: false },
                             ticks: { 
                                 callback: (value) => formatCurrency(value),
-                                font: { size: 12, weight: '600' },
-                                color: isDark ? '#cbd5e1' : '#475569',
-                                padding: 12
+                                font: { size: 11, weight: '500', family: "'SF Pro Text', sans-serif" },
+                                color: isDark ? '#64748b' : '#94a3b8',
+                                padding: 12,
+                                maxTicksLimit: 5
                             }
                         }
                     }

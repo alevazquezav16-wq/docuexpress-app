@@ -1,10 +1,83 @@
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
     {% for category, message in messages %}
-      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      <div class="alert alert-{{ category }} alert-dismissible fade show flash-alert d-flex align-items-center gap-3" role="alert">
+        <div class="flash-icon flex-shrink-0">
+          {% if category == 'success' %}
+            <i class="bi bi-check-circle-fill"></i>
+          {% elif category == 'danger' or category == 'error' %}
+            <i class="bi bi-exclamation-circle-fill"></i>
+          {% elif category == 'warning' %}
+            <i class="bi bi-exclamation-triangle-fill"></i>
+          {% elif category == 'info' %}
+            <i class="bi bi-info-circle-fill"></i>
+          {% else %}
+            <i class="bi bi-bell-fill"></i>
+          {% endif %}
+        </div>
+        <div class="flex-grow-1">{{ message }}</div>
+        <button type="button" class="btn-close flex-shrink-0" data-bs-dismiss="alert" aria-label="Close"></button>
       </div>
     {% endfor %}
   {% endif %}
 {% endwith %}
+
+<style>
+.flash-alert {
+    border: none;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    animation: flashSlideIn 0.3s ease-out;
+}
+@keyframes flashSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.flash-icon {
+    font-size: 1.25rem;
+    line-height: 1;
+}
+.alert-success.flash-alert {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.12) 0%, rgba(34, 197, 94, 0.06) 100%);
+    color: #15803d;
+    border-left: 4px solid #22c55e;
+}
+.alert-danger.flash-alert, .alert-error.flash-alert {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(239, 68, 68, 0.06) 100%);
+    color: #b91c1c;
+    border-left: 4px solid #ef4444;
+}
+.alert-warning.flash-alert {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0.06) 100%);
+    color: #b45309;
+    border-left: 4px solid #f59e0b;
+}
+.alert-info.flash-alert {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(59, 130, 246, 0.06) 100%);
+    color: #1d4ed8;
+    border-left: 4px solid #3b82f6;
+}
+[data-bs-theme="dark"] .alert-success.flash-alert {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.18) 0%, rgba(34, 197, 94, 0.08) 100%);
+    color: #4ade80;
+}
+[data-bs-theme="dark"] .alert-danger.flash-alert, [data-bs-theme="dark"] .alert-error.flash-alert {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.18) 0%, rgba(239, 68, 68, 0.08) 100%);
+    color: #f87171;
+}
+[data-bs-theme="dark"] .alert-warning.flash-alert {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.18) 0%, rgba(245, 158, 11, 0.08) 100%);
+    color: #fbbf24;
+}
+[data-bs-theme="dark"] .alert-info.flash-alert {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.18) 0%, rgba(59, 130, 246, 0.08) 100%);
+    color: #60a5fa;
+}
+</style>

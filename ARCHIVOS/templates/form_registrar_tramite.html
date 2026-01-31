@@ -2,19 +2,61 @@
      hx-trigger="refresh-papeleria-list from:body" 
      hx-get="{{ url_for('papeleria.get_tramite_form') }}" 
      hx-swap="innerHTML">
+<!-- Toast de confirmación para móvil -->
+<div id="tramite-success-toast" class="alert alert-success d-none mb-3" role="alert" style="animation-duration: 0.3s;">
+	<div class="d-flex align-items-center">
+		<i class="bi bi-check-circle-fill me-2 fs-4"></i>
+		<div>
+			<strong>¡Trámite registrado!</strong>
+			<div class="small">El formulario está listo para otro registro</div>
+		</div>
+	</div>
+</div>
 <form id="form-registrar-tramite"
 		hx-post="{{ url_for('papeleria.registrar_tramite') }}"
 		hx-target="#registrar-tramite-container"
 		hx-swap="innerHTML"
-		hx-indicator="#tramite-loading">
+		hx-indicator="#tramite-loading"
+		hx-on::after-request="handleTramiteResponse(event)">
 	{% include 'form_tramite_fields.html' %}
 	{{ form_tramite.hidden_tag() }}
-	<button type="submit" class="btn btn-primary w-100">
+	<button type="submit" class="btn btn-primary w-100 btn-lg">
 		<span class="htmx-indicator" id="tramite-loading">
 			<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
 			Procesando...
 		</span>
-		<span class="htmx-hide-on-request">Registrar</span>
+		<span class="htmx-hide-on-request"><i class="bi bi-plus-circle me-1"></i>Registrar Trámite</span>
 	</button>
 </form>
+<script>
+function handleTramiteResponse(event) {
+	if (event.detail.successful) {
+		showTramiteSuccessToast();
+		scrollToFormSmooth();
+	}
+}
+
+function showTramiteSuccessToast() {
+	const toast = document.getElementById('tramite-success-toast');
+	if (toast) {
+		toast.classList.remove('d-none');
+		toast.style.animation = 'fadeInDown 0.3s ease';
+		setTimeout(() => {
+			toast.style.animation = 'fadeOutUp 0.3s ease';
+			setTimeout(() => {
+				toast.classList.add('d-none');
+			}, 300);
+		}, 4000);
+	}
+}
+
+function scrollToFormSmooth() {
+	const container = document.getElementById('registrar-tramite-container');
+	if (container && window.innerWidth < 992) {
+		setTimeout(() => {
+			container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+		}, 100);
+	}
+}
+</script>
 </div>

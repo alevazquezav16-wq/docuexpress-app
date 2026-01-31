@@ -56,22 +56,57 @@
     </div>
 </div>
 <script>
+// Variables de rango de fechas locales para dashboard_content
+// Se sincronizan con las globales cuando están disponibles
+let _dashboardDateRange = 30;
+let _dashboardCustomStart = null;
+let _dashboardCustomEnd = null;
+
+// Funciones locales de fecha que pueden funcionar independientemente
+function getDashboardStartDate() {
+    // Primero intentar usar las funciones globales si existen
+    if (typeof getStartDate === 'function') {
+        try {
+            return getStartDate();
+        } catch(e) {}
+    }
+    // Fallback: calcular localmente
+    if (_dashboardCustomStart && _dashboardCustomEnd) {
+        return _dashboardCustomStart;
+    }
+    const date = new Date();
+    date.setDate(date.getDate() - _dashboardDateRange);
+    return date.toISOString().split('T')[0];
+}
+
+function getDashboardEndDate() {
+    // Primero intentar usar las funciones globales si existen
+    if (typeof getEndDate === 'function') {
+        try {
+            return getEndDate();
+        } catch(e) {}
+    }
+    // Fallback: calcular localmente
+    if (_dashboardCustomStart && _dashboardCustomEnd) {
+        return _dashboardCustomEnd;
+    }
+    return new Date().toISOString().split('T')[0];
+}
+
 // Actualiza el resumen visual del rango de fechas seleccionado en el dashboard
 function updateDashboardDateRangeSummary() {
-    let start = '-';
-    let end = '-';
-    if (typeof getStartDate === 'function' && typeof getEndDate === 'function') {
-        start = getStartDate();
-        end = getEndDate();
-    }
-    document.getElementById('dashboard-date-range-start').textContent = start;
-    document.getElementById('dashboard-date-range-end').textContent = end;
+    let start = getDashboardStartDate();
+    let end = getDashboardEndDate();
+    const startEl = document.getElementById('dashboard-date-range-start');
+    const endEl = document.getElementById('dashboard-date-range-end');
+    if (startEl) startEl.textContent = start;
+    if (endEl) endEl.textContent = end;
 }
 
 // Actualiza las tarjetas de resumen del dashboard según el filtro de fechas
 async function updateDashboardTotals() {
-    let fecha_inicio = typeof getStartDate === 'function' ? getStartDate() : null;
-    let fecha_fin = typeof getEndDate === 'function' ? getEndDate() : null;
+    let fecha_inicio = getDashboardStartDate();
+    let fecha_fin = getDashboardEndDate();
     try {
         const params = new URLSearchParams();
         if (fecha_inicio) params.append('fecha_inicio', fecha_inicio);
@@ -99,17 +134,52 @@ async function updateDashboardTotals() {
 function triggerDashboardTotalsUpdate() {
     updateDashboardDateRangeSummary();
     updateDashboardTotals();
+    // Intentar inicializar gráficos con retry si chartManager no está listo
+    initializeChartsWithRetry();
+}
+
+function initializeChartsWithRetry(attempt = 0) {
+    const maxAttempts = 5;
+    const delay = 200;
+    
     if (typeof chartManager !== 'undefined' && chartManager.initialize) {
-        chartDataCache && chartDataCache.clear && chartDataCache.clear();
+        if (typeof chartDataCache !== 'undefined' && chartDataCache.clear) {
+            chartDataCache.clear();
+        }
         chartManager.initialize();
+        console.log('✅ Charts initialized successfully');
     } else if (typeof initializeDashboardScripts === 'function') {
         initializeDashboardScripts();
+        console.log('✅ Dashboard scripts initialized');
+    } else if (attempt < maxAttempts) {
+        // Reintentar después de un pequeño delay
+        console.log(`⏳ Waiting for chartManager... attempt ${attempt + 1}/${maxAttempts}`);
+        setTimeout(() => initializeChartsWithRetry(attempt + 1), delay);
+    } else {
+        console.warn('⚠️ Could not initialize charts after max attempts');
     }
 }
 
-document.addEventListener('DOMContentLoaded', triggerDashboardTotalsUpdate);
+// Esperar a que el DOM esté listo y luego inicializar con un pequeño delay
+// para asegurar que los scripts de index.html se hayan ejecutado
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(triggerDashboardTotalsUpdate, 150);
+    });
+} else {
+    // DOM ya está listo, ejecutar con delay
+    setTimeout(triggerDashboardTotalsUpdate, 150);
+}
+
 document.body.addEventListener('change', function(event) {
     if (event.target.name === 'dateRange') {
+        // Sincronizar con el valor seleccionado
+        const value = event.target.value;
+        if (value !== 'custom') {
+            _dashboardDateRange = parseInt(value);
+            _dashboardCustomStart = null;
+            _dashboardCustomEnd = null;
+        }
         setTimeout(triggerDashboardTotalsUpdate, 150);
     }
 });

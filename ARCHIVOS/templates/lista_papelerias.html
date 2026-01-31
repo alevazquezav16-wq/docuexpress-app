@@ -1,27 +1,104 @@
-<div id="papelerias-list-container" class="card shadow-sm">
+<div id="papelerias-list-container" class="card border-0 shadow-sm overflow-hidden">
     {% if current_user.role == 'admin' %}
-    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
-        <a href="{{ url_for('main.exportar_csv_general') }}" class="btn btn-sm btn-outline-success">
-            <i class="bi bi-file-earmark-spreadsheet"></i> <span class="d-none d-md-inline">Exportar Todo</span>
-        </a>
-        <h5 class="mb-0 order-first order-md-0 w-100 w-md-auto text-center text-md-start">Mis Papelerías</h5>
-        <div class="position-relative" style="min-width: 200px; max-width: 100%;">
-            <input type="search" name="q" class="form-control form-control-sm" 
-                   placeholder="Buscar..."
-                   value="{{ request.args.get('q', '') }}"
-                   hx-get="{{ url_for('main.index') }}"
-                   hx-trigger="keyup changed delay:300ms, search"
-                   hx-target="#papeleriaList"
-                   hx-swap="innerHTML">
-            <span id="search-indicator" class="htmx-indicator position-absolute top-50 end-0 translate-middle-y me-2">
-                <span class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></span>
-            </span>
+    <div class="card-header bg-transparent border-bottom py-3">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div class="d-flex align-items-center gap-2">
+                <div class="header-icon">
+                    <i class="bi bi-shop"></i>
+                </div>
+                <div>
+                    <h5 class="mb-0 fw-bold">Mis Papelerías</h5>
+                    <small class="text-muted">{{ papelerias|length if papelerias else 0 }} registradas</small>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <div class="search-wrapper position-relative">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="search" name="q" class="form-control form-control-sm search-input" 
+                           placeholder="Buscar papelería..."
+                           value="{{ request.args.get('q', '') }}"
+                           hx-get="{{ url_for('main.index') }}"
+                           hx-trigger="keyup changed delay:300ms, search"
+                           hx-target="#papeleriaList"
+                           hx-swap="innerHTML"
+                           hx-indicator="#search-indicator">
+                    <span id="search-indicator" class="htmx-indicator position-absolute top-50 end-0 translate-middle-y me-2">
+                        <span class="spinner-border spinner-border-sm text-primary" role="status"></span>
+                    </span>
+                </div>
+                <a href="{{ url_for('main.exportar_csv_general') }}" class="btn btn-sm btn-success d-flex align-items-center gap-1" title="Exportar datos">
+                    <i class="bi bi-download"></i>
+                    <span class="d-none d-lg-inline">Exportar</span>
+                </a>
+            </div>
         </div>
     </div>
     {% else %}
-    <div class="card-header"><h5 class="mb-0">Mis Papelerías</h5></div> 
+    <div class="card-header bg-transparent border-bottom py-3">
+        <div class="d-flex align-items-center gap-2">
+            <div class="header-icon">
+                <i class="bi bi-shop"></i>
+            </div>
+            <h5 class="mb-0 fw-bold">Mis Papelerías</h5>
+        </div>
+    </div>
     {% endif %}
-    <div id="papeleriaList" class="list-group list-group-flush" style="max-height: 500px; overflow-y: auto;">
+    <div id="papeleriaList" class="list-group list-group-flush papelerias-scroll" style="max-height: 520px; overflow-y: auto;">
         {% include "_lista_papelerias_items.html" %}
     </div>
 </div>
+
+<style>
+.header-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--bs-primary), #6366f1);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+}
+.search-wrapper {
+    min-width: 200px;
+}
+.search-wrapper .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--bs-secondary-color);
+    font-size: 0.85rem;
+    pointer-events: none;
+}
+.search-input {
+    padding-left: 36px;
+    border-radius: 20px;
+    border: 1px solid var(--bs-border-color);
+    background: var(--bs-tertiary-bg);
+    transition: all 0.2s ease;
+}
+.search-input:focus {
+    background: var(--bs-body-bg);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    border-color: var(--bs-primary);
+}
+.papelerias-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: var(--bs-secondary-bg) transparent;
+}
+.papelerias-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+.papelerias-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+.papelerias-scroll::-webkit-scrollbar-thumb {
+    background: var(--bs-secondary-bg);
+    border-radius: 3px;
+}
+.papelerias-scroll::-webkit-scrollbar-thumb:hover {
+    background: var(--bs-secondary-color);
+}
+</style>
