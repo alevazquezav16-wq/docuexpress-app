@@ -525,6 +525,13 @@
                     return;
                 }
 
+                // IMPORTANTE: Restaurar canvas ANTES de verificar si existen
+                // Los skeletons destruyen los canvas, así que debemos restaurarlos primero
+                this.restoreCanvas('topPapeleriasChart');
+                this.restoreCanvas('monthlySummaryChart');
+                this.restoreCanvas('tramitesDistributionChart');
+                this.restoreCanvas('gastosDistributionChart');
+
                 const availableCanvases = this.getCanvasElements();
                 if (availableCanvases.length === 0) {
                     console.log('ℹ️ No chart canvases found in DOM.');
