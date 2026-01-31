@@ -226,6 +226,25 @@
     let customStartDate = null;
     let customEndDate = null;
 
+    // --- FUNCIONES DE FECHA (definidas antes de ChartManager para evitar problemas de hoisting) ---
+    function getStartDate() {
+        if (customStartDate && customEndDate) {
+            return customStartDate;
+        }
+        
+        const date = new Date();
+        date.setDate(date.getDate() - currentDateRange);
+        return date.toISOString().split('T')[0];
+    }
+
+    function getEndDate() {
+        if (customStartDate && customEndDate) {
+            return customEndDate;
+        }
+        
+        return new Date().toISOString().split('T')[0];
+    }
+
     // --- CLASE PARA GESTIÓN DE GRÁFICOS ---
     class ChartManager {
         constructor() {
@@ -263,10 +282,44 @@
         
         // Restaurar canvas después de skeleton
         restoreCanvas(canvasId) {
-            const container = document.getElementById(canvasId)?.parentElement;
-            if (container && !container.querySelector('canvas')) {
-                container.innerHTML = `<canvas id="${canvasId}" style="max-height: 400px;"></canvas>`;
+            // Primero intentar encontrar el canvas existente
+            let canvas = document.getElementById(canvasId);
+            if (canvas) {
+                return; // El canvas ya existe, no hacer nada
             }
+            
+            // Si el canvas no existe, buscar el contenedor por clase y restaurar
+            const containers = document.querySelectorAll('.apple-chart-container');
+            containers.forEach(container => {
+                // Verificar si este contenedor debería tener este canvas
+                // buscando si hay un skeleton o si está vacío
+                if (container.querySelector('.skeleton') || !container.querySelector('canvas')) {
+                    // Determinar qué canvas restaurar basándose en la posición o el contenido anterior
+                    const parentCard = container.closest('.apple-card');
+                    if (parentCard) {
+                        const header = parentCard.querySelector('.apple-header');
+                        if (header) {
+                            const headerText = header.textContent.toLowerCase();
+                            let shouldRestore = false;
+                            
+                            if (canvasId === 'topPapeleriasChart' && headerText.includes('papelería')) {
+                                shouldRestore = true;
+                            } else if (canvasId === 'monthlySummaryChart' && headerText.includes('evolución')) {
+                                shouldRestore = true;
+                            } else if (canvasId === 'tramitesDistributionChart' && headerText.includes('trámites')) {
+                                shouldRestore = true;
+                            } else if (canvasId === 'gastosDistributionChart' && headerText.includes('gastos')) {
+                                shouldRestore = true;
+                            }
+                            
+                            if (shouldRestore && !container.querySelector('canvas')) {
+                                container.innerHTML = `<canvas id="${canvasId}" style="max-height: 400px;"></canvas>`;
+                                console.log(`✅ Canvas ${canvasId} restored`);
+                            }
+                        }
+                    }
+                }
+            });
         }
         
         // Animar conteo de números en tarjetas
@@ -562,6 +615,12 @@
             
             // Destruir gráficos existentes
             this.destroyAll();
+            
+            // IMPORTANTE: Restaurar los canvas que fueron reemplazados por skeletons
+            this.restoreCanvas('topPapeleriasChart');
+            this.restoreCanvas('monthlySummaryChart');
+            this.restoreCanvas('tramitesDistributionChart');
+            this.restoreCanvas('gastosDistributionChart');
 
             // Crear cada gráfico individualmente con manejo de errores
             const chartPromises = [
@@ -1526,25 +1585,6 @@
         setTimeout(() => {
             initializeDashboardScripts();
         }, 300);
-    }
-
-    // Función helper para obtener fecha inicial según el rango
-    function getStartDate() {
-        if (customStartDate && customEndDate) {
-            return customStartDate;
-        }
-        
-        const date = new Date();
-        date.setDate(date.getDate() - currentDateRange);
-        return date.toISOString().split('T')[0];
-    }
-
-    function getEndDate() {
-        if (customStartDate && customEndDate) {
-            return customEndDate;
-        }
-        
-        return new Date().toISOString().split('T')[0];
     }
     
     // --- CALCULADORA RÁPIDA ---
