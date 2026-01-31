@@ -77,6 +77,19 @@ def dashboard_charts_data():
     fecha_inicio = request.args.get('fecha_inicio')
     fecha_fin = request.args.get('fecha_fin')
     
+    # Validar formato de fechas
+    if fecha_inicio and fecha_fin:
+        try:
+            from datetime import datetime
+            datetime.strptime(fecha_inicio, '%Y-%m-%d')
+            datetime.strptime(fecha_fin, '%Y-%m-%d')
+        except ValueError as e:
+            logging.warning(f"[API] Invalid date format: {fecha_inicio} - {fecha_fin}: {e}")
+            fecha_inicio = None
+            fecha_fin = None
+    
+    logging.info(f"[API] dashboard-charts request: fecha_inicio={fecha_inicio}, fecha_fin={fecha_fin}")
+    
     # --- CACHÉ INTELIGENTE ---
     version = get_user_data_version(effective_user_id)
     cache = getattr(current_app, 'cache', None)
@@ -89,56 +102,77 @@ def dashboard_charts_data():
             return jsonify(cached_data)
 
     logging.info(f"[CACHE MISS] Calculando gráficos dashboard (v:{version})")
-    # 1. Top Papelerías
-    top_papelerias = papeleria_repository.get_top_by_ganancia(
-        effective_user_id, 
-        limit=10,
-        fecha_inicio=fecha_inicio,
-        fecha_fin=fecha_fin
-    )
-    top_papelerias_data = {'labels': [p['nombre'] for p in top_papelerias], 'data': [p['ganancia_total'] or 0 for p in top_papelerias]}
-
-    # 2. Resumen Mensual
-    summary_result = tramite_repository.get_monthly_summary(
-        effective_user_id,
-        fecha_inicio=fecha_inicio,
-        fecha_fin=fecha_fin
-    )
-    monthly_summary_data = summary_result['monthly_data']
     
-    monthly_summary = {
-        'labels': [row['month'] for row in monthly_summary_data],
-        'ingresos': [row['ingresos'] for row in monthly_summary_data],
-        'costos': [row['gastos'] for row in monthly_summary_data],
-        'ganancias': [row['ganancias'] for row in monthly_summary_data],
-        'totals': summary_result['totals']
-    }
+    try:
+        # 1. Top Papelerías
+        top_papelerias = papeleria_repository.get_top_by_ganancia(
+            effective_user_id, 
+            limit=10,
+            fecha_inicio=fecha_inicio,
+            fecha_fin=fecha_fin
+        )
+        top_papelerias_data = {
+            'labels': [p['nombre'] for p in top_papelerias], 
+            'data': [float(p.get('ganancia_total') or 0) for p in top_papelerias]
+        }
 
-    # 3. Distribución de Trámites
-    dist_data = tramite_repository.get_tramites_distribution(
-        effective_user_id,
-        fecha_inicio=fecha_inicio,
-        fecha_fin=fecha_fin
-    )
-    tramites_dist = {'labels': [row['tramite_label'] for row in dist_data], 'data': [row['total_count'] for row in dist_data]}
+        # 2. Resumen Mensual
+        summary_result = tramite_repository.get_monthly_summary(
+            effective_user_id,
+            fecha_inicio=fecha_inicio,
+            fecha_fin=fecha_fin
+        )
+        monthly_summary_data = summary_result.get('monthly_data', [])
+        
+        monthly_summary = {
+            'labels': [row['month'] for row in monthly_summary_data],
+            'ingresos': [float(row.get('ingresos') or 0) for row in monthly_summary_data],
+            'costos': [float(row.get('gastos') or 0) for row in monthly_summary_data],
+            'ganancias': [float(row.get('ganancias') or 0) for row in monthly_summary_data],
+            'totals': summary_result.get('totals', {'total_ingresos': 0, 'total_gastos': 0, 'total_ganancia': 0})
+        }
 
-    # 4. Distribución de Gastos
-    gastos_data = gasto_repository.get_gastos_distribution(
-        effective_user_id,
-        fecha_inicio=fecha_inicio,
-        fecha_fin=fecha_fin
-    )
-    gastos_dist = {'labels': [row['categoria'] for row in gastos_data], 'data': [row['total_monto'] for row in gastos_data]}
+        # 3. Distribución de Trámites
+        dist_data = tramite_repository.get_tramites_distribution(
+            effective_user_id,
+            fecha_inicio=fecha_inicio,
+            fecha_fin=fecha_fin
+        )
+        tramites_dist = {
+            'labels': [row['tramite_label'] for row in dist_data], 
+            'data': [int(row.get('total_count') or 0) for row in dist_data]
+        }
 
-    response_data = {
-        'topPapelerias': top_papelerias_data,
-        'monthlySummary': monthly_summary,
-        'tramitesDistribution': tramites_dist,
-        'gastosDistribution': gastos_dist
-    }
+        # 4. Distribución de Gastos
+        gastos_data = gasto_repository.get_gastos_distribution(
+            effective_user_id,
+            fecha_inicio=fecha_inicio,
+            fecha_fin=fecha_fin
+        )
+        gastos_dist = {
+            'labels': [row['categoria'] for row in gastos_data], 
+            'data': [float(row.get('total_monto') or 0) for row in gastos_data]
+        }
 
-    if cache:
-        cache.set(cache_key, response_data, timeout=300) # 5 minutos de caché (o hasta que cambie la versión)
+        response_data = {
+            'topPapelerias': top_papelerias_data,
+            'monthlySummary': monthly_summary,
+            'tramitesDistribution': tramites_dist,
+            'gastosDistribution': gastos_dist
+        }
+
+        if cache:
+            cache.set(cache_key, response_data, timeout=300) # 5 minutos de caché (o hasta que cambie la versión)
+
+    except Exception as e:
+        logging.error(f"[API] Error generating charts data: {e}")
+        # Devolver estructura vacía pero válida en caso de error
+        response_data = {
+            'topPapelerias': {'labels': [], 'data': []},
+            'monthlySummary': {'labels': [], 'ingresos': [], 'costos': [], 'ganancias': [], 'totals': {'total_ingresos': 0, 'total_gastos': 0, 'total_ganancia': 0}},
+            'tramitesDistribution': {'labels': [], 'data': []},
+            'gastosDistribution': {'labels': [], 'data': []}
+        }
 
     # Log de performance para dashboard-charts
     elapsed_ms = (time.time() - start_time) * 1000

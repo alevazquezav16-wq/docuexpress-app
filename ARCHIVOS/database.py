@@ -276,22 +276,41 @@ class PapeleriaRepository:
     def get_top_by_ganancia(self, user_id, limit=10, fecha_inicio=None, fecha_fin=None):
         """Gets top papelerias by total profit, optionally filtered by date range.
         NOTA: Incluye papelerías inactivas para mostrar datos históricos completos."""
-        query = db.session.query(
-            Papeleria.nombre,
-            (func.sum(func.coalesce(Tramite.precio, 0)) - func.sum(func.coalesce(Tramite.costo, 0))).label('ganancia_total') # type: ignore
-        ).outerjoin(Tramite, Papeleria.id == Tramite.papeleria_id)\
-         .filter(Papeleria.user_id == user_id)
-        
-        # Aplicar filtro de fecha si se proporciona
-        if fecha_inicio and fecha_fin:
-            query = query.filter(Tramite.fecha >= fecha_inicio, Tramite.fecha <= fecha_fin)
-        
-        query = query.group_by(Papeleria.id, Papeleria.nombre)\
-         .order_by(db.desc('ganancia_total'))\
-         .limit(limit)
-        
-        # Convert rows to dictionaries
-        return [row._asdict() for row in query.all()]
+        try:
+            # Si hay filtro de fechas, usar INNER JOIN para solo incluir papelerías con trámites en el rango
+            if fecha_inicio and fecha_fin:
+                query = db.session.query(
+                    Papeleria.nombre,
+                    (func.sum(func.coalesce(Tramite.precio, 0)) - func.sum(func.coalesce(Tramite.costo, 0))).label('ganancia_total')
+                ).join(Tramite, Papeleria.id == Tramite.papeleria_id)\
+                 .filter(
+                    Papeleria.user_id == user_id,
+                    Tramite.fecha >= fecha_inicio,
+                    Tramite.fecha <= fecha_fin
+                )
+            else:
+                # Sin filtro de fechas, usar OUTER JOIN para incluir todas las papelerías
+                query = db.session.query(
+                    Papeleria.nombre,
+                    (func.sum(func.coalesce(Tramite.precio, 0)) - func.sum(func.coalesce(Tramite.costo, 0))).label('ganancia_total')
+                ).outerjoin(Tramite, Papeleria.id == Tramite.papeleria_id)\
+                 .filter(Papeleria.user_id == user_id)
+            
+            query = query.group_by(Papeleria.id, Papeleria.nombre)\
+             .order_by(db.desc('ganancia_total'))\
+             .limit(limit)
+            
+            # Convert rows to dictionaries, ensuring ganancia_total is not None
+            results = []
+            for row in query.all():
+                row_dict = row._asdict()
+                row_dict['ganancia_total'] = float(row_dict.get('ganancia_total') or 0)
+                results.append(row_dict)
+            
+            return results
+        except Exception as e:
+            logging.error(f"Error in get_top_by_ganancia: {e}")
+            return []
 
     def update_name(self, papeleria_id, nuevo_nombre, user_id):
         """Updates the name of a papeleria."""
@@ -680,52 +699,75 @@ class TramiteRepository:
         # 1. Generate the date range
         if fecha_inicio and fecha_fin:
             # Usar rango personalizado
-            start_date = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
-            end_date = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
-            start_date = start_date.replace(day=1)
+            try:
+                start_date = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+                end_date = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+            except (ValueError, TypeError) as e:
+                logging.warning(f"Error parsing dates: {fecha_inicio} - {fecha_fin}: {e}")
+                end_date = date.today()
+                start_date = end_date - relativedelta(months=11)
+            
+            # IMPORTANTE: NO hacer replace(day=1) para rangos cortos
+            # Solo ajustar al inicio del mes si el rango es mayor a 60 días
+            dias_rango = (end_date - start_date).days
+            if dias_rango > 60:
+                start_date = start_date.replace(day=1)
         else:
             # Usar últimos 12 meses por defecto
             end_date = date.today()
             start_date = end_date - relativedelta(months=11)
             start_date = start_date.replace(day=1)
 
+        # Generar lista de meses que deben aparecer en el resultado
         months = []
-        current_date = start_date
-        while current_date <= end_date:
-            months.append(current_date.strftime('%Y-%m'))
-            current_date += relativedelta(months=1)
+        # Empezar desde el mes de start_date
+        current_month_date = start_date.replace(day=1)
+        end_month_date = end_date.replace(day=1)
+        while current_month_date <= end_month_date:
+            months.append(current_month_date.strftime('%Y-%m'))
+            current_month_date += relativedelta(months=1)
+        
+        # Si no hay meses (rango muy corto dentro del mismo mes), agregar al menos el mes actual
+        if not months:
+            months.append(start_date.strftime('%Y-%m'))
 
         # 2. Get data from Tramites (Ingresos and Costos)
         # NOTA: No filtramos por is_active para incluir datos históricos de papelerías inactivas
+        # Convertir fechas a string para comparación consistente con SQLite
+        start_date_str = start_date.strftime('%Y-%m-%d')
+        end_date_str = end_date.strftime('%Y-%m-%d')
+        
         tramites_query = db.session.query(
             func.strftime('%Y-%m', Tramite.fecha).label('month'),
-            func.sum(Tramite.precio).label('total_ingresos'),
-            func.sum(Tramite.costo).label('total_costos_tramite')
+            func.coalesce(func.sum(Tramite.precio), 0).label('total_ingresos'),
+            func.coalesce(func.sum(Tramite.costo), 0).label('total_costos_tramite')
         ).filter(
             Tramite.user_id == user_id,
-            Tramite.fecha >= start_date,
-            Tramite.fecha <= end_date
+            Tramite.fecha >= start_date_str,
+            Tramite.fecha <= end_date_str
         ).group_by('month').all()
 
         # 3. Get data from Gastos
         gastos_query = db.session.query(
             func.strftime('%Y-%m', Gasto.fecha).label('month'),
-            func.sum(Gasto.monto).label('total_gastos_generales')
+            func.coalesce(func.sum(Gasto.monto), 0).label('total_gastos_generales')
         ).filter(
             Gasto.user_id == user_id,
-            Gasto.fecha >= start_date,
-            Gasto.fecha <= end_date
+            Gasto.fecha >= start_date_str,
+            Gasto.fecha <= end_date_str
         ).group_by('month').all()
 
         # 4. Process and combine data
         monthly_summary = defaultdict(lambda: {'ingresos': 0, 'gastos': 0})
 
         for row in tramites_query:
-            monthly_summary[row.month]['ingresos'] += row.total_ingresos
-            monthly_summary[row.month]['gastos'] += row.total_costos_tramite
+            if row.month:  # Solo procesar si el mes no es None
+                monthly_summary[row.month]['ingresos'] += float(row.total_ingresos or 0)
+                monthly_summary[row.month]['gastos'] += float(row.total_costos_tramite or 0)
 
         for row in gastos_query:
-            monthly_summary[row.month]['gastos'] += row.total_gastos_generales
+            if row.month:  # Solo procesar si el mes no es None
+                monthly_summary[row.month]['gastos'] += float(row.total_gastos_generales or 0)
         
         # 5. Build final list and calculate totals
         final_data = []
@@ -762,20 +804,31 @@ class TramiteRepository:
 
     def get_tramites_distribution(self, user_id, limit=10, fecha_inicio=None, fecha_fin=None):
         """Gets the distribution of tramites by count, optionally filtered by date range."""
-        # NOTA: No filtramos por is_active para incluir datos históricos de papelerías inactivas
-        query = db.session.query(
-            Tramite.tramite.label('tramite_label'),
-            func.count(Tramite.id).label('total_count')
-        ).filter(Tramite.user_id == user_id)
-        
-        # Aplicar filtro de fecha si se proporciona
-        if fecha_inicio and fecha_fin:
-            query = query.filter(Tramite.fecha >= fecha_inicio, Tramite.fecha <= fecha_fin)
-        
-        query = query.group_by(Tramite.tramite)\
-         .order_by(db.desc('total_count'))\
-         .limit(limit)
-        return [row._asdict() for row in query.all()]
+        try:
+            # NOTA: No filtramos por is_active para incluir datos históricos de papelerías inactivas
+            query = db.session.query(
+                Tramite.tramite.label('tramite_label'),
+                func.count(Tramite.id).label('total_count')
+            ).filter(Tramite.user_id == user_id)
+            
+            # Aplicar filtro de fecha si se proporciona
+            if fecha_inicio and fecha_fin:
+                query = query.filter(Tramite.fecha >= fecha_inicio, Tramite.fecha <= fecha_fin)
+            
+            query = query.group_by(Tramite.tramite)\
+             .order_by(db.desc('total_count'))\
+             .limit(limit)
+            
+            results = []
+            for row in query.all():
+                row_dict = row._asdict()
+                row_dict['total_count'] = int(row_dict.get('total_count') or 0)
+                results.append(row_dict)
+            
+            return results
+        except Exception as e:
+            logging.error(f"Error in get_tramites_distribution: {e}")
+            return []
 
     def get_tramites_distribution_for_papeleria(self, papeleria_id, user_id, limit=10):
         """Gets the distribution of tramites for a specific papeleria."""
@@ -997,18 +1050,29 @@ class GastoRepository:
 
     def get_gastos_distribution(self, user_id, fecha_inicio=None, fecha_fin=None):
         """Gets the distribution of gastos by categoria, optionally filtered by date range."""
-        query = db.session.query(
-            Gasto.categoria,
-            func.sum(Gasto.monto).label('total_monto')
-        ).filter(Gasto.user_id == user_id)
-        
-        # Aplicar filtro de fecha si se proporciona
-        if fecha_inicio and fecha_fin:
-            query = query.filter(Gasto.fecha >= fecha_inicio, Gasto.fecha <= fecha_fin)
-        
-        query = query.group_by(Gasto.categoria)\
-         .order_by(db.desc('total_monto'))
-        return [row._asdict() for row in query.all()]
+        try:
+            query = db.session.query(
+                Gasto.categoria,
+                func.coalesce(func.sum(Gasto.monto), 0).label('total_monto')
+            ).filter(Gasto.user_id == user_id)
+            
+            # Aplicar filtro de fecha si se proporciona
+            if fecha_inicio and fecha_fin:
+                query = query.filter(Gasto.fecha >= fecha_inicio, Gasto.fecha <= fecha_fin)
+            
+            query = query.group_by(Gasto.categoria)\
+             .order_by(db.desc('total_monto'))
+            
+            results = []
+            for row in query.all():
+                row_dict = row._asdict()
+                row_dict['total_monto'] = float(row_dict.get('total_monto') or 0)
+                results.append(row_dict)
+            
+            return results
+        except Exception as e:
+            logging.error(f"Error in get_gastos_distribution: {e}")
+            return []
 
     def get_gastos_summary(self, user_id, fecha_inicio=None, fecha_fin=None, categoria=None):
         """Gets a summary of gastos based on filters."""
