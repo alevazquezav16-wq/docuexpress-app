@@ -245,15 +245,20 @@
                             </a>
                             <form action="{{ url_for('papeleria.eliminar_tramite', tramite_id=d.id) }}"
                                   method="post"
-                                  class="d-inline"
+                                  class="d-inline delete-tramite-form"
                                   hx-post="{{ url_for('papeleria.eliminar_tramite', tramite_id=d.id) }}"
-                                  hx-target="#main-dashboard-content"
-                                  hx-swap="innerHTML"
+                                  hx-swap="none"
+                                  hx-indicator="closest .delete-tramite-form"
                                   hx-confirm="¿Estás seguro de que quieres eliminar este trámite? Esta acción no se puede deshacer.">
                                 {{ delete_form.hidden_tag() }}
-                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar trámite">
-                                    <i class="bi bi-trash"></i>
-                                    <span class="d-none d-md-inline ms-1">Eliminar</span>
+                                <button type="submit" class="btn btn-sm btn-outline-danger delete-btn" title="Eliminar trámite">
+                                    <span class="delete-btn-content">
+                                        <i class="bi bi-trash"></i>
+                                        <span class="d-none d-md-inline ms-1">Eliminar</span>
+                                    </span>
+                                    <span class="delete-btn-loading d-none">
+                                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                    </span>
                                 </button>
                             </form>
                         </div>
@@ -912,6 +917,32 @@
         themeObserver.observe(document.documentElement, {
             attributes: true,
             attributeFilter: ['data-bs-theme']
+        });
+        
+        // Manejador para botones de eliminar trámite
+        document.addEventListener('htmx:beforeRequest', function(event) {
+            const form = event.target.closest('.delete-tramite-form');
+            if (form) {
+                const btn = form.querySelector('.delete-btn');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.querySelector('.delete-btn-content').classList.add('d-none');
+                    btn.querySelector('.delete-btn-loading').classList.remove('d-none');
+                }
+            }
+        });
+        
+        document.addEventListener('htmx:afterRequest', function(event) {
+            const form = event.target.closest('.delete-tramite-form');
+            if (form) {
+                const btn = form.querySelector('.delete-btn');
+                if (btn) {
+                    // Restaurar el botón en caso de error
+                    btn.disabled = false;
+                    btn.querySelector('.delete-btn-content').classList.remove('d-none');
+                    btn.querySelector('.delete-btn-loading').classList.add('d-none');
+                }
+            }
         });
     });
 

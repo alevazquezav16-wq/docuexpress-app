@@ -313,6 +313,8 @@ def editar_tramite(tramite_id):
 @login_required
 def eliminar_tramite(tramite_id):
     form = DeleteForm(request.form)
+    papeleria_id = None  # Inicializar fuera del scope del if
+    
     if form.validate_on_submit():
         effective_user_id = get_effective_user_id()
         papeleria_id = tramite_repository.delete(tramite_id, effective_user_id)
@@ -324,17 +326,17 @@ def eliminar_tramite(tramite_id):
     else:
         flash('Error de seguridad al intentar eliminar el trámite. Por favor, recarga la página e inténtalo de nuevo.', 'danger')
 
-    # Renderizar flash messages y disparar eventos
+    # Renderizar flash messages y redirigir
     if request.headers.get('HX-Request'):
-        flash_html = render_template('flash_messages.html')
-        response = make_response(f'<div id="flash-container" hx-swap-oob="innerHTML">{flash_html}</div>')
-        # Disparar evento para recargar dashboard
-        response.headers['HX-Trigger'] = json.dumps({'reload-dashboard': ''})
-        # Redirigir a la página de la papelería o al index
+        # Usar HX-Redirect para forzar la recarga de la página después de eliminar
+        # Esto garantiza que la tabla se actualice correctamente
         if papeleria_id:
-            response.headers['HX-Redirect'] = url_for('papeleria.ver_papeleria', papeleria_id=papeleria_id)
+            redirect_url = url_for('papeleria.ver_papeleria', papeleria_id=papeleria_id)
         else:
-            response.headers['HX-Redirect'] = url_for('main.index')
+            redirect_url = url_for('main.index')
+        
+        response = make_response('')
+        response.headers['HX-Redirect'] = redirect_url
         return response
     
     # Fallback para peticiones no-HTMX

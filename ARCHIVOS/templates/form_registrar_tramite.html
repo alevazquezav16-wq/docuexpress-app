@@ -2,61 +2,213 @@
      hx-trigger="refresh-papeleria-list from:body" 
      hx-get="{{ url_for('papeleria.get_tramite_form') }}" 
      hx-swap="innerHTML">
-<!-- Toast de confirmación para móvil -->
-<div id="tramite-success-toast" class="alert alert-success d-none mb-3" role="alert" style="animation-duration: 0.3s;">
+<!-- Estilos para animaciones móviles -->
+<style>
+@keyframes tramiteSuccessPulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.7); }
+    50% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(25, 135, 84, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(25, 135, 84, 0); }
+}
+@keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeSlideOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-10px); }
+}
+.tramite-btn-loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.85;
+}
+.tramite-btn-loading::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: shimmer 1.5s infinite;
+}
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+.tramite-success-animation {
+    animation: tramiteSuccessPulse 0.6s ease-out;
+}
+#tramite-success-toast.show-toast {
+    animation: fadeSlideIn 0.3s ease forwards;
+}
+#tramite-success-toast.hide-toast {
+    animation: fadeSlideOut 0.3s ease forwards;
+}
+.tramite-counter-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #198754;
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    animation: fadeSlideIn 0.3s ease;
+}
+</style>
+
+<!-- Toast de confirmación mejorado -->
+<div id="tramite-success-toast" class="alert alert-success d-none mb-3 shadow-sm" role="alert">
 	<div class="d-flex align-items-center">
-		<i class="bi bi-check-circle-fill me-2 fs-4"></i>
-		<div>
-			<strong>¡Trámite registrado!</strong>
-			<div class="small">El formulario está listo para otro registro</div>
+		<div class="me-3" style="font-size: 1.75rem;">
+			<i class="bi bi-check-circle-fill text-success"></i>
 		</div>
+		<div class="flex-grow-1">
+			<strong class="d-block">¡Trámite registrado!</strong>
+			<small class="text-muted">
+				<span id="tramite-count-msg">El formulario está listo para otro registro</span>
+			</small>
+		</div>
+		<button type="button" class="btn-close ms-2" onclick="hideToastManual()" aria-label="Cerrar"></button>
 	</div>
 </div>
+
 <form id="form-registrar-tramite"
 		hx-post="{{ url_for('papeleria.registrar_tramite') }}"
 		hx-target="#registrar-tramite-container"
 		hx-swap="innerHTML"
 		hx-indicator="#tramite-loading"
+		hx-on::before-request="handleTramiteBeforeRequest(event)"
 		hx-on::after-request="handleTramiteResponse(event)">
 	{% include 'form_tramite_fields.html' %}
 	{{ form_tramite.hidden_tag() }}
-	<button type="submit" class="btn btn-primary w-100 btn-lg">
-		<span class="htmx-indicator" id="tramite-loading">
-			<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-			Procesando...
-		</span>
-		<span class="htmx-hide-on-request"><i class="bi bi-plus-circle me-1"></i>Registrar Trámite</span>
-	</button>
+	<div class="position-relative d-inline-block w-100">
+		<button type="submit" id="btn-registrar-tramite" class="btn btn-primary w-100 btn-lg position-relative overflow-hidden">
+			<span class="htmx-indicator" id="tramite-loading">
+				<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+				Procesando...
+			</span>
+			<span class="htmx-hide-on-request"><i class="bi bi-plus-circle me-1"></i>Registrar Trámite</span>
+		</button>
+		<span id="tramite-session-counter" class="tramite-counter-badge d-none">0</span>
+	</div>
 </form>
+
 <script>
+// Contador de trámites en la sesión
+if (typeof window.tramiteSessionCount === 'undefined') {
+    window.tramiteSessionCount = parseInt(sessionStorage.getItem('tramiteCount') || '0');
+}
+
+function handleTramiteBeforeRequest(event) {
+    const btn = document.getElementById('btn-registrar-tramite');
+    if (btn) {
+        btn.classList.add('tramite-btn-loading');
+    }
+    // Vibración táctil sutil al enviar (si está disponible)
+    if ('vibrate' in navigator) {
+        navigator.vibrate(10);
+    }
+}
+
 function handleTramiteResponse(event) {
-	if (event.detail.successful) {
-		showTramiteSuccessToast();
-		scrollToFormSmooth();
-	}
+    const btn = document.getElementById('btn-registrar-tramite');
+    if (btn) {
+        btn.classList.remove('tramite-btn-loading');
+    }
+    
+    if (event.detail.successful) {
+        // Incrementar contador
+        window.tramiteSessionCount++;
+        sessionStorage.setItem('tramiteCount', window.tramiteSessionCount);
+        
+        // Vibración de éxito
+        if ('vibrate' in navigator) {
+            navigator.vibrate([50, 30, 50]);
+        }
+        
+        showTramiteSuccessToast();
+        updateTramiteCounter();
+        scrollToFormSmooth();
+        
+        // Animación de éxito en el botón
+        if (btn) {
+            btn.classList.add('tramite-success-animation');
+            setTimeout(() => btn.classList.remove('tramite-success-animation'), 600);
+        }
+    }
 }
 
 function showTramiteSuccessToast() {
-	const toast = document.getElementById('tramite-success-toast');
-	if (toast) {
-		toast.classList.remove('d-none');
-		toast.style.animation = 'fadeInDown 0.3s ease';
-		setTimeout(() => {
-			toast.style.animation = 'fadeOutUp 0.3s ease';
-			setTimeout(() => {
-				toast.classList.add('d-none');
-			}, 300);
-		}, 4000);
-	}
+    const toast = document.getElementById('tramite-success-toast');
+    const countMsg = document.getElementById('tramite-count-msg');
+    
+    if (toast) {
+        // Actualizar mensaje con el contador
+        if (countMsg && window.tramiteSessionCount > 1) {
+            countMsg.textContent = `Has registrado ${window.tramiteSessionCount} trámites en esta sesión`;
+        } else if (countMsg) {
+            countMsg.textContent = 'El formulario está listo para otro registro';
+        }
+        
+        toast.classList.remove('d-none', 'hide-toast');
+        toast.classList.add('show-toast');
+        
+        // Auto-ocultar después de 5 segundos
+        clearTimeout(window.toastTimeout);
+        window.toastTimeout = setTimeout(() => {
+            toast.classList.remove('show-toast');
+            toast.classList.add('hide-toast');
+            setTimeout(() => {
+                toast.classList.add('d-none');
+                toast.classList.remove('hide-toast');
+            }, 300);
+        }, 5000);
+    }
+}
+
+function hideToastManual() {
+    const toast = document.getElementById('tramite-success-toast');
+    if (toast) {
+        clearTimeout(window.toastTimeout);
+        toast.classList.remove('show-toast');
+        toast.classList.add('hide-toast');
+        setTimeout(() => {
+            toast.classList.add('d-none');
+            toast.classList.remove('hide-toast');
+        }, 300);
+    }
+}
+
+function updateTramiteCounter() {
+    const counter = document.getElementById('tramite-session-counter');
+    if (counter && window.tramiteSessionCount > 0) {
+        counter.textContent = window.tramiteSessionCount;
+        counter.classList.remove('d-none');
+    }
 }
 
 function scrollToFormSmooth() {
-	const container = document.getElementById('registrar-tramite-container');
-	if (container && window.innerWidth < 992) {
-		setTimeout(() => {
-			container.scrollIntoView({ behavior: 'smooth', block: 'start' });
-		}, 100);
-	}
+    const container = document.getElementById('registrar-tramite-container');
+    // Solo en dispositivos móviles o tablets
+    if (container && window.innerWidth < 992) {
+        setTimeout(() => {
+            container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 150);
+    }
+}
+
+// Inicializar contador al cargar
+document.addEventListener('DOMContentLoaded', function() {
+    updateTramiteCounter();
+});
+// También actualizar si ya está cargado (para casos de HTMX swap)
+if (document.readyState === 'complete') {
+    updateTramiteCounter();
 }
 </script>
 </div>

@@ -114,65 +114,137 @@
             // Actualizar tarjeta de total
             document.getElementById('total-gastos-valor').textContent = `$${data.total.toFixed(2)}`;
 
-            const CHART_COLORS_ARRAY = ['#dc3545', '#fd7e14', '#ffc107', '#20c997', '#0d6efd', '#6f42c1', '#6c757d'];
+            const CHART_COLORS_ARRAY = ['#dc3545', '#fd7e14', '#ffc107', '#20c997', '#0d6efd', '#6f42c1', '#6c757d', '#17a2b8', '#28a745', '#e83e8c'];
 
             // Gráfico de Distribución
-            const distCtx = document.getElementById('gastosDistributionChart').getContext('2d');
+            const distCanvas = document.getElementById('gastosDistributionChart');
+            const distCtx = distCanvas.getContext('2d');
             if (gastosDistChart) {
                 gastosDistChart.destroy();
             }
-            gastosDistChart = new Chart(distCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: data.distribution.labels,
-                    datasets: [{
-                        label: 'Distribución de Gastos',
-                        data: data.distribution.data,
-                        backgroundColor: CHART_COLORS_ARRAY,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: { display: true, text: 'Distribución por Categoría' }
+            
+            // Verificar si hay datos de distribución
+            if (data.distribution && data.distribution.labels && data.distribution.labels.length > 0) {
+                gastosDistChart = new Chart(distCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: data.distribution.labels,
+                        datasets: [{
+                            label: 'Distribución de Gastos',
+                            data: data.distribution.data,
+                            backgroundColor: CHART_COLORS_ARRAY.slice(0, data.distribution.labels.length),
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { 
+                                position: 'bottom',
+                                labels: { font: { size: 11 } }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const value = context.parsed;
+                                        return ` ${context.label}: $${value.toFixed(2)}`;
+                                    }
+                                }
+                            }
+                        }
                     }
-                }
-            });
+                });
+            } else {
+                // Mostrar mensaje de "Sin datos"
+                showNoDataMessage(distCanvas, 'Sin gastos registrados');
+            }
 
             // Gráfico de Tendencia
-            const trendCtx = document.getElementById('gastosTrendChart').getContext('2d');
+            const trendCanvas = document.getElementById('gastosTrendChart');
+            const trendCtx = trendCanvas.getContext('2d');
             if (gastosTrendChart) {
                 gastosTrendChart.destroy();
             }
-            gastosTrendChart = new Chart(trendCtx, {
-                type: 'line',
-                data: {
-                    labels: data.trend.labels,
-                    datasets: [{
-                        label: 'Tendencia de Gastos',
-                        data: data.trend.data,
-                        borderColor: '#dc3545',
-                        backgroundColor: 'rgba(220, 53, 69, 0.2)',
-                        fill: true,
-                        tension: 0.1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: { display: true, text: 'Tendencia Mensual' }
+            
+            // Verificar si hay datos de tendencia
+            if (data.trend && data.trend.labels && data.trend.labels.length > 0) {
+                gastosTrendChart = new Chart(trendCtx, {
+                    type: 'line',
+                    data: {
+                        labels: data.trend.labels,
+                        datasets: [{
+                            label: 'Gastos Mensuales',
+                            data: data.trend.data,
+                            borderColor: '#dc3545',
+                            backgroundColor: 'rgba(220, 53, 69, 0.15)',
+                            fill: true,
+                            tension: 0.35,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#dc3545',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2
+                        }]
                     },
-                    scales: {
-                        y: { beginAtZero: true }
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    title: function(items) {
+                                        // Formatear mes bonito
+                                        const d = new Date(items[0].label + '-02');
+                                        return new Intl.DateTimeFormat('es-MX', {month: 'long', year: 'numeric'}).format(d);
+                                    },
+                                    label: function(context) {
+                                        return ` Gasto: $${context.parsed.y.toFixed(2)}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: { 
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return '$' + value.toLocaleString('es-MX');
+                                    }
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    callback: function(value) {
+                                        const d = new Date(this.getLabelForValue(value) + '-02');
+                                        return new Intl.DateTimeFormat('es-MX', {month: 'short'}).format(d).replace('.', '');
+                                    }
+                                }
+                            }
+                        }
                     }
-                }
-            });
+                });
+            } else {
+                // Mostrar mensaje de "Sin datos"
+                showNoDataMessage(trendCanvas, 'Sin historial de gastos');
+            }
 
         } catch (e) {
             console.error("Error al parsear o renderizar los gráficos de gastos:", e);
         }
+    }
+    
+    function showNoDataMessage(canvas, message) {
+        const ctx = canvas.getContext('2d');
+        const w = canvas.clientWidth || canvas.width;
+        const h = canvas.clientHeight || canvas.height;
+        ctx.clearRect(0, 0, w, h);
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#6c757d';
+        ctx.font = '14px Inter, system-ui, sans-serif';
+        ctx.fillText(message, w / 2, h / 2);
+        ctx.restore();
     }
 </script>
 {% endblock %}

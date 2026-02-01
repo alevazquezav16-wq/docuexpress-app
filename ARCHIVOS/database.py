@@ -1075,18 +1075,73 @@ class GastoRepository:
             return []
 
     def get_gastos_summary(self, user_id, fecha_inicio=None, fecha_fin=None, categoria=None):
-        """Gets a summary of gastos based on filters."""
-        query = db.session.query(
+        """Gets a complete summary of gastos including total, distribution and trend."""
+        # 1. Calcular el total
+        total_query = db.session.query(
             func.sum(Gasto.monto).label('total')
         ).filter(Gasto.user_id == user_id)
 
         if fecha_inicio and fecha_fin:
-            query = query.filter(Gasto.fecha.between(fecha_inicio, fecha_fin))
+            total_query = total_query.filter(Gasto.fecha.between(fecha_inicio, fecha_fin))
         if categoria:
-            query = query.filter(Gasto.categoria == categoria)
+            total_query = total_query.filter(Gasto.categoria == categoria)
         
-        total = query.scalar() or 0
-        return {'total': total}
+        total = float(total_query.scalar() or 0)
+        
+        # 2. Obtener la distribución por categoría
+        distribution = self.get_gastos_distribution(user_id, fecha_inicio, fecha_fin)
+        distribution_labels = [item.get('categoria', 'Sin categoría') for item in distribution]
+        distribution_data = [item.get('total_monto', 0) for item in distribution]
+        
+        # 3. Obtener la tendencia mensual (últimos 12 meses)
+        trend = self._get_gastos_trend(user_id, fecha_inicio, fecha_fin, categoria)
+        
+        return {
+            'total': total,
+            'distribution': {
+                'labels': distribution_labels,
+                'data': distribution_data
+            },
+            'trend': {
+                'labels': trend['labels'],
+                'data': trend['data']
+            }
+        }
+
+    def _get_gastos_trend(self, user_id, fecha_inicio=None, fecha_fin=None, categoria=None):
+        """Gets the monthly trend of gastos for the last 12 months."""
+        try:
+            # Si hay fecha_inicio y fecha_fin, usar esas fechas
+            # Si no, usar los últimos 12 meses
+            query = db.session.query(
+                func.strftime('%Y-%m', Gasto.fecha).label('month'),
+                func.sum(Gasto.monto).label('total')
+            ).filter(Gasto.user_id == user_id)
+            
+            if fecha_inicio and fecha_fin:
+                query = query.filter(Gasto.fecha.between(fecha_inicio, fecha_fin))
+            else:
+                # Últimos 12 meses si no hay filtro de fecha
+                from datetime import date
+                from dateutil.relativedelta import relativedelta
+                end_date = date.today()
+                start_date = end_date - relativedelta(months=12)
+                query = query.filter(Gasto.fecha >= start_date)
+            
+            if categoria:
+                query = query.filter(Gasto.categoria == categoria)
+            
+            query = query.group_by('month').order_by('month')
+            
+            results = query.all()
+            
+            labels = [row.month for row in results]
+            data = [float(row.total or 0) for row in results]
+            
+            return {'labels': labels, 'data': data}
+        except Exception as e:
+            logging.error(f"Error in _get_gastos_trend: {e}")
+            return {'labels': [], 'data': []}
 
 
 # ==================== REPOSITORIO DE ANÁLISIS AVANZADO ====================
