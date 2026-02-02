@@ -325,6 +325,7 @@ def register_context_processors(app):
             
             return Markup(f"{rendered_field}{error_html}")
         return dict(render_field=render_field)
+    
     @app.context_processor
     def inject_current_year():
         """Inyecta el año actual en todos los templates."""
