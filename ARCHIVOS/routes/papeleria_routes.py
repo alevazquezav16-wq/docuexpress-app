@@ -224,10 +224,15 @@ def registrar_tramite():
                 papelerias_data = papeleria_repository.get_papelerias_and_totals_for_user(effective_user_id)
                 new_form.papeleria_id.choices = [(p.id, p.nombre) for p in papelerias_data['papelerias']]
                 new_form.papeleria_id.data = papeleria_id # Mantener selección para agilizar captura
-                form_html = render_template('partials/form_registrar_tramite_content.html', form_tramite=new_form)
+                form_html = render_template('partials/form_registrar_tramite_content.html', form_tramite=new_form, registro_exitoso=True)
                 # OOB swap para actualizar el contenedor de mensajes flash y el formulario
                 response = make_response(f'<div id="flash-container" hx-swap-oob="innerHTML">{flash_html}</div>{form_html}')
-                response.headers['HX-Trigger'] = json.dumps({'reload-dashboard': '', 'refresh-papeleria-list': ''})
+                # Añadir señal explícita de éxito para el frontend
+                response.headers['HX-Trigger'] = json.dumps({
+                    'reload-dashboard': '',
+                    'refresh-papeleria-list': '',
+                    'tramiteRegistrado': {'cantidad': cantidad, 'tramite': tramite_nombre}
+                })
                 return response
             # Si no es HTMX, redirect tradicional
             return redirect(url_for('papeleria.ver_papeleria', papeleria_id=papeleria_id))

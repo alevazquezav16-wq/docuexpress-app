@@ -18,22 +18,11 @@
     to { opacity: 0; transform: translateY(-10px); }
 }
 .tramite-btn-loading {
-    position: relative;
-    pointer-events: none;
-    opacity: 0.85;
+    pointer-events: none !important;
+    opacity: 0.7;
+    cursor: not-allowed !important;
 }
-.tramite-btn-loading::after {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-    animation: shimmer 1.5s infinite;
-}
-@keyframes shimmer {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
-}
-.tramite-success-animation {
+.tramite-btn-success {
     animation: tramiteSuccessPulse 0.6s ease-out;
 }
 #tramite-success-toast.show-toast {
@@ -73,7 +62,7 @@
 				<span id="tramite-count-msg">El formulario está listo para otro registro</span>
 			</small>
 		</div>
-		<button type="button" class="btn-close ms-2" onclick="hideToastManual()" aria-label="Cerrar"></button>
+		<button type="button" class="btn-close ms-2" onclick="hideTramiteToast()" aria-label="Cerrar"></button>
 	</div>
 </div>
 
@@ -82,8 +71,9 @@
 		hx-target="#registrar-tramite-container"
 		hx-swap="innerHTML"
 		hx-indicator="#tramite-loading"
-		hx-on::before-request="handleTramiteBeforeRequest(event)"
-		hx-on::after-request="handleTramiteResponse(event)">
+		hx-disabled-elt="#btn-registrar-tramite"
+		hx-on::before-request="onTramiteBeforeRequest(this)"
+		hx-on::after-request="onTramiteAfterRequest(event, this)">
 	{% include 'form_tramite_fields.html' %}
 	{{ form_tramite.hidden_tag() }}
 	<div class="position-relative d-inline-block w-100">
@@ -99,116 +89,118 @@
 </form>
 
 <script>
-// Contador de trámites en la sesión
-if (typeof window.tramiteSessionCount === 'undefined') {
-    window.tramiteSessionCount = parseInt(sessionStorage.getItem('tramiteCount') || '0');
-}
+(function() {
+    // Contador de trámites en la sesión (persistente)
+    if (typeof window.tramiteSessionCount === 'undefined') {
+        window.tramiteSessionCount = parseInt(sessionStorage.getItem('tramiteCount') || '0');
+    }
 
-function handleTramiteBeforeRequest(event) {
-    const btn = document.getElementById('btn-registrar-tramite');
-    if (btn) {
-        btn.classList.add('tramite-btn-loading');
-    }
-    // Vibración táctil sutil al enviar (si está disponible)
-    if ('vibrate' in navigator) {
-        navigator.vibrate(10);
-    }
-}
+    // Antes de enviar: bloquear UI inmediatamente
+    window.onTramiteBeforeRequest = function(form) {
+        const btn = form.querySelector('button[type="submit"]');
+        if (btn) {
+            btn.disabled = true;
+            btn.classList.add('tramite-btn-loading');
+        }
+        // Feedback táctil (móviles)
+        if ('vibrate' in navigator) {
+            navigator.vibrate(10);
+        }
+    };
 
-function handleTramiteResponse(event) {
-    const btn = document.getElementById('btn-registrar-tramite');
-    if (btn) {
-        btn.classList.remove('tramite-btn-loading');
-    }
-    
-    if (event.detail.successful) {
+    // Después de la respuesta: restaurar UI
+    window.onTramiteAfterRequest = function(event, form) {
+        const btn = form.querySelector('button[type="submit"]');
+        if (btn) {
+            btn.disabled = false;
+            btn.classList.remove('tramite-btn-loading');
+        }
+        // El feedback de éxito se maneja via el evento 'tramiteRegistrado' del servidor
+    };
+
+    // Escuchar evento personalizado de éxito desde el servidor (via HX-Trigger)
+    document.body.addEventListener('tramiteRegistrado', function(evt) {
         // Incrementar contador
         window.tramiteSessionCount++;
         sessionStorage.setItem('tramiteCount', window.tramiteSessionCount);
         
-        // Vibración de éxito
+        // Feedback táctil de éxito
         if ('vibrate' in navigator) {
             navigator.vibrate([50, 30, 50]);
         }
         
-        showTramiteSuccessToast();
+        // Mostrar toast y actualizar contador
+        showTramiteToast();
         updateTramiteCounter();
-        scrollToFormSmooth();
         
-        // Animación de éxito en el botón
-        if (btn) {
-            btn.classList.add('tramite-success-animation');
-            setTimeout(() => btn.classList.remove('tramite-success-animation'), 600);
-        }
-    }
-}
+        // Animación en botón (puede ser el nuevo o existente después del swap)
+        setTimeout(() => {
+            const btn = document.getElementById('btn-registrar-tramite') || document.getElementById('btn-registrar-tramite-inner');
+            if (btn) {
+                btn.classList.add('tramite-btn-success');
+                setTimeout(() => btn.classList.remove('tramite-btn-success'), 600);
+            }
+        }, 50);
+        
+        // Scroll suave en móvil
+        scrollToTramiteForm();
+    });
 
-function showTramiteSuccessToast() {
-    const toast = document.getElementById('tramite-success-toast');
-    const countMsg = document.getElementById('tramite-count-msg');
-    
-    if (toast) {
-        // Actualizar mensaje con el contador
-        if (countMsg && window.tramiteSessionCount > 1) {
-            countMsg.textContent = `Has registrado ${window.tramiteSessionCount} trámites en esta sesión`;
-        } else if (countMsg) {
-            countMsg.textContent = 'El formulario está listo para otro registro';
+    window.showTramiteToast = function() {
+        const toast = document.getElementById('tramite-success-toast') || document.getElementById('tramite-success-toast-inner');
+        const countMsg = document.getElementById('tramite-count-msg') || document.getElementById('tramite-count-msg-inner');
+        
+        if (toast) {
+            // Actualizar mensaje
+            if (countMsg && window.tramiteSessionCount > 1) {
+                countMsg.textContent = `Has registrado ${window.tramiteSessionCount} trámites en esta sesión`;
+            } else if (countMsg) {
+                countMsg.textContent = 'El formulario está listo para otro registro';
+            }
+            
+            toast.classList.remove('d-none', 'hide-toast');
+            toast.classList.add('show-toast');
+            
+            // Auto-ocultar después de 5s
+            clearTimeout(window.tramiteToastTimeout);
+            window.tramiteToastTimeout = setTimeout(() => {
+                hideTramiteToast();
+            }, 5000);
         }
-        
-        toast.classList.remove('d-none', 'hide-toast');
-        toast.classList.add('show-toast');
-        
-        // Auto-ocultar después de 5 segundos
-        clearTimeout(window.toastTimeout);
-        window.toastTimeout = setTimeout(() => {
+    };
+
+    window.hideTramiteToast = function() {
+        const toast = document.getElementById('tramite-success-toast') || document.getElementById('tramite-success-toast-inner');
+        if (toast) {
+            clearTimeout(window.tramiteToastTimeout);
             toast.classList.remove('show-toast');
             toast.classList.add('hide-toast');
             setTimeout(() => {
                 toast.classList.add('d-none');
                 toast.classList.remove('hide-toast');
             }, 300);
-        }, 5000);
-    }
-}
+        }
+    };
 
-function hideToastManual() {
-    const toast = document.getElementById('tramite-success-toast');
-    if (toast) {
-        clearTimeout(window.toastTimeout);
-        toast.classList.remove('show-toast');
-        toast.classList.add('hide-toast');
-        setTimeout(() => {
-            toast.classList.add('d-none');
-            toast.classList.remove('hide-toast');
-        }, 300);
-    }
-}
+    window.updateTramiteCounter = function() {
+        const counter = document.getElementById('tramite-session-counter');
+        if (counter && window.tramiteSessionCount > 0) {
+            counter.textContent = window.tramiteSessionCount;
+            counter.classList.remove('d-none');
+        }
+    };
 
-function updateTramiteCounter() {
-    const counter = document.getElementById('tramite-session-counter');
-    if (counter && window.tramiteSessionCount > 0) {
-        counter.textContent = window.tramiteSessionCount;
-        counter.classList.remove('d-none');
-    }
-}
+    window.scrollToTramiteForm = function() {
+        const container = document.getElementById('registrar-tramite-container');
+        if (container && window.innerWidth < 992) {
+            setTimeout(() => {
+                container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 150);
+        }
+    };
 
-function scrollToFormSmooth() {
-    const container = document.getElementById('registrar-tramite-container');
-    // Solo en dispositivos móviles o tablets
-    if (container && window.innerWidth < 992) {
-        setTimeout(() => {
-            container.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 150);
-    }
-}
-
-// Inicializar contador al cargar
-document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar contador al cargar
     updateTramiteCounter();
-});
-// También actualizar si ya está cargado (para casos de HTMX swap)
-if (document.readyState === 'complete') {
-    updateTramiteCounter();
-}
+})();
 </script>
 </div>
