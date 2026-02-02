@@ -1,36 +1,5 @@
-<!-- Estilos para animaciones de feedback -->
-<style>
-@keyframes tramiteSuccessPulse {
-    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.7); }
-    50% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(25, 135, 84, 0); }
-    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(25, 135, 84, 0); }
-}
-@keyframes fadeSlideIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-@keyframes fadeSlideOut {
-    from { opacity: 1; transform: translateY(0); }
-    to { opacity: 0; transform: translateY(-10px); }
-}
-.tramite-btn-loading {
-    pointer-events: none !important;
-    opacity: 0.7;
-    cursor: not-allowed !important;
-}
-.tramite-btn-success {
-    animation: tramiteSuccessPulse 0.6s ease-out;
-}
-.tramite-toast-show {
-    animation: fadeSlideIn 0.3s ease forwards;
-}
-.tramite-toast-hide {
-    animation: fadeSlideOut 0.3s ease forwards;
-}
-</style>
-
 <!-- Toast de confirmación - visible si registro_exitoso -->
-<div id="tramite-success-toast-partial" class="alert alert-success mb-3 shadow-sm {% if not registro_exitoso %}d-none{% endif %}" role="alert">
+<div id="tramite-success-toast" class="alert alert-success mb-3 shadow-sm {% if not registro_exitoso %}d-none{% endif %}" role="alert">
 	<div class="d-flex align-items-center">
 		<div class="me-3" style="font-size: 1.75rem;">
 			<i class="bi bi-check-circle-fill text-success"></i>
@@ -47,12 +16,12 @@
 	hx-post="{{ url_for('papeleria.registrar_tramite') }}"
 	hx-target="#registrar-tramite-container"
 	hx-swap="innerHTML"
-	hx-indicator="#tramite-loading-partial">
+	hx-indicator="#tramite-loading">
 	{% include 'form_tramite_fields.html' %}
 	{{ form_tramite.hidden_tag() }}
-	<div class="position-relative">
-		<button type="submit" id="btn-registrar-tramite-partial" class="btn btn-primary w-100 btn-lg position-relative overflow-hidden">
-			<span class="htmx-indicator" id="tramite-loading-partial">
+	<div class="position-relative d-inline-block w-100">
+		<button type="submit" id="btn-registrar-tramite" class="btn btn-primary w-100 btn-lg position-relative overflow-hidden">
+			<span class="htmx-indicator" id="tramite-loading">
 				<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
 				Procesando...
 			</span>
@@ -63,8 +32,14 @@
 
 <script>
 (function() {
-    // Si fue registro exitoso, vibrar y auto-ocultar toast después de 5s
+    // Asegurar que HTMX procese el nuevo contenido
+    if (typeof htmx !== 'undefined') {
+        htmx.process(document.getElementById('form-registrar-tramite'));
+    }
+    
+    // Si fue registro exitoso, ejecutar feedback
     {% if registro_exitoso %}
+    // Vibración táctil
     if ('vibrate' in navigator) {
         navigator.vibrate([50, 30, 50]);
     }
@@ -79,10 +54,14 @@
     }
     // Auto-ocultar toast después de 5 segundos
     setTimeout(function() {
-        var toast = document.getElementById('tramite-success-toast-partial');
-        if (toast) {
-            toast.classList.add('tramite-toast-hide');
-            setTimeout(function() { toast.classList.add('d-none'); }, 300);
+        var toast = document.getElementById('tramite-success-toast');
+        if (toast && !toast.classList.contains('d-none')) {
+            toast.style.transition = 'opacity 0.3s ease';
+            toast.style.opacity = '0';
+            setTimeout(function() { 
+                toast.classList.add('d-none'); 
+                toast.style.opacity = '1';
+            }, 300);
         }
     }, 5000);
     {% endif %}
