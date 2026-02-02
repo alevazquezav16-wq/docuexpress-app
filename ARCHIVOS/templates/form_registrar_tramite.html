@@ -1,5 +1,13 @@
 <div id="registrar-tramite-container">
 
+<!-- Estilos para el indicador de carga HTMX nativo -->
+<style>
+/* Durante la petición HTMX, mostrar spinner y ocultar texto */
+#form-registrar-tramite.htmx-request #tramite-loading { display: inline-flex !important; }
+#form-registrar-tramite.htmx-request #tramite-btn-text { display: none !important; }
+#form-registrar-tramite.htmx-request #btn-registrar-tramite { opacity: 0.7; pointer-events: none; }
+</style>
+
 <!-- Toast de confirmación (oculto inicialmente) -->
 <div id="tramite-success-toast" class="alert alert-success d-none mb-3 shadow-sm" role="alert">
 	<div class="d-flex align-items-center">
@@ -17,12 +25,13 @@
 <form id="form-registrar-tramite"
 		hx-post="{{ url_for('papeleria.registrar_tramite') }}"
 		hx-target="#registrar-tramite-container"
-		hx-swap="innerHTML">
+		hx-swap="innerHTML"
+		hx-disabled-elt="#btn-registrar-tramite">
 	{% include 'form_tramite_fields.html' %}
 	{{ form_tramite.hidden_tag() }}
 	<div class="position-relative d-inline-block w-100">
 		<button type="submit" id="btn-registrar-tramite" class="btn btn-primary w-100 btn-lg position-relative overflow-hidden">
-			<span id="tramite-loading" class="d-none">
+			<span id="tramite-loading" style="display: none;">
 				<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
 				Procesando...
 			</span>
@@ -31,58 +40,6 @@
 	</div>
 </form>
 
-<script>
-(function() {
-    // DELEGACIÓN DE EVENTOS: Registrar UNA SOLA VEZ en document.body
-    // Usamos un flag para evitar registrar múltiples veces
-    if (!window._tramiteListenersRegistered) {
-        window._tramiteListenersRegistered = true;
-        
-        // Listener para ANTES de la request
-        document.body.addEventListener('htmx:beforeRequest', function(evt) {
-            // Solo actuar si el evento viene del form de trámites
-            if (evt.detail.elt && evt.detail.elt.id === 'form-registrar-tramite') {
-                console.log('[TRAMITE] beforeRequest disparado');
-                var btn = document.getElementById('btn-registrar-tramite');
-                var loading = document.getElementById('tramite-loading');
-                var btnText = document.getElementById('tramite-btn-text');
-                
-                if (btn) {
-                    btn.disabled = true;
-                    btn.style.opacity = '0.7';
-                    console.log('[TRAMITE] Botón deshabilitado');
-                }
-                if (loading) {
-                    loading.classList.remove('d-none');
-                    console.log('[TRAMITE] Spinner mostrado');
-                }
-                if (btnText) {
-                    btnText.classList.add('d-none');
-                    console.log('[TRAMITE] Texto ocultado');
-                }
-            }
-        });
-        
-        // Listener para DESPUÉS de la request (en caso de error sin swap)
-        document.body.addEventListener('htmx:afterRequest', function(evt) {
-            if (evt.detail.elt && evt.detail.elt.id === 'form-registrar-tramite') {
-                console.log('[TRAMITE] afterRequest disparado, successful:', evt.detail.successful);
-                // Solo restaurar si hubo error (el swap no ocurrió)
-                if (!evt.detail.successful) {
-                    var btn = document.getElementById('btn-registrar-tramite');
-                    var loading = document.getElementById('tramite-loading');
-                    var btnText = document.getElementById('tramite-btn-text');
-                    
-                    if (btn) btn.disabled = false;
-                    if (btn) btn.style.opacity = '1';
-                    if (loading) loading.classList.add('d-none');
-                    if (btnText) btnText.classList.remove('d-none');
-                }
-            }
-        });
-        
-        console.log('[TRAMITE] Listeners de delegación registrados en document.body');
-    }
-})();
-</script>
+<!-- El indicador de carga ahora es manejado por CSS con la clase .htmx-request -->
+<!-- HTMX agrega automáticamente la clase htmx-request al form durante la petición -->
 </div>
