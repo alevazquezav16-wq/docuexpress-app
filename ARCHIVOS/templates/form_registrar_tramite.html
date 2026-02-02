@@ -36,27 +36,55 @@
 
 <script>
 (function() {
-    var form = document.getElementById('form-registrar-tramite');
-    var btn = document.getElementById('btn-registrar-tramite');
-    var loading = document.getElementById('tramite-loading');
-    var btnText = document.getElementById('tramite-btn-text');
-    
-    if (form && btn) {
-        form.addEventListener('htmx:beforeRequest', function(evt) {
-            btn.disabled = true;
-            btn.style.opacity = '0.7';
-            btn.style.pointerEvents = 'none';
-            if (loading) loading.classList.remove('d-none');
-            if (btnText) btnText.classList.add('d-none');
+    // DELEGACIÓN DE EVENTOS: Registrar UNA SOLA VEZ en document.body
+    // Usamos un flag para evitar registrar múltiples veces
+    if (!window._tramiteListenersRegistered) {
+        window._tramiteListenersRegistered = true;
+        
+        // Listener para ANTES de la request
+        document.body.addEventListener('htmx:beforeRequest', function(evt) {
+            // Solo actuar si el evento viene del form de trámites
+            if (evt.detail.elt && evt.detail.elt.id === 'form-registrar-tramite') {
+                console.log('[TRAMITE] beforeRequest disparado');
+                var btn = document.getElementById('btn-registrar-tramite');
+                var loading = document.getElementById('tramite-loading');
+                var btnText = document.getElementById('tramite-btn-text');
+                
+                if (btn) {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.7';
+                    console.log('[TRAMITE] Botón deshabilitado');
+                }
+                if (loading) {
+                    loading.classList.remove('d-none');
+                    console.log('[TRAMITE] Spinner mostrado');
+                }
+                if (btnText) {
+                    btnText.classList.add('d-none');
+                    console.log('[TRAMITE] Texto ocultado');
+                }
+            }
         });
         
-        form.addEventListener('htmx:afterRequest', function(evt) {
-            btn.disabled = false;
-            btn.style.opacity = '1';
-            btn.style.pointerEvents = 'auto';
-            if (loading) loading.classList.add('d-none');
-            if (btnText) btnText.classList.remove('d-none');
+        // Listener para DESPUÉS de la request (en caso de error sin swap)
+        document.body.addEventListener('htmx:afterRequest', function(evt) {
+            if (evt.detail.elt && evt.detail.elt.id === 'form-registrar-tramite') {
+                console.log('[TRAMITE] afterRequest disparado, successful:', evt.detail.successful);
+                // Solo restaurar si hubo error (el swap no ocurrió)
+                if (!evt.detail.successful) {
+                    var btn = document.getElementById('btn-registrar-tramite');
+                    var loading = document.getElementById('tramite-loading');
+                    var btnText = document.getElementById('tramite-btn-text');
+                    
+                    if (btn) btn.disabled = false;
+                    if (btn) btn.style.opacity = '1';
+                    if (loading) loading.classList.add('d-none');
+                    if (btnText) btnText.classList.remove('d-none');
+                }
+            }
         });
+        
+        console.log('[TRAMITE] Listeners de delegación registrados en document.body');
     }
 })();
 </script>
