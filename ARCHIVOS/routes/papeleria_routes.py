@@ -147,9 +147,9 @@ def agregar_papeleria():
 def get_tramite_form():
     """Devuelve el formulario de trámites actualizado (para HTMX cuando se agrega una papelería)."""
     effective_user_id = get_effective_user_id()
-    papelerias = papeleria_repository.get_all(effective_user_id)
+    papelerias_data = papeleria_repository.get_papelerias_and_totals_for_user(effective_user_id)
     form_tramite = TramiteForm()
-    form_tramite.papeleria_id.choices = [(p.id, p.nombre) for p in papelerias]
+    form_tramite.papeleria_id.choices = [(p.id, p.nombre) for p in papelerias_data['papelerias']]
     return render_template('form_registrar_tramite.html', form_tramite=form_tramite)
 
 @papeleria_bp.route('/registrar-tramite', methods=['POST'])
