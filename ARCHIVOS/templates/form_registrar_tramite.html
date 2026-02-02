@@ -1,11 +1,14 @@
 <div id="registrar-tramite-container">
 
-<!-- Estilos para el indicador de carga HTMX nativo -->
+<!-- Estilos para el indicador de carga -->
 <style>
-/* Durante la petición HTMX, mostrar spinner y ocultar texto */
-#form-registrar-tramite.htmx-request #tramite-loading { display: inline-flex !important; }
-#form-registrar-tramite.htmx-request #tramite-btn-text { display: none !important; }
-#form-registrar-tramite.htmx-request #btn-registrar-tramite { opacity: 0.7; pointer-events: none; }
+/* Clase activa durante la petición - aplicada por CSS y JS como respaldo */
+#form-registrar-tramite.htmx-request #tramite-loading,
+#form-registrar-tramite.is-loading #tramite-loading { display: inline-flex !important; }
+#form-registrar-tramite.htmx-request #tramite-btn-text,
+#form-registrar-tramite.is-loading #tramite-btn-text { display: none !important; }
+#form-registrar-tramite.htmx-request #btn-registrar-tramite,
+#form-registrar-tramite.is-loading #btn-registrar-tramite { opacity: 0.7; pointer-events: none; }
 </style>
 
 <!-- Toast de confirmación (oculto inicialmente) -->
@@ -40,6 +43,26 @@
 	</div>
 </form>
 
-<!-- El indicador de carga ahora es manejado por CSS con la clase .htmx-request -->
-<!-- HTMX agrega automáticamente la clase htmx-request al form durante la petición -->
+<script>
+// Respaldo JavaScript para móviles donde htmx-request puede no funcionar bien
+(function() {
+    var form = document.getElementById('form-registrar-tramite');
+    if (form && !form._mobileFixApplied) {
+        form._mobileFixApplied = true;
+        
+        // Usar evento submit nativo como respaldo
+        form.addEventListener('submit', function(e) {
+            // No prevenir default - dejar que HTMX maneje
+            this.classList.add('is-loading');
+            console.log('[TRAMITE-MOBILE] Submit detectado, clase is-loading agregada');
+        });
+        
+        // Escuchar htmx:beforeRequest como respaldo adicional
+        form.addEventListener('htmx:beforeRequest', function(e) {
+            this.classList.add('is-loading');
+            console.log('[TRAMITE-MOBILE] htmx:beforeRequest, clase is-loading agregada');
+        });
+    }
+})();
+</script>
 </div>

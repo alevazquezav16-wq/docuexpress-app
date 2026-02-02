@@ -49,3 +49,87 @@
 2026-01-29 23:41:20,212 - werkzeug - INFO - 127.0.0.1 - - [29/Jan/2026 23:41:20] "GET /api/notificaciones HTTP/1.1" 200 -
 2026-01-29 23:41:20,876 - werkzeug - INFO - 127.0.0.1 - - [29/Jan/2026 23:41:20] "GET /configuracion/logs?level=ERROR HTTP/1.1" 200 -
 2026-01-29 23:41:21,016 - werkzeug - INFO - 127.0.0.1 - - [29/Jan/2026 23:41:21] "GET /api/notificaciones HTTP/1.1" 200 -
+2026-02-01 10:24:55,931 - root - INFO - ✅ SECRET_KEY cargado desde variables de entorno
+2026-02-01 10:24:55,931 - root - INFO - ✅ SECRET_KEY cargado desde variables de entorno
+2026-02-01 10:24:55,935 - root - INFO - ✅ SECRET_KEY cargado desde variables de entorno
+2026-02-01 10:24:55,943 - root - INFO - ⚠️ Rate Limiting deshabilitado
+2026-02-01 10:24:55,943 - root - INFO - ⚠️ Rate Limiting deshabilitado
+2026-02-01 10:24:55,943 - root - INFO - ⚠️ Rate Limiting deshabilitado
+2026-02-01 10:24:55,947 - ARCHIVOS.backup_manager - INFO - ⏰ Backups programados: diariamente (2 AM)
+2026-02-01 10:24:55,947 - ARCHIVOS.backup_manager - INFO - ⏰ Backups programados: diariamente (2 AM)
+2026-02-01 10:24:55,947 - ARCHIVOS.backup_manager - INFO - ⏰ Backups programados: diariamente (2 AM)
+2026-02-01 10:24:55,947 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-02-01 10:24:55,947 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-02-01 10:24:55,947 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-02-01 10:24:55,948 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-02-01 10:24:55,948 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-02-01 10:24:55,948 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-02-01 10:24:55,949 - apscheduler.scheduler - INFO - Added job "Backup automático de base de datos" to job store "default"
+2026-02-01 10:24:55,949 - apscheduler.scheduler - INFO - Added job "Backup automático de base de datos" to job store "default"
+2026-02-01 10:24:55,949 - apscheduler.scheduler - INFO - Added job "Backup automático de base de datos" to job store "default"
+2026-02-01 10:24:55,949 - apscheduler.scheduler - INFO - Added job "Backup inicial al arrancar" to job store "default"
+2026-02-01 10:24:55,949 - apscheduler.scheduler - INFO - Added job "Backup inicial al arrancar" to job store "default"
+2026-02-01 10:24:55,949 - apscheduler.scheduler - INFO - Added job "Backup inicial al arrancar" to job store "default"
+2026-02-01 10:24:55,949 - apscheduler.scheduler - INFO - Scheduler started
+2026-02-01 10:24:55,949 - apscheduler.scheduler - INFO - Scheduler started
+2026-02-01 10:24:55,949 - apscheduler.scheduler - INFO - Scheduler started
+2026-02-01 10:24:55,949 - ARCHIVOS.backup_manager - INFO - ✅ Scheduler de backups iniciado
+2026-02-01 10:24:55,949 - ARCHIVOS.backup_manager - INFO - ✅ Scheduler de backups iniciado
+2026-02-01 10:24:55,949 - ARCHIVOS.backup_manager - INFO - ✅ Scheduler de backups iniciado
+2026-02-01 10:24:55,949 - ARCHIVOS.backup_manager - INFO - 📦 Backups automáticos habilitados
+2026-02-01 10:24:55,949 - ARCHIVOS.backup_manager - INFO - 📦 Backups automáticos habilitados
+2026-02-01 10:24:55,949 - ARCHIVOS.backup_manager - INFO - 📦 Backups automáticos habilitados
+2026-02-01 10:24:55,949 - ARCHIVOS.backup_manager - INFO -    Directorio: /home/vladtrix/DOCUEXPRESS PAGINA/ARCHIVOS/backups
+2026-02-01 10:24:55,949 - ARCHIVOS.backup_manager - INFO -    Directorio: /home/vladtrix/DOCUEXPRESS PAGINA/ARCHIVOS/backups
+2026-02-01 10:24:55,949 - ARCHIVOS.backup_manager - INFO -    Directorio: /home/vladtrix/DOCUEXPRESS PAGINA/ARCHIVOS/backups
+2026-02-01 10:24:55,949 - ARCHIVOS.backup_manager - INFO -    Retención: 30 días
+2026-02-01 10:24:55,949 - ARCHIVOS.backup_manager - INFO -    Retención: 30 días
+2026-02-01 10:24:55,949 - ARCHIVOS.backup_manager - INFO -    Retención: 30 días
+2026-02-01 10:24:55,959 - root - INFO - ✓ Blueprint registrado: Autenticación
+2026-02-01 10:24:55,959 - root - INFO - ✓ Blueprint registrado: Autenticación
+2026-02-01 10:24:55,960 - root - INFO - ✓ Blueprint registrado: Autenticación
+2026-02-01 10:24:55,962 - root - INFO - ✓ Blueprint registrado: Papelerías
+2026-02-01 10:24:55,963 - root - INFO - ✓ Blueprint registrado: Papelerías
+2026-02-01 10:24:55,963 - root - INFO - ✓ Blueprint registrado: Papelerías
+2026-02-01 10:24:55,964 - root - INFO - ✓ Blueprint registrado: Gastos
+2026-02-01 10:24:55,965 - root - INFO - ✓ Blueprint registrado: Gastos
+2026-02-01 10:24:55,965 - root - INFO - ✓ Blueprint registrado: Gastos
+2026-02-01 10:24:55,965 - root - INFO - ✓ Blueprint registrado: Principal
+2026-02-01 10:24:55,966 - root - INFO - ✓ Blueprint registrado: Principal
+2026-02-01 10:24:55,966 - root - INFO - ✓ Blueprint registrado: Principal
+2026-02-01 10:24:55,967 - root - INFO - ✓ Blueprint registrado: Configuración
+2026-02-01 10:24:55,968 - root - INFO - ✓ Blueprint registrado: Configuración
+2026-02-01 10:24:55,968 - root - INFO - ✓ Blueprint registrado: Configuración
+2026-02-01 10:24:55,969 - root - INFO - ✓ Blueprint registrado: API
+2026-02-01 10:24:55,970 - root - INFO - ✓ Blueprint registrado: API
+2026-02-01 10:24:55,970 - root - INFO - ✓ Blueprint registrado: API
+2026-02-01 10:25:05,948 - apscheduler.executors.default - INFO - Running job "Backup inicial al arrancar (trigger: date[2026-02-01 10:25:05 MST], next run at: 2026-02-01 10:25:05 MST)" (scheduled at 2026-02-01 10:25:05.947866-07:00)
+2026-02-01 10:25:05,948 - apscheduler.executors.default - INFO - Running job "Backup inicial al arrancar (trigger: date[2026-02-01 10:25:05 MST], next run at: 2026-02-01 10:25:05 MST)" (scheduled at 2026-02-01 10:25:05.947927-07:00)
+2026-02-01 10:25:05,948 - apscheduler.executors.default - INFO - Running job "Backup inicial al arrancar (trigger: date[2026-02-01 10:25:05 MST], next run at: 2026-02-01 10:25:05 MST)" (scheduled at 2026-02-01 10:25:05.947863-07:00)
+2026-02-01 10:25:05,949 - apscheduler.scheduler - INFO - Removed job startup_backup
+2026-02-01 10:25:05,949 - apscheduler.scheduler - INFO - Removed job startup_backup
+2026-02-01 10:25:05,949 - apscheduler.scheduler - INFO - Removed job startup_backup
+2026-02-01 10:25:05,962 - ARCHIVOS.backup_manager - INFO - ✅ Backup creado exitosamente: control_papelerias_backup_20260201_102505.db
+2026-02-01 10:25:05,962 - ARCHIVOS.backup_manager - INFO -    Tamaño: 152.00 KB
+2026-02-01 10:25:05,967 - ARCHIVOS.backup_manager - INFO - 🗑️ 4 backup(s) antiguo(s) eliminado(s)
+2026-02-01 10:25:05,967 - apscheduler.executors.default - INFO - Job "Backup inicial al arrancar (trigger: date[2026-02-01 10:25:05 MST], next run at: 2026-02-01 10:25:05 MST)" executed successfully
+2026-02-01 10:25:05,978 - ARCHIVOS.backup_manager - INFO - ✅ Backup creado exitosamente: control_papelerias_backup_20260201_102505.db
+2026-02-01 10:25:05,979 - ARCHIVOS.backup_manager - INFO -    Tamaño: 152.00 KB
+2026-02-01 10:25:05,981 - apscheduler.executors.default - INFO - Job "Backup inicial al arrancar (trigger: date[2026-02-01 10:25:05 MST], next run at: 2026-02-01 10:25:05 MST)" executed successfully
+2026-02-01 10:25:05,994 - ARCHIVOS.backup_manager - INFO - ✅ Backup creado exitosamente: control_papelerias_backup_20260201_102505.db
+2026-02-01 10:25:05,994 - ARCHIVOS.backup_manager - INFO -    Tamaño: 152.00 KB
+2026-02-01 10:25:05,997 - apscheduler.executors.default - INFO - Job "Backup inicial al arrancar (trigger: date[2026-02-01 10:25:05 MST], next run at: 2026-02-01 10:25:05 MST)" executed successfully
+2026-02-01 13:24:56,410 - root - WARNING - 404 error: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2026-02-01 14:03:54,363 - root - WARNING - 404 error: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2026-02-02 02:00:00,033 - apscheduler.executors.default - INFO - Running job "Backup automático de base de datos (trigger: cron[hour='2', minute='0'], next run at: 2026-02-03 02:00:00 MST)" (scheduled at 2026-02-02 02:00:00-07:00)
+2026-02-02 02:00:00,032 - apscheduler.executors.default - INFO - Running job "Backup automático de base de datos (trigger: cron[hour='2', minute='0'], next run at: 2026-02-03 02:00:00 MST)" (scheduled at 2026-02-02 02:00:00-07:00)
+2026-02-02 02:00:00,035 - apscheduler.executors.default - INFO - Running job "Backup automático de base de datos (trigger: cron[hour='2', minute='0'], next run at: 2026-02-03 02:00:00 MST)" (scheduled at 2026-02-02 02:00:00-07:00)
+2026-02-02 02:00:00,048 - ARCHIVOS.backup_manager - INFO - ✅ Backup creado exitosamente: control_papelerias_backup_20260202_020000.db
+2026-02-02 02:00:00,048 - ARCHIVOS.backup_manager - INFO -    Tamaño: 152.00 KB
+2026-02-02 02:00:00,051 - apscheduler.executors.default - INFO - Job "Backup automático de base de datos (trigger: cron[hour='2', minute='0'], next run at: 2026-02-03 02:00:00 MST)" executed successfully
+2026-02-02 02:00:00,062 - ARCHIVOS.backup_manager - INFO - ✅ Backup creado exitosamente: control_papelerias_backup_20260202_020000.db
+2026-02-02 02:00:00,062 - ARCHIVOS.backup_manager - INFO -    Tamaño: 152.00 KB
+2026-02-02 02:00:00,064 - apscheduler.executors.default - INFO - Job "Backup automático de base de datos (trigger: cron[hour='2', minute='0'], next run at: 2026-02-03 02:00:00 MST)" executed successfully
+2026-02-02 02:00:00,080 - ARCHIVOS.backup_manager - INFO - ✅ Backup creado exitosamente: control_papelerias_backup_20260202_020000.db
+2026-02-02 02:00:00,080 - ARCHIVOS.backup_manager - INFO -    Tamaño: 152.00 KB
+2026-02-02 02:00:00,082 - apscheduler.executors.default - INFO - Job "Backup automático de base de datos (trigger: cron[hour='2', minute='0'], next run at: 2026-02-03 02:00:00 MST)" executed successfully

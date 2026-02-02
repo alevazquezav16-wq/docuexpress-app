@@ -1,9 +1,12 @@
-<!-- Estilos para el indicador de carga HTMX nativo -->
+<!-- Estilos para el indicador de carga -->
 <style>
-/* Durante la petición HTMX, mostrar spinner y ocultar texto */
-#form-registrar-tramite.htmx-request #tramite-loading { display: inline-flex !important; }
-#form-registrar-tramite.htmx-request #tramite-btn-text { display: none !important; }
-#form-registrar-tramite.htmx-request #btn-registrar-tramite { opacity: 0.7; pointer-events: none; }
+/* Clase activa durante la petición - aplicada por CSS y JS como respaldo */
+#form-registrar-tramite.htmx-request #tramite-loading,
+#form-registrar-tramite.is-loading #tramite-loading { display: inline-flex !important; }
+#form-registrar-tramite.htmx-request #tramite-btn-text,
+#form-registrar-tramite.is-loading #tramite-btn-text { display: none !important; }
+#form-registrar-tramite.htmx-request #btn-registrar-tramite,
+#form-registrar-tramite.is-loading #btn-registrar-tramite { opacity: 0.7; pointer-events: none; }
 </style>
 
 <!-- Toast de confirmación - visible si registro_exitoso -->
@@ -40,6 +43,22 @@
 
 <script>
 (function() {
+    // Respaldo JavaScript para móviles
+    var form = document.getElementById('form-registrar-tramite');
+    if (form && !form._mobileFixApplied) {
+        form._mobileFixApplied = true;
+        
+        form.addEventListener('submit', function(e) {
+            this.classList.add('is-loading');
+            console.log('[TRAMITE-MOBILE] Submit detectado');
+        });
+        
+        form.addEventListener('htmx:beforeRequest', function(e) {
+            this.classList.add('is-loading');
+            console.log('[TRAMITE-MOBILE] htmx:beforeRequest');
+        });
+    }
+    
     // Feedback de registro exitoso
     {% if registro_exitoso %}
     console.log('[TRAMITE] Registro exitoso detectado');
