@@ -2,53 +2,6 @@
      hx-trigger="refresh-papeleria-list from:body" 
      hx-get="{{ url_for('papeleria.get_tramite_form') }}" 
      hx-swap="innerHTML">
-<!-- Estilos para animaciones móviles -->
-<style>
-@keyframes tramiteSuccessPulse {
-    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.7); }
-    50% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(25, 135, 84, 0); }
-    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(25, 135, 84, 0); }
-}
-@keyframes fadeSlideIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-@keyframes fadeSlideOut {
-    from { opacity: 1; transform: translateY(0); }
-    to { opacity: 0; transform: translateY(-10px); }
-}
-.tramite-btn-loading {
-    pointer-events: none !important;
-    opacity: 0.7;
-    cursor: not-allowed !important;
-}
-.tramite-btn-success {
-    animation: tramiteSuccessPulse 0.6s ease-out;
-}
-.tramite-toast-show {
-    animation: fadeSlideIn 0.3s ease forwards;
-}
-.tramite-toast-hide {
-    animation: fadeSlideOut 0.3s ease forwards;
-}
-.tramite-counter-badge {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    background: #198754;
-    color: white;
-    border-radius: 50%;
-    width: 24px;
-    height: 24px;
-    font-size: 12px;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    animation: fadeSlideIn 0.3s ease;
-}
-</style>
 
 <!-- Toast de confirmación (oculto inicialmente) -->
 <div id="tramite-success-toast" class="alert alert-success d-none mb-3 shadow-sm" role="alert">
@@ -67,18 +20,44 @@
 <form id="form-registrar-tramite"
 		hx-post="{{ url_for('papeleria.registrar_tramite') }}"
 		hx-target="#registrar-tramite-container"
-		hx-swap="innerHTML"
-		hx-indicator="#tramite-loading">
+		hx-swap="innerHTML">
 	{% include 'form_tramite_fields.html' %}
 	{{ form_tramite.hidden_tag() }}
 	<div class="position-relative d-inline-block w-100">
 		<button type="submit" id="btn-registrar-tramite" class="btn btn-primary w-100 btn-lg position-relative overflow-hidden">
-			<span class="htmx-indicator" id="tramite-loading">
+			<span id="tramite-loading" class="d-none">
 				<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
 				Procesando...
 			</span>
-			<span class="htmx-hide-on-request"><i class="bi bi-plus-circle me-1"></i>Registrar Trámite</span>
+			<span id="tramite-btn-text"><i class="bi bi-plus-circle me-1"></i>Registrar Trámite</span>
 		</button>
 	</div>
 </form>
+
+<script>
+(function() {
+    var form = document.getElementById('form-registrar-tramite');
+    var btn = document.getElementById('btn-registrar-tramite');
+    var loading = document.getElementById('tramite-loading');
+    var btnText = document.getElementById('tramite-btn-text');
+    
+    if (form && btn) {
+        form.addEventListener('htmx:beforeRequest', function(evt) {
+            btn.disabled = true;
+            btn.style.opacity = '0.7';
+            btn.style.pointerEvents = 'none';
+            if (loading) loading.classList.remove('d-none');
+            if (btnText) btnText.classList.add('d-none');
+        });
+        
+        form.addEventListener('htmx:afterRequest', function(evt) {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.pointerEvents = 'auto';
+            if (loading) loading.classList.add('d-none');
+            if (btnText) btnText.classList.remove('d-none');
+        });
+    }
+})();
+</script>
 </div>
