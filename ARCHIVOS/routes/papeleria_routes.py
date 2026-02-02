@@ -228,10 +228,10 @@ def registrar_tramite():
                 # OOB swap para actualizar el contenedor de mensajes flash y el formulario
                 response = make_response(f'<div id="flash-container" hx-swap-oob="innerHTML">{flash_html}</div>{form_html}')
                 # Añadir señal explícita de éxito para el frontend
-                # NOTA: NO incluir 'refresh-papeleria-list' aquí porque el contenedor lo escucha
-                # y haría una segunda petición GET que sobreescribiría nuestro partial
+                # NOTA: NO incluir 'reload-dashboard' ni 'refresh-papeleria-list' aquí porque
+                # el dashboard-container escucha reload-dashboard y haría un GET que sobreescribiría
+                # nuestro partial antes de que el usuario vea el feedback
                 response.headers['HX-Trigger'] = json.dumps({
-                    'reload-dashboard': '',
                     'tramiteRegistrado': {'cantidad': cantidad, 'tramite': tramite_nombre}
                 })
                 return response

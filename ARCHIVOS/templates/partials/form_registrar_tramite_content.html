@@ -85,6 +85,13 @@
     // Feedback de registro exitoso
     {% if registro_exitoso %}
     console.log('[TRAMITE] Registro exitoso detectado');
+    
+    // Actualizar gráficos del dashboard (sin recargar toda la página)
+    if (typeof chartManager !== 'undefined' && chartManager.reinitialize) {
+        console.log('[TRAMITE] Actualizando gráficos del dashboard');
+        chartManager.reinitialize({ clearCache: true });
+    }
+    
     if ('vibrate' in navigator) {
         navigator.vibrate([50, 30, 50]);
     }
