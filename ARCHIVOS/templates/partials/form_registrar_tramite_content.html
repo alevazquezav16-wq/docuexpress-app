@@ -21,27 +21,25 @@
 .tramite-btn-success {
     animation: tramiteSuccessPulse 0.6s ease-out;
 }
-#tramite-success-toast-inner.show-toast {
+.tramite-toast-show {
     animation: fadeSlideIn 0.3s ease forwards;
 }
-#tramite-success-toast-inner.hide-toast {
+.tramite-toast-hide {
     animation: fadeSlideOut 0.3s ease forwards;
 }
 </style>
 
-<!-- Toast de confirmación mejorado -->
-<div id="tramite-success-toast-inner" class="alert alert-success d-none mb-3 shadow-sm" role="alert">
+<!-- Toast de confirmación - visible si registro_exitoso -->
+<div id="tramite-success-toast-partial" class="alert alert-success mb-3 shadow-sm {% if not registro_exitoso %}d-none{% endif %}" role="alert">
 	<div class="d-flex align-items-center">
 		<div class="me-3" style="font-size: 1.75rem;">
 			<i class="bi bi-check-circle-fill text-success"></i>
 		</div>
 		<div class="flex-grow-1">
 			<strong class="d-block">¡Trámite registrado!</strong>
-			<small class="text-muted">
-				<span id="tramite-count-msg-inner">El formulario está listo para otro registro</span>
-			</small>
+			<small class="text-muted">El formulario está listo para otro registro</small>
 		</div>
-		<button type="button" class="btn-close ms-2" onclick="hideTramiteToast()" aria-label="Cerrar"></button>
+		<button type="button" class="btn-close ms-2" onclick="this.closest('.alert').classList.add('d-none')" aria-label="Cerrar"></button>
 	</div>
 </div>
 
@@ -49,15 +47,12 @@
 	hx-post="{{ url_for('papeleria.registrar_tramite') }}"
 	hx-target="#registrar-tramite-container"
 	hx-swap="innerHTML"
-	hx-indicator="#tramite-loading-inner"
-	hx-disabled-elt="#btn-registrar-tramite-inner"
-	hx-on::before-request="onTramiteBeforeRequest(this)"
-	hx-on::after-request="onTramiteAfterRequest(event, this)">
+	hx-indicator="#tramite-loading-partial">
 	{% include 'form_tramite_fields.html' %}
 	{{ form_tramite.hidden_tag() }}
 	<div class="position-relative">
-		<button type="submit" id="btn-registrar-tramite-inner" class="btn btn-primary w-100 btn-lg position-relative overflow-hidden">
-			<span class="htmx-indicator" id="tramite-loading-inner">
+		<button type="submit" id="btn-registrar-tramite-partial" class="btn btn-primary w-100 btn-lg position-relative overflow-hidden">
+			<span class="htmx-indicator" id="tramite-loading-partial">
 				<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
 				Procesando...
 			</span>
@@ -68,107 +63,28 @@
 
 <script>
 (function() {
-    // Contador de trámites en sesión (persistente en sessionStorage)
-    if (typeof window.tramiteSessionCount === 'undefined') {
-        window.tramiteSessionCount = parseInt(sessionStorage.getItem('tramiteCount') || '0');
-    }
-
-    // Antes de enviar: bloquear UI inmediatamente
-    window.onTramiteBeforeRequest = function(form) {
-        const btn = form.querySelector('button[type="submit"]');
-        if (btn) {
-            btn.disabled = true;
-            btn.classList.add('tramite-btn-loading');
-        }
-        // Feedback táctil (móviles)
-        if ('vibrate' in navigator) {
-            navigator.vibrate(10);
-        }
-    };
-
-    // Después de la respuesta: restaurar UI y mostrar feedback
-    window.onTramiteAfterRequest = function(event, form) {
-        const btn = form.querySelector('button[type="submit"]');
-        if (btn) {
-            btn.disabled = false;
-            btn.classList.remove('tramite-btn-loading');
-        }
-        // El feedback de éxito se maneja via el evento 'tramiteRegistrado'
-    };
-
-    // Escuchar evento personalizado de éxito desde el servidor
-    document.body.addEventListener('tramiteRegistrado', function(evt) {
-        // Incrementar contador
-        window.tramiteSessionCount++;
-        sessionStorage.setItem('tramiteCount', window.tramiteSessionCount);
-        
-        // Feedback táctil de éxito
-        if ('vibrate' in navigator) {
-            navigator.vibrate([50, 30, 50]);
-        }
-        
-        // Mostrar toast
-        showTramiteToast();
-        
-        // Animación en botón
-        const btn = document.getElementById('btn-registrar-tramite-inner');
-        if (btn) {
-            btn.classList.add('tramite-btn-success');
-            setTimeout(() => btn.classList.remove('tramite-btn-success'), 600);
-        }
-        
-        // Scroll suave en móvil
-        scrollToTramiteForm();
-    });
-
-    window.showTramiteToast = function() {
-        const toast = document.getElementById('tramite-success-toast-inner');
-        const countMsg = document.getElementById('tramite-count-msg-inner');
-        
-        if (toast) {
-            // Actualizar mensaje
-            if (countMsg && window.tramiteSessionCount > 1) {
-                countMsg.textContent = `Has registrado ${window.tramiteSessionCount} trámites en esta sesión`;
-            } else if (countMsg) {
-                countMsg.textContent = 'El formulario está listo para otro registro';
-            }
-            
-            toast.classList.remove('d-none', 'hide-toast');
-            toast.classList.add('show-toast');
-            
-            // Auto-ocultar después de 5s
-            clearTimeout(window.tramiteToastTimeout);
-            window.tramiteToastTimeout = setTimeout(() => {
-                hideTramiteToast();
-            }, 5000);
-        }
-    };
-
-    window.hideTramiteToast = function() {
-        const toast = document.getElementById('tramite-success-toast-inner');
-        if (toast) {
-            clearTimeout(window.tramiteToastTimeout);
-            toast.classList.remove('show-toast');
-            toast.classList.add('hide-toast');
-            setTimeout(() => {
-                toast.classList.add('d-none');
-                toast.classList.remove('hide-toast');
-            }, 300);
-        }
-    };
-
-    window.scrollToTramiteForm = function() {
-        const container = document.getElementById('registrar-tramite-container');
-        if (container && window.innerWidth < 992) {
-            setTimeout(() => {
-                container.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 150);
-        }
-    };
-
-    // Si se carga con éxito (flag del servidor), mostrar toast inmediatamente
+    // Si fue registro exitoso, vibrar y auto-ocultar toast después de 5s
     {% if registro_exitoso %}
-    document.body.dispatchEvent(new CustomEvent('tramiteRegistrado'));
+    if ('vibrate' in navigator) {
+        navigator.vibrate([50, 30, 50]);
+    }
+    // Scroll al formulario en móvil
+    if (window.innerWidth < 992) {
+        var container = document.getElementById('registrar-tramite-container');
+        if (container) {
+            setTimeout(function() {
+                container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+    }
+    // Auto-ocultar toast después de 5 segundos
+    setTimeout(function() {
+        var toast = document.getElementById('tramite-success-toast-partial');
+        if (toast) {
+            toast.classList.add('tramite-toast-hide');
+            setTimeout(function() { toast.classList.add('d-none'); }, 300);
+        }
+    }, 5000);
     {% endif %}
 })();
 </script>

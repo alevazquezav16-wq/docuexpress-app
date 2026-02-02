@@ -25,10 +25,10 @@
 .tramite-btn-success {
     animation: tramiteSuccessPulse 0.6s ease-out;
 }
-#tramite-success-toast.show-toast {
+.tramite-toast-show {
     animation: fadeSlideIn 0.3s ease forwards;
 }
-#tramite-success-toast.hide-toast {
+.tramite-toast-hide {
     animation: fadeSlideOut 0.3s ease forwards;
 }
 .tramite-counter-badge {
@@ -50,7 +50,7 @@
 }
 </style>
 
-<!-- Toast de confirmación mejorado -->
+<!-- Toast de confirmación (oculto inicialmente) -->
 <div id="tramite-success-toast" class="alert alert-success d-none mb-3 shadow-sm" role="alert">
 	<div class="d-flex align-items-center">
 		<div class="me-3" style="font-size: 1.75rem;">
@@ -58,11 +58,9 @@
 		</div>
 		<div class="flex-grow-1">
 			<strong class="d-block">¡Trámite registrado!</strong>
-			<small class="text-muted">
-				<span id="tramite-count-msg">El formulario está listo para otro registro</span>
-			</small>
+			<small class="text-muted">El formulario está listo para otro registro</small>
 		</div>
-		<button type="button" class="btn-close ms-2" onclick="hideTramiteToast()" aria-label="Cerrar"></button>
+		<button type="button" class="btn-close ms-2" onclick="this.closest('.alert').classList.add('d-none')" aria-label="Cerrar"></button>
 	</div>
 </div>
 
@@ -70,10 +68,7 @@
 		hx-post="{{ url_for('papeleria.registrar_tramite') }}"
 		hx-target="#registrar-tramite-container"
 		hx-swap="innerHTML"
-		hx-indicator="#tramite-loading"
-		hx-disabled-elt="#btn-registrar-tramite"
-		hx-on::before-request="onTramiteBeforeRequest(this)"
-		hx-on::after-request="onTramiteAfterRequest(event, this)">
+		hx-indicator="#tramite-loading">
 	{% include 'form_tramite_fields.html' %}
 	{{ form_tramite.hidden_tag() }}
 	<div class="position-relative d-inline-block w-100">
@@ -84,123 +79,6 @@
 			</span>
 			<span class="htmx-hide-on-request"><i class="bi bi-plus-circle me-1"></i>Registrar Trámite</span>
 		</button>
-		<span id="tramite-session-counter" class="tramite-counter-badge d-none">0</span>
 	</div>
 </form>
-
-<script>
-(function() {
-    // Contador de trámites en la sesión (persistente)
-    if (typeof window.tramiteSessionCount === 'undefined') {
-        window.tramiteSessionCount = parseInt(sessionStorage.getItem('tramiteCount') || '0');
-    }
-
-    // Antes de enviar: bloquear UI inmediatamente
-    window.onTramiteBeforeRequest = function(form) {
-        const btn = form.querySelector('button[type="submit"]');
-        if (btn) {
-            btn.disabled = true;
-            btn.classList.add('tramite-btn-loading');
-        }
-        // Feedback táctil (móviles)
-        if ('vibrate' in navigator) {
-            navigator.vibrate(10);
-        }
-    };
-
-    // Después de la respuesta: restaurar UI
-    window.onTramiteAfterRequest = function(event, form) {
-        const btn = form.querySelector('button[type="submit"]');
-        if (btn) {
-            btn.disabled = false;
-            btn.classList.remove('tramite-btn-loading');
-        }
-        // El feedback de éxito se maneja via el evento 'tramiteRegistrado' del servidor
-    };
-
-    // Escuchar evento personalizado de éxito desde el servidor (via HX-Trigger)
-    document.body.addEventListener('tramiteRegistrado', function(evt) {
-        // Incrementar contador
-        window.tramiteSessionCount++;
-        sessionStorage.setItem('tramiteCount', window.tramiteSessionCount);
-        
-        // Feedback táctil de éxito
-        if ('vibrate' in navigator) {
-            navigator.vibrate([50, 30, 50]);
-        }
-        
-        // Mostrar toast y actualizar contador
-        showTramiteToast();
-        updateTramiteCounter();
-        
-        // Animación en botón (puede ser el nuevo o existente después del swap)
-        setTimeout(() => {
-            const btn = document.getElementById('btn-registrar-tramite') || document.getElementById('btn-registrar-tramite-inner');
-            if (btn) {
-                btn.classList.add('tramite-btn-success');
-                setTimeout(() => btn.classList.remove('tramite-btn-success'), 600);
-            }
-        }, 50);
-        
-        // Scroll suave en móvil
-        scrollToTramiteForm();
-    });
-
-    window.showTramiteToast = function() {
-        const toast = document.getElementById('tramite-success-toast') || document.getElementById('tramite-success-toast-inner');
-        const countMsg = document.getElementById('tramite-count-msg') || document.getElementById('tramite-count-msg-inner');
-        
-        if (toast) {
-            // Actualizar mensaje
-            if (countMsg && window.tramiteSessionCount > 1) {
-                countMsg.textContent = `Has registrado ${window.tramiteSessionCount} trámites en esta sesión`;
-            } else if (countMsg) {
-                countMsg.textContent = 'El formulario está listo para otro registro';
-            }
-            
-            toast.classList.remove('d-none', 'hide-toast');
-            toast.classList.add('show-toast');
-            
-            // Auto-ocultar después de 5s
-            clearTimeout(window.tramiteToastTimeout);
-            window.tramiteToastTimeout = setTimeout(() => {
-                hideTramiteToast();
-            }, 5000);
-        }
-    };
-
-    window.hideTramiteToast = function() {
-        const toast = document.getElementById('tramite-success-toast') || document.getElementById('tramite-success-toast-inner');
-        if (toast) {
-            clearTimeout(window.tramiteToastTimeout);
-            toast.classList.remove('show-toast');
-            toast.classList.add('hide-toast');
-            setTimeout(() => {
-                toast.classList.add('d-none');
-                toast.classList.remove('hide-toast');
-            }, 300);
-        }
-    };
-
-    window.updateTramiteCounter = function() {
-        const counter = document.getElementById('tramite-session-counter');
-        if (counter && window.tramiteSessionCount > 0) {
-            counter.textContent = window.tramiteSessionCount;
-            counter.classList.remove('d-none');
-        }
-    };
-
-    window.scrollToTramiteForm = function() {
-        const container = document.getElementById('registrar-tramite-container');
-        if (container && window.innerWidth < 992) {
-            setTimeout(() => {
-                container.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 150);
-        }
-    };
-
-    // Inicializar contador al cargar
-    updateTramiteCounter();
-})();
-</script>
 </div>
